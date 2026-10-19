@@ -273,7 +273,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
               className="absolute inset-0 z-50 flex flex-col items-center justify-start bg-white pt-16 px-6"
             >
               <div className="mt-4 mb-6">
-                <FishTokriLogo className="h-16 w-auto" />
+                <FishTokriLogo className="h-auto w-[min(80vw,360px)]" />
               </div>
               <div className="w-72 h-72">
                 <Lottie animationData={successAnimation} loop={false} autoplay />
@@ -285,7 +285,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
         <div className="flex flex-col flex-1 px-7 pt-8 pb-8">
           {/* Logo — always visible */}
           <div className="flex justify-center mb-5">
-            <FishTokriLogo className="h-16 w-auto" />
+            <FishTokriLogo className="h-auto w-[min(80vw,360px)]" />
           </div>
 
           {!otpSent ? (

@@ -151,16 +151,16 @@ export function Header({
   return (
     <>
     <header className="sticky top-0 z-50 glass">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
         {/* Left: Logo */}
         <div className="flex items-center shrink-0">
           {onLogoClick ? (
             <button onClick={onLogoClick} className="flex items-center group focus:outline-none">
-              <FishTokriLogo className="h-8 sm:h-11 w-auto" />
+              <FishTokriLogo className="h-auto w-[44vw] max-w-[380px] sm:w-[min(34vw,380px)]" />
             </button>
           ) : (
             <Link href="/" className="flex items-center group">
-              <FishTokriLogo className="h-8 sm:h-11 w-auto" />
+              <FishTokriLogo className="h-auto w-[44vw] max-w-[380px] sm:w-[min(34vw,380px)]" />
             </Link>
           )}
         </div>

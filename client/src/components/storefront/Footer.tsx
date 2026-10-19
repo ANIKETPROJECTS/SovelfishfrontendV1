@@ -60,7 +60,7 @@ export function Footer() {
           {/* Brand Column */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="inline-flex rounded-md bg-white p-2 mb-4">
-              <FishTokriLogo className="h-9 w-auto" />
+              <FishTokriLogo className="h-auto w-full max-w-[320px]" />
             </div>
             <p className="text-white text-sm leading-relaxed mb-5">
               Thane's freshest fish, seafood & meat, cleaned, packed, and delivered straight to your doorstep.

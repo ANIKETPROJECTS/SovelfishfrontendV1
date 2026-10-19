@@ -373,7 +373,7 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
 <div class="page">
   <div class="header">
     <div class="brand-block">
-      <img src="/brand/fresh-stock-xchange.png" alt="Fresh Stock Xchange" style="height:38px;width:auto;display:block;" />
+      <img src="/brand/fresh-stock-xchange.png" alt="Fresh Stock Xchange" style="height:48px;width:auto;display:block;" />
       <div class="brand-sub">Fresh Seafood &amp; Meat &middot; Mumbai</div>
       <div class="company-details">
         <p><span class="detail-label">ADD :</span> Thane, Mumbai</p>
