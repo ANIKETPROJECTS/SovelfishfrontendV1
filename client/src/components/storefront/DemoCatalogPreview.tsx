@@ -106,22 +106,12 @@ export function DemoCatalogPreview() {
 
   return (
     <div className="space-y-8 pb-8 sm:space-y-10" data-testid="preview-catalog">
-      <section className="relative isolate min-h-[200px] overflow-hidden rounded-3xl bg-[#1B324D] shadow-lg sm:min-h-[260px]">
+      <section className="relative aspect-[21/9] w-full overflow-hidden rounded-3xl bg-[#1B324D] shadow-lg">
         <img
-          src="/banners/banner2.png"
-          alt="A selection of fresh seafood and meat"
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
+          src="/banners/fresh-stock-xchange.jpg"
+          alt="Fresh Stock Xchange banner featuring premium fish, meat, and chicken"
+          className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#1B324D] via-[#1B324D]/85 to-[#1B324D]/25" />
-        <div className="flex min-h-[200px] max-w-2xl flex-col justify-center p-6 sm:min-h-[260px] sm:p-10">
-          <span className="mb-3 h-1 w-12 rounded-full bg-[#59C39E]" />
-          <h1 className="max-w-xl text-3xl font-bold leading-tight text-white sm:text-5xl">
-            Fresh picks for every table
-          </h1>
-          <p className="mt-3 max-w-md text-sm text-white/90 sm:text-base">
-            Seafood, meat, and kitchen favourites, packed fresh for your recipes.
-          </p>
-        </div>
       </section>
 
       <section aria-labelledby="catalog-categories-heading">
@@ -175,10 +165,7 @@ export function DemoCatalogPreview() {
         >
           <div className="mb-4 flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#248764]">
-                {String(index + 1).padStart(2, "0")} / Curated selection
-              </p>
-              <h2 id={section.id} className="mt-1 text-xl font-semibold text-[#1B324D] sm:text-2xl">
+              <h2 id={section.id} className="text-xl font-semibold text-[#1B324D] sm:text-2xl">
                 {section.title}
               </h2>
               <p className="mt-1 text-sm text-slate-600">{section.subtitle}</p>
