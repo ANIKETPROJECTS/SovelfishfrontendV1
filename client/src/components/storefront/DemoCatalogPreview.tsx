@@ -156,12 +156,15 @@ export function DemoCatalogPreview() {
 
       {visibleSections.map((section) => {
         const isNavySection = section.id === "from-the-sea";
+        const isDeepGreenSection = section.id === "meat-counter";
         const isSeafoamSection = section.id === "kitchen-essentials";
         const sectionSurface = isNavySection
           ? "border-[#1B324D] bg-[#1B324D]"
-          : isSeafoamSection
-            ? "border-[#59C39E] bg-[#59C39E]"
-            : "border-slate-200 bg-white";
+          : isDeepGreenSection
+            ? "border-[#248764] bg-[#248764]"
+            : isSeafoamSection
+              ? "border-[#59C39E] bg-[#59C39E]"
+              : "border-slate-200 bg-white";
 
         return (
           <section
@@ -173,11 +176,11 @@ export function DemoCatalogPreview() {
               <div className="min-w-0">
                 <h2
                   id={section.id}
-                  className={`text-xl font-semibold sm:text-2xl ${isNavySection ? "text-white" : "text-[#1B324D]"}`}
+                  className={`text-xl font-semibold sm:text-2xl ${isNavySection || isDeepGreenSection ? "text-white" : "text-[#1B324D]"}`}
                 >
                   {section.title}
                 </h2>
-                <p className={`mt-1 text-sm ${isNavySection ? "text-white/85" : "text-slate-600"}`}>
+                <p className={`mt-1 text-sm ${isNavySection || isDeepGreenSection ? "text-white/85" : "text-slate-600"}`}>
                   {section.subtitle}
                 </p>
               </div>
