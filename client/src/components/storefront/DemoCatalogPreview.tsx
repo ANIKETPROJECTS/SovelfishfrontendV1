@@ -154,40 +154,51 @@ export function DemoCatalogPreview() {
         </div>
       </section>
 
-      {visibleSections.map((section, index) => (
-        <section
-          key={section.id}
-          aria-labelledby={section.id}
-          className={`rounded-3xl border p-4 sm:p-6 ${
-            index % 2 === 1
-              ? "border-[#59C39E]/25 bg-[#59C39E]/[0.07]"
-              : "border-slate-200 bg-white"
-          }`}
-        >
-          <div className="mb-4 flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <h2 id={section.id} className="text-xl font-semibold text-[#1B324D] sm:text-2xl">
-                {section.title}
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">{section.subtitle}</p>
-            </div>
-            <span className="shrink-0 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-[#1B324D]">
-              {section.products.length} picks
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {section.products.map((product) => (
-              <div key={`${section.id}-${product.id}`} className="h-full rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm sm:p-3">
-                <ProductCard
-                  product={product}
-                  disableNavigation
-                  onProductClick={() => setOpenProduct(product)}
-                />
+      {visibleSections.map((section) => {
+        const isNavySection = section.id === "from-the-sea";
+        const isSeafoamSection = section.id === "kitchen-essentials";
+        const sectionSurface = isNavySection
+          ? "border-[#1B324D] bg-[#1B324D]"
+          : isSeafoamSection
+            ? "border-[#59C39E] bg-[#59C39E]"
+            : "border-slate-200 bg-white";
+
+        return (
+          <section
+            key={section.id}
+            aria-labelledby={section.id}
+            className={`rounded-3xl border p-4 sm:p-6 ${sectionSurface}`}
+          >
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <h2
+                  id={section.id}
+                  className={`text-xl font-semibold sm:text-2xl ${isNavySection ? "text-white" : "text-[#1B324D]"}`}
+                >
+                  {section.title}
+                </h2>
+                <p className={`mt-1 text-sm ${isNavySection ? "text-white/85" : "text-slate-600"}`}>
+                  {section.subtitle}
+                </p>
               </div>
-            ))}
-          </div>
-        </section>
-      ))}
+              <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1B324D]">
+                {section.products.length} picks
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+              {section.products.map((product) => (
+                <div key={`${section.id}-${product.id}`} className="h-full rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm sm:p-3">
+                  <ProductCard
+                    product={product}
+                    disableNavigation
+                    onProductClick={() => setOpenProduct(product)}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
 
       <Dialog open={Boolean(openProduct)} onOpenChange={(open) => !open && setOpenProduct(null)}>
         <DialogContent className="max-w-md overflow-hidden rounded-3xl p-0">
