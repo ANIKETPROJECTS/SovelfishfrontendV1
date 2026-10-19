@@ -1,4 +1,8 @@
 import { useState } from "react";
+import type { Product } from "@shared/schema";
+import { ProductCard } from "@/components/storefront/ProductCard";
+import { useCart } from "@/context/CartContext";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const categories = [
   { name: "All categories", image: "/banners/banner2.png", value: "All" },
@@ -9,42 +13,88 @@ const categories = [
   { name: "Masalas", image: "/categories/masalas.png", value: "Masalas" },
 ];
 
+type PreviewProduct = Product & { isPreviewOnly: true };
+
+function makePreviewProduct(
+  id: number,
+  name: string,
+  category: string,
+  price: number,
+  imageUrl: string,
+  grossWeight: string,
+  netWeight: string,
+): PreviewProduct {
+  return {
+    id: id as unknown as string,
+    name,
+    category,
+    subCategory: null,
+    status: "active",
+    limitedStockNote: null,
+    price,
+    originalPrice: null,
+    unit: "500 g",
+    imageUrl,
+    isArchived: false,
+    updatedAt: new Date(0),
+    sectionId: null,
+    description: null,
+    grossWeight,
+    netWeight,
+    pieces: null,
+    serves: null,
+    discountPct: 0,
+    quantity: 999,
+    availableQty: 999,
+    batchExpired: false,
+    couponIds: [],
+    recipes: [],
+    preorderMode: "normal",
+    isPreviewOnly: true,
+  };
+}
+
 const products = [
-  { name: "Fresh Pomfret", category: "Fish", detail: "Whole fish · 500 g", price: "₹549", image: "/categories/fish.png" },
-  { name: "Coastal Prawns", category: "Prawns", detail: "Cleaned · 500 g", price: "₹399", image: "/categories/prawns.png" },
-  { name: "Chicken Curry Cut", category: "Chicken", detail: "Bone-in · 500 g", price: "₹189", image: "/categories/chicken.png" },
-  { name: "Goat Curry Cut", category: "Mutton", detail: "Bone-in · 500 g", price: "₹449", image: "/categories/mutton.png" },
-  { name: "Coastal Fish Masala", category: "Masalas", detail: "House blend · 100 g", price: "₹99", image: "/categories/masalas.png" },
+  makePreviewProduct(990001, "Fresh Pomfret", "Fish", 549, "/categories/fish.png", "500", "450"),
+  makePreviewProduct(990002, "Coastal Prawns", "Prawns", 399, "/categories/prawns.png", "500", "450"),
+  makePreviewProduct(990003, "Fresh Basa Fillets", "Fish", 329, "/categories/fish.png", "500", "450"),
+  makePreviewProduct(990004, "Chicken Curry Cut", "Chicken", 189, "/categories/chicken.png", "500", "450"),
+  makePreviewProduct(990005, "Goat Curry Cut", "Mutton", 449, "/categories/mutton.png", "500", "450"),
+  makePreviewProduct(990006, "Coastal Fish Masala", "Masalas", 99, "/categories/masalas.png", "100", "100"),
+  makePreviewProduct(990007, "Classic Tandoori Masala", "Masalas", 89, "/categories/masalas.png", "100", "100"),
 ];
 
 const sections = [
-  { title: "Best Sellers", subtitle: "Popular picks from the demo catalogue", products: products.slice(0, 4) },
-  { title: "Fresh From The Sea", subtitle: "Sample seafood favourites", products: products.slice(0, 2) },
-  { title: "Meat For Every Meal", subtitle: "Demo cuts for everyday cooking", products: products.slice(2, 4) },
-  { title: "Pantry Pairings", subtitle: "A sample masala to complete the meal", products: products.slice(4) },
+  {
+    id: "best-sellers",
+    title: "Best Sellers",
+    subtitle: "Fresh favourites for your table",
+    products: [products[0], products[1], products[3], products[4]],
+  },
+  {
+    id: "from-the-sea",
+    title: "From the Sea",
+    subtitle: "Seafood prepared for easy cooking",
+    products: [products[0], products[1], products[2]],
+  },
+  {
+    id: "meat-counter",
+    title: "Meat Counter",
+    subtitle: "Classic cuts for everyday meals",
+    products: [products[3], products[4]],
+  },
+  {
+    id: "kitchen-essentials",
+    title: "Kitchen Essentials",
+    subtitle: "Finishing touches for your favourite recipes",
+    products: [products[5], products[6]],
+  },
 ];
-
-function DemoProductCard({ product }: { product: (typeof products)[number] }) {
-  return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="relative aspect-square overflow-hidden bg-slate-50">
-        <img src={product.image} alt={product.name} loading="lazy" className="h-full w-full object-cover" />
-        <span className="absolute left-2 top-2 rounded-full bg-[#1B324D] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-          Demo
-        </span>
-      </div>
-      <div className="p-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#1B324D]/65">{product.category}</p>
-        <h3 className="mt-1 line-clamp-2 min-h-10 text-sm font-semibold text-[#1B324D]">{product.name}</h3>
-        <p className="mt-1 text-xs text-slate-500">{product.detail}</p>
-        <p className="mt-2 font-bold text-[#1B324D]">{product.price}</p>
-      </div>
-    </article>
-  );
-}
 
 export function DemoCatalogPreview() {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [openProduct, setOpenProduct] = useState<PreviewProduct | null>(null);
+  const { addToCart } = useCart();
   const visibleSections = sections
     .map((section) => ({
       ...section,
@@ -55,85 +105,141 @@ export function DemoCatalogPreview() {
     .filter((section) => section.products.length > 0);
 
   return (
-    <div className="space-y-7 sm:space-y-9" data-testid="demo-catalog-preview">
-      <section className="relative isolate min-h-[190px] sm:min-h-[240px] overflow-hidden rounded-2xl bg-[#1B324D] shadow-lg">
+    <div className="space-y-8 pb-8 sm:space-y-10" data-testid="preview-catalog">
+      <section className="relative isolate min-h-[200px] overflow-hidden rounded-3xl bg-[#1B324D] shadow-lg sm:min-h-[260px]">
         <img
           src="/banners/banner2.png"
-          alt="Seafood and meat selection"
+          alt="A selection of fresh seafood and meat"
           className="absolute inset-0 -z-20 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#1B324D] via-[#1B324D]/90 to-[#1B324D]/35" />
-        <div className="flex min-h-[190px] max-w-2xl flex-col justify-center p-6 sm:min-h-[240px] sm:p-10">
-          <span className="mb-3 w-fit rounded-full bg-[#59C39E] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#1B324D]">
-            Replit preview catalogue
-          </span>
-          <h1 className="max-w-xl text-2xl font-bold leading-tight text-white sm:text-4xl">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#1B324D] via-[#1B324D]/85 to-[#1B324D]/25" />
+        <div className="flex min-h-[200px] max-w-2xl flex-col justify-center p-6 sm:min-h-[260px] sm:p-10">
+          <span className="mb-3 h-1 w-12 rounded-full bg-[#59C39E]" />
+          <h1 className="max-w-xl text-3xl font-bold leading-tight text-white sm:text-5xl">
             Fresh picks for every table
           </h1>
-          <p className="mt-2 max-w-md text-sm text-white/90 sm:text-base">
-            Explore sample seafood, meat, and masala selections.
+          <p className="mt-3 max-w-md text-sm text-white/90 sm:text-base">
+            Seafood, meat, and kitchen favourites, packed fresh for your recipes.
           </p>
         </div>
       </section>
 
-      <section aria-labelledby="demo-categories-heading">
-        <div className="mb-3 flex items-end justify-between gap-3">
-          <h2 id="demo-categories-heading" className="text-xl font-semibold text-[#1B324D] sm:text-2xl">
-            Shop by category
-          </h2>
-          <span className="text-xs font-medium text-slate-500">Sample content</span>
+      <section aria-labelledby="catalog-categories-heading">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#248764]">Find your favourites</p>
+            <h2 id="catalog-categories-heading" className="mt-1 text-xl font-semibold text-[#1B324D] sm:text-2xl">
+              Shop by category
+            </h2>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
           {categories.map((category) => {
             const isSelected = selectedCategory === category.value;
             return (
-            <button
-              key={category.value}
-              type="button"
-              onClick={() => setSelectedCategory(category.value)}
-              aria-pressed={isSelected}
-              aria-label={`Show ${category.name} demo products`}
-              className={`group relative aspect-[4/3] overflow-hidden rounded-2xl bg-[#1B324D] text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#59C39E] ${
-                isSelected ? "ring-4 ring-[#59C39E]" : ""
-              }`}
-            >
-              <img src={category.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-              <span className="absolute inset-0 bg-gradient-to-t from-[#1B324D]/95 via-[#1B324D]/20 to-transparent" />
-              <span className="absolute bottom-3 left-3 right-2 text-base font-bold text-white sm:bottom-4 sm:left-4 sm:text-lg">
-                {category.name}
-              </span>
-            </button>
+              <button
+                key={category.value}
+                type="button"
+                onClick={() => setSelectedCategory(category.value)}
+                aria-pressed={isSelected}
+                aria-label={`Show ${category.name} products`}
+                className={`group relative aspect-[4/3] overflow-hidden rounded-2xl bg-[#1B324D] text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#59C39E] ${
+                  isSelected ? "ring-4 ring-[#59C39E]" : ""
+                }`}
+              >
+                <img
+                  src={category.image}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <span className="absolute inset-0 bg-gradient-to-t from-[#1B324D]/95 via-[#1B324D]/20 to-transparent" />
+                <span className="absolute bottom-3 left-3 right-2 text-base font-bold text-white sm:bottom-4 sm:left-4 sm:text-lg">
+                  {category.name}
+                </span>
+              </button>
             );
           })}
         </div>
       </section>
 
-      {visibleSections.map((section) => (
-        <section key={section.title} aria-labelledby={`demo-${section.title.toLowerCase().replaceAll(" ", "-")}`}>
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <h2
-                id={`demo-${section.title.toLowerCase().replaceAll(" ", "-")}`}
-                className="text-xl font-semibold text-[#1B324D] sm:text-2xl"
-              >
+      {visibleSections.map((section, index) => (
+        <section
+          key={section.id}
+          aria-labelledby={section.id}
+          className={`rounded-3xl border p-4 sm:p-6 ${
+            index % 2 === 1
+              ? "border-[#59C39E]/25 bg-[#59C39E]/[0.07]"
+              : "border-slate-200 bg-white"
+          }`}
+        >
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#248764]">
+                {String(index + 1).padStart(2, "0")} / Curated selection
+              </p>
+              <h2 id={section.id} className="mt-1 text-xl font-semibold text-[#1B324D] sm:text-2xl">
                 {section.title}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">{section.subtitle}</p>
+              <p className="mt-1 text-sm text-slate-600">{section.subtitle}</p>
             </div>
-            <span className="shrink-0 rounded-full bg-[#59C39E]/20 px-3 py-1 text-xs font-semibold text-[#1B324D]">
-              Demo
+            <span className="shrink-0 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-[#1B324D]">
+              {section.products.length} picks
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
             {section.products.map((product) => (
-              <DemoProductCard key={`${section.title}-${product.name}`} product={product} />
+              <div key={`${section.id}-${product.id}`} className="h-full rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm sm:p-3">
+                <ProductCard
+                  product={product}
+                  disableNavigation
+                  onProductClick={() => setOpenProduct(product)}
+                />
+              </div>
             ))}
           </div>
         </section>
       ))}
-      <p className="rounded-xl bg-[#59C39E]/15 px-4 py-3 text-sm text-[#1B324D]">
-        Preview only: products, prices, and stock are examples. No demo item can be purchased or added to your cart.
-      </p>
+
+      <Dialog open={Boolean(openProduct)} onOpenChange={(open) => !open && setOpenProduct(null)}>
+        <DialogContent className="max-w-md overflow-hidden rounded-3xl p-0">
+          {openProduct && (
+            <>
+              <img
+                src={openProduct.imageUrl ?? ""}
+                alt={openProduct.name}
+                className="aspect-[4/3] w-full object-cover"
+              />
+              <div className="p-5 sm:p-6">
+                <DialogHeader className="text-left">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#248764]">
+                    {openProduct.category}
+                  </p>
+                  <DialogTitle className="text-2xl font-semibold text-[#1B324D]">
+                    {openProduct.name}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {openProduct.grossWeight} g gross · {openProduct.netWeight} g net
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="mt-5 flex items-center justify-between gap-4">
+                  <span className="text-2xl font-bold text-[#1B324D]">₹{openProduct.price}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addToCart(openProduct, 1, true);
+                      setOpenProduct(null);
+                    }}
+                    className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

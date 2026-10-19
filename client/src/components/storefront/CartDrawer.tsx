@@ -215,7 +215,7 @@ async function checkCheckoutStock(
 }
 
 function getStockCheckItems(items: CartItem[]): StockCheckItem[] {
-  return items.map((item) => ({
+  return items.filter((item) => !item.isPreviewOnly).map((item) => ({
     productId: item.originalId ?? String(item.id),
     quantity: item.quantity,
     name: item.name,
@@ -1088,6 +1088,14 @@ export function CartDrawer() {
   };
 
   const placeOrder = async () => {
+    if (items.some((item) => item.isPreviewOnly)) {
+      toast({
+        title: "Order unavailable for these items",
+        description: "Only items listed in the live catalog can be checked out. Remove these items to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
     const selected = savedAddresses.find(a => a.id === activeAddressId);
     if (!selected) return;
     const stockCheckItems = getStockCheckItems(items);
@@ -1569,7 +1577,9 @@ export function CartDrawer() {
   // is closed. Pause stock polling once the Razorpay checkout is open or payment
   // is pending, including while the customer switches to an external UPI app.
   useEffect(() => {
-    if (items.length === 0) {
+    const stockCheckItems = getStockCheckItems(items);
+    const orderableItems = items.filter((item) => !item.isPreviewOnly);
+    if (items.length === 0 || stockCheckItems.length === 0) {
       setCartStockWarnings((current) =>
         Object.keys(current).length === 0 ? current : {},
       );
@@ -1603,7 +1613,7 @@ export function CartDrawer() {
       ) return;
       cartStockCheckInFlightRef.current = true;
       try {
-        const result = await checkCheckoutStock(getStockCheckItems(items), hubDbName);
+        const result = await checkCheckoutStock(stockCheckItems, hubDbName);
         if (
           stopped ||
           razorpayOpenRef.current ||
@@ -1611,7 +1621,7 @@ export function CartDrawer() {
           paymentSucceededRef.current
         ) return;
 
-        const nextWarnings = getCartStockWarnings(items, result);
+        const nextWarnings = getCartStockWarnings(orderableItems, result);
         // Background stock refreshes update inline warnings only. Reserve the
         // blocking dialog for an explicit checkout attempt, so a shopper can
         // adjust quantities without being interrupted by a popup.
@@ -1620,7 +1630,7 @@ export function CartDrawer() {
         );
         if (isStockIssueDialogOpen) {
           if (Object.keys(nextWarnings).length > 0) {
-            setStockIssueRows(getCartStockIssueRows(items, result));
+            setStockIssueRows(getCartStockIssueRows(orderableItems, result));
           } else {
             setStockIssueRows([]);
             setIsStockIssueDialogOpen(false);

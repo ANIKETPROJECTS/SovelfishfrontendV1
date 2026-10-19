@@ -15,6 +15,8 @@ export interface CartItem extends Omit<Product, 'id'> {
   id: number;
   quantity: number;
   instruction?: string;
+  /** Replit-only storefront fixture; never valid for order creation. */
+  isPreviewOnly?: boolean;
   /** True when this item was added from the dedicated preorder storefront area. */
   isPreorderCheckout?: boolean;
   isCombo?: boolean;
@@ -83,6 +85,8 @@ function calcMaxQty(
   liveStockByProductId: ReadonlyMap<string, number | null>,
   liveProductsLoaded: boolean,
 ): number {
+  if (item.isPreviewOnly) return 999;
+
   if (item.isCombo) {
     // ── Combo with full per-product data ──────────────────────────────────
     if (item.comboIncludes && item.comboIncludes.length > 0) {
@@ -166,11 +170,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const notifiedExpiredIds = useRef<Set<string>>(new Set());
 
   const addToCart = (product: Product | CartItem, quantity = 1, openCart = false) => {
-    if (!customer) {
+    const isPreviewOnly = import.meta.env.DEV && (product as CartItem).isPreviewOnly === true;
+    if (!isPreviewOnly && !customer) {
       openLoginModal();
       return;
     }
-    if (!isPincodeVerified) {
+    if (!isPreviewOnly && !isPincodeVerified) {
       openPicker();
       return;
     }
