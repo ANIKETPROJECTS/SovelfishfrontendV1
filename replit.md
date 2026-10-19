@@ -12,6 +12,16 @@ A mobile-first, full-stack web application for an online fresh fish, seafood, an
 - **Routing**: wouter
 - **UI Components**: Radix UI / shadcn-ui, Lucide icons, Embla Carousel
 
+## Brand Palette
+
+- Seafoam Green: `#59C39E` — wordmark “FRESH” and fish accents
+- Deep Navy Blue: `#1B324D` — wordmark “STOCK XCHANGE” and fish outline
+
+The Replit development preview shows sample categories, products, and a
+branded food banner only when the selected hub has no catalog data. This demo
+content is frontend-only, is clearly labeled as a preview, and is never saved
+to MongoDB or shown by the production build.
+
 ## Project Structure
 
 - `client/` — React frontend (Vite)

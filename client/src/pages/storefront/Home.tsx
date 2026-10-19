@@ -17,6 +17,7 @@ import type { CarouselSlide, Category, Section, Combo } from "@shared/schema";
 import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
 import { SeoHead } from "@/components/SeoHead";
 import { isNormalStorefrontProduct, isPreorderStorefrontProduct } from "@shared/productVisibility";
+import { DemoCatalogPreview } from "@/components/storefront/DemoCatalogPreview";
 
 function getFallbackImage(_category: string): string {
   return noImageImg;
@@ -59,11 +60,11 @@ function ComboImages({ images, imageUrl }: { images: string[]; imageUrl?: string
 }
 
 export default function Home() {
-  const { data: products, isLoading } = useProducts();
-  const { data: carouselSlides = [] } = useQuery<CarouselSlide[]>({ queryKey: ["/api/carousel"] });
-  const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/categories"] });
-  const { data: sections = [] } = useQuery<Section[]>({ queryKey: ["/api/sections"] });
-  const { data: combos = [] } = useQuery<Combo[]>({ queryKey: ["/api/combos"] });
+  const { data: products, isLoading, isSuccess: productsLoaded } = useProducts();
+  const { data: carouselSlides = [], isSuccess: carouselLoaded } = useQuery<CarouselSlide[]>({ queryKey: ["/api/carousel"] });
+  const { data: categories = [], isSuccess: categoriesLoaded } = useQuery<Category[]>({ queryKey: ["/api/categories"] });
+  const { data: sections = [], isSuccess: sectionsLoaded } = useQuery<Section[]>({ queryKey: ["/api/sections"] });
+  const { data: combos = [], isSuccess: combosLoaded } = useQuery<Combo[]>({ queryKey: ["/api/combos"] });
   const { addToCart, removeFromCart, updateQuantity, items: cartItems, computeMaxQty } = useCart();
   const [activeCategory, setActiveCategory] = useState("All");
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -75,6 +76,13 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState(initialQ);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [, navigate] = useLocation();
+  const demoPreview =
+    import.meta.env.DEV &&
+    productsLoaded && products?.length === 0 &&
+    carouselLoaded && carouselSlides.length === 0 &&
+    categoriesLoaded && categories.length === 0 &&
+    sectionsLoaded && sections.length === 0 &&
+    combosLoaded && combos.length === 0;
 
   useEffect(() => {
     if (initialQ) setView("category");
@@ -307,12 +315,16 @@ export default function Home() {
         canonical="/"
       />
       <audio ref={audioRef} src={welcomeAudio} />
-      <Header onSearch={(q) => {
+      <Header onSearch={demoPreview ? undefined : (q) => {
         setSearchQuery(q);
         if (q) setView("category");
       }} onLogoClick={handleLogoClickHome} initialSearchValue={searchQuery} />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-5">
+        {demoPreview ? (
+          <DemoCatalogPreview />
+        ) : (
+          <>
         {/* Banner Carousel */}
         <div className="relative w-full aspect-[21/9] rounded-2xl overflow-hidden mb-5 shadow-lg">
           {carouselSlides.map((slide, index) => (
@@ -581,6 +593,8 @@ export default function Home() {
             </section>
           );
         })}
+          </>
+        )}
       </main>
 
       <CartDrawer />

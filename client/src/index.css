@@ -6,22 +6,24 @@
 
 @layer base {
   :root {
-    /* FishTokri Brand: Blue #364F9F (primary) | Pink-Red #F05B4E (accent) */
-    --primary: 226 49% 42%;       /* #364F9F – Brand Blue */
-    --accent: 5 84% 62%;          /* #F05B4E – Brand Pink-Red */
+    /* Fresh Stock Xchange brand palette */
+    --brand-seafoam: #59C39E;
+    --brand-navy: #1B324D;
+    --primary: 212.4 48.08% 20.39%; /* #1B324D – Deep Navy Blue */
+    --accent: 159.06 46.92% 55.69%; /* #59C39E – Seafoam Green */
     --background: 0 0% 100%;
-    --foreground: 226 49% 18%;
+    --foreground: 212.4 48.08% 20.39%;
 
     --font-sans: 'Poppins', sans-serif;
     --font-display: 'Poppins', sans-serif;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 212.4 48.08% 20.39%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 226 30% 88%;
-    --input: 226 30% 88%;
-    --ring: 226 49% 42%;
+    --border: 212.4 18% 88%;
+    --input: 212.4 18% 88%;
+    --ring: 212.4 48.08% 20.39%;
 
     --radius: 1rem;
   }
@@ -72,5 +74,78 @@
   .dob-input::-webkit-inner-spin-button,
   .dob-input::-webkit-clear-button {
     display: none;
+  }
+
+  /* Keep older one-off brand literals aligned with the updated palette. */
+  [class~="text-[#364F9F]"],
+  [class~="text-[#354f9f]"] {
+    color: var(--brand-navy) !important;
+  }
+  [class~="bg-[#364F9F]"],
+  [class~="bg-[#354f9f]"] {
+    background-color: var(--brand-navy) !important;
+  }
+  [class~="border-[#364F9F]"],
+  [class~="border-[#354f9f]"] {
+    border-color: var(--brand-navy) !important;
+  }
+  [class~="text-[#F05B4E]"],
+  [class~="text-[#f05c4e]"] {
+    color: var(--brand-seafoam) !important;
+  }
+  [class~="bg-[#F05B4E]"],
+  [class~="bg-[#f05c4e]"] {
+    background-color: var(--brand-seafoam) !important;
+  }
+  [class~="border-[#F05B4E]"],
+  [class~="border-[#f05c4e]"] {
+    border-color: var(--brand-seafoam) !important;
+  }
+  [class~="hover:bg-[#F05B4E]"]:hover,
+  [class~="hover:bg-[#f05c4e]"]:hover {
+    background-color: var(--brand-seafoam) !important;
+  }
+  [class~="hover:bg-[#F05B4E]"]:hover [class~="text-white"],
+  [class~="hover:bg-[#f05c4e]"]:hover [class~="text-white"],
+  [class*="bg-accent"][class~="text-white"] {
+    color: var(--brand-navy) !important;
+  }
+  [style*="color: rgb(54, 79, 159)"] {
+    color: var(--brand-navy) !important;
+  }
+  [style*="color: rgb(53, 79, 159)"] {
+    color: var(--brand-navy) !important;
+  }
+  [style*="background-color: rgb(54, 79, 159)"] {
+    background-color: var(--brand-navy) !important;
+  }
+  [style*="background-color: rgb(53, 79, 159)"] {
+    background-color: var(--brand-navy) !important;
+  }
+  [style*="border-color: rgb(54, 79, 159)"] {
+    border-color: var(--brand-navy) !important;
+  }
+  [style*="border-color: rgb(53, 79, 159)"] {
+    border-color: var(--brand-navy) !important;
+  }
+  [style*="color: rgb(240, 91, 78)"] {
+    color: var(--brand-seafoam) !important;
+  }
+  [style*="background-color: rgb(240, 91, 78)"] {
+    background-color: var(--brand-seafoam) !important;
+    color: var(--brand-navy) !important;
+  }
+  [style*="border-color: rgb(240, 91, 78)"] {
+    border-color: var(--brand-seafoam) !important;
+  }
+  [style*="color: rgb(240, 92, 78)"] {
+    color: var(--brand-seafoam) !important;
+  }
+  [style*="background-color: rgb(240, 92, 78)"] {
+    background-color: var(--brand-seafoam) !important;
+    color: var(--brand-navy) !important;
+  }
+  [style*="border-color: rgb(240, 92, 78)"] {
+    border-color: var(--brand-seafoam) !important;
   }
 }

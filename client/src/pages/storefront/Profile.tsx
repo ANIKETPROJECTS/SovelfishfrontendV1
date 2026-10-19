@@ -435,7 +435,12 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
 
   const win = window.open("", "_blank", "width=700,height=900");
   if (!win) return;
-  win.document.write(html);
+  const brandedHtml = html
+    .replaceAll("#364F9F", "#1B324D")
+    .replaceAll("#354f9f", "#1B324D")
+    .replaceAll("#F05B4E", "#59C39E")
+    .replaceAll("#f05c4e", "#59C39E");
+  win.document.write(brandedHtml);
   win.document.close();
   win.focus();
   setTimeout(() => { win.print(); }, 500);

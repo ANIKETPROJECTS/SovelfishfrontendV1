@@ -14,8 +14,8 @@ import userImg from "@assets/user_(1)_1774707188827.png";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { motion, AnimatePresence } from "framer-motion";
 
-const BRAND_BLUE = "#364F9F";
-const BRAND_RED = "#F05B4E";
+const BRAND_BLUE = "#1B324D";
+const BRAND_RED = "#59C39E";
 const BRAND_ORANGE = "#F97316";
 
 interface OtpModalProps {
