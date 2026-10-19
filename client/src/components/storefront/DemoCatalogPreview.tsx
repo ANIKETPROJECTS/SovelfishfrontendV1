@@ -91,6 +91,86 @@ const sections = [
   },
 ];
 
+function MealStepsSection() {
+  const steps = [
+    { number: "01", title: "Pick your favourites", description: "Explore fresh fish, meat and kitchen essentials." },
+    { number: "02", title: "Build your basket", description: "Bring the ingredients for your meal together." },
+    { number: "03", title: "Add your own flavour", description: "Finish with the spices and masalas you love." },
+  ];
+
+  return (
+    <section
+      aria-labelledby="meal-steps-heading"
+      className="relative isolate overflow-hidden rounded-3xl bg-[#1B324D] p-5 sm:p-7"
+    >
+      <div
+        aria-hidden="true"
+        className="absolute -right-16 -top-20 -z-10 h-56 w-56 rounded-full border-[28px] border-[#59C39E]/20"
+      />
+      <div className="grid gap-5 lg:grid-cols-[0.8fr_2fr] lg:items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#59C39E]">
+            Made for your table
+          </p>
+          <h2 id="meal-steps-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
+            Build a meal that feels like yours.
+          </h2>
+          <p className="mt-2 text-sm text-white/80">
+            Start with a fresh favourite and finish with the flavours you love.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {steps.map((step) => (
+            <div key={step.number} className="rounded-2xl bg-white p-4 sm:p-5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#59C39E]/20 text-sm font-bold text-[#1B324D]">
+                {step.number}
+              </span>
+              <h3 className="mt-4 font-semibold text-[#1B324D]">{step.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">{step.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MasalaSpotlight({ onExplore }: { onExplore: () => void }) {
+  return (
+    <section
+      aria-labelledby="masala-spotlight-heading"
+      className="grid overflow-hidden rounded-3xl bg-[#59C39E] sm:grid-cols-2"
+    >
+      <div className="flex flex-col items-start justify-center p-5 sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#1B324D]/75">
+          A little extra flavour
+        </p>
+        <h2 id="masala-spotlight-heading" className="mt-2 text-2xl font-semibold text-[#1B324D] sm:text-3xl">
+          Small pack. Big flavour.
+        </h2>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-[#1B324D]/80 sm:text-base">
+          Find the finishing touch for your favourite seafood and meat dishes.
+        </p>
+        <button
+          type="button"
+          onClick={onExplore}
+          className="mt-5 rounded-full bg-[#1B324D] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#13253a] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
+        >
+          Explore masalas <span aria-hidden="true">→</span>
+        </button>
+      </div>
+      <div className="flex min-h-56 items-center justify-center bg-white/35 p-5 sm:min-h-72 sm:p-8">
+        <img
+          src="/categories/masalas.png"
+          alt=""
+          loading="lazy"
+          className="h-48 w-48 rounded-3xl object-cover shadow-lg sm:h-60 sm:w-60"
+        />
+      </div>
+    </section>
+  );
+}
+
 export function DemoCatalogPreview() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [openProduct, setOpenProduct] = useState<PreviewProduct | null>(null);
@@ -154,7 +234,7 @@ export function DemoCatalogPreview() {
         </div>
       </section>
 
-      {visibleSections.map((section) => {
+      {visibleSections.flatMap((section) => {
         const isNavySection = section.id === "from-the-sea";
         const isDeepGreenSection = section.id === "meat-counter";
         const isSeafoamSection = section.id === "kitchen-essentials";
@@ -166,41 +246,45 @@ export function DemoCatalogPreview() {
               ? "border-[#59C39E] bg-[#59C39E]"
               : "border-slate-200 bg-white";
 
-        return (
-          <section
-            key={section.id}
-            aria-labelledby={section.id}
-            className={`rounded-3xl border p-4 sm:p-6 ${sectionSurface}`}
-          >
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <div className="min-w-0">
-                <h2
-                  id={section.id}
-                  className={`text-xl font-semibold sm:text-2xl ${isNavySection || isDeepGreenSection ? "text-white" : "text-[#1B324D]"}`}
-                >
-                  {section.title}
-                </h2>
-                <p className={`mt-1 text-sm ${isNavySection || isDeepGreenSection ? "text-white/85" : "text-slate-600"}`}>
-                  {section.subtitle}
-                </p>
-              </div>
-              <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1B324D]">
-                {section.products.length} picks
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-              {section.products.map((product) => (
-                <div key={`${section.id}-${product.id}`} className="h-full rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm sm:p-3">
-                  <ProductCard
-                    product={product}
-                    disableNavigation
-                    onProductClick={() => setOpenProduct(product)}
-                  />
+        return [
+            <section
+              key={section.id}
+              aria-labelledby={section.id}
+              className={`rounded-3xl border p-4 sm:p-6 ${sectionSurface}`}
+            >
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <h2
+                    id={section.id}
+                    className={`text-xl font-semibold sm:text-2xl ${isNavySection || isDeepGreenSection ? "text-white" : "text-[#1B324D]"}`}
+                  >
+                    {section.title}
+                  </h2>
+                  <p className={`mt-1 text-sm ${isNavySection || isDeepGreenSection ? "text-white/85" : "text-slate-600"}`}>
+                    {section.subtitle}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </section>
-        );
+                <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1B324D]">
+                  {section.products.length} picks
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+                {section.products.map((product) => (
+                  <div key={`${section.id}-${product.id}`} className="h-full rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm sm:p-3">
+                    <ProductCard
+                      product={product}
+                      disableNavigation
+                      onProductClick={() => setOpenProduct(product)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>,
+            ...(section.id === "best-sellers" ? [<MealStepsSection key="meal-steps" />] : []),
+            ...(section.id === "meat-counter"
+              ? [<MasalaSpotlight key="masala-spotlight" onExplore={() => setSelectedCategory("Masalas")} />]
+              : []),
+        ];
       })}
 
       <Dialog open={Boolean(openProduct)} onOpenChange={(open) => !open && setOpenProduct(null)}>
