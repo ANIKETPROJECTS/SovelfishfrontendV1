@@ -71,7 +71,17 @@ Note: this project previously had live credentials committed in plaintext inside
 - **Build**: `npm run build` — builds the frontend to `dist/public`
 - **Production**: `npm start` — serves the built frontend + API
 
-## Replit Setup (last verified 2026-07-19)
+## Replit Setup
+
+Setup check on 2026-10-19: dependencies installed and `npm run build` passed.
+Express was updated within major version 5 to resolve an imported dependency
+blocked by the package security policy. `MONGODB_URI` and `SESSION_SECRET` are
+configured as Replit Secrets. Runtime verification is currently blocked by the
+Atlas server rejecting the TLS handshake (`ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR`).
+Confirm the cluster is running and its Network Access IP access list permits
+the workspace before restarting **Start application**. Do not disable TLS
+certificate validation. The storefront and authenticated admin UI have not yet
+been verified in this import.
 
 ### 1. Install dependencies
 ```
