@@ -5,7 +5,7 @@ import { useCart } from "@/context/CartContext";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const categories = [
-  { name: "All categories", image: "/banners/banner2.png", value: "All" },
+  { name: "All categories", image: "/categories/all.png", value: "All" },
   { name: "Fish", image: "/categories/fish.png", value: "Fish" },
   { name: "Prawns", image: "/categories/prawns.png", value: "Prawns" },
   { name: "Chicken", image: "/categories/chicken.png", value: "Chicken" },
@@ -133,18 +133,19 @@ export function DemoCatalogPreview() {
                 onClick={() => setSelectedCategory(category.value)}
                 aria-pressed={isSelected}
                 aria-label={`Show ${category.name} products`}
-                className={`group relative aspect-[4/3] overflow-hidden rounded-2xl bg-[#1B324D] text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#59C39E] ${
+                className={`group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#59C39E] ${
                   isSelected ? "ring-4 ring-[#59C39E]" : ""
                 }`}
               >
-                <img
-                  src={category.image}
-                  alt=""
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <span className="absolute inset-0 bg-gradient-to-t from-[#1B324D]/95 via-[#1B324D]/20 to-transparent" />
-                <span className="absolute bottom-3 left-3 right-2 text-base font-bold text-white sm:bottom-4 sm:left-4 sm:text-lg">
+                <span className="block aspect-square overflow-hidden bg-slate-50">
+                  <img
+                    src={category.image}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </span>
+                <span className="flex min-h-11 items-center justify-center px-2 py-2 text-center text-sm font-bold text-[#1B324D] sm:text-base">
                   {category.name}
                 </span>
               </button>
