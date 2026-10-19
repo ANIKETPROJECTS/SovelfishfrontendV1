@@ -73,15 +73,20 @@ Note: this project previously had live credentials committed in plaintext inside
 
 ## Replit Setup
 
-Setup check on 2026-10-19: dependencies installed and `npm run build` passed.
-Express was updated within major version 5 to resolve an imported dependency
-blocked by the package security policy. `MONGODB_URI` and `SESSION_SECRET` are
-configured as Replit Secrets. Runtime verification is currently blocked by the
-Atlas server rejecting the TLS handshake (`ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR`).
-Confirm the cluster is running and its Network Access IP access list permits
-the workspace before restarting **Start application**. Do not disable TLS
-certificate validation. The storefront and authenticated admin UI have not yet
-been verified in this import.
+Verified on 2026-10-19: dependencies installed, `npm run build` passed, and the
+**Start application** workflow serves on port 5000. Express was updated within
+major version 5 to resolve an imported dependency blocked by the package
+security policy. `MONGODB_URI` and `SESSION_SECRET` are configured as Replit
+Secrets. All three shared MongoDB connections succeeded after the user checked
+Atlas cluster and Network Access settings.
+
+The storefront pincode prompt and `/admin/login` were visually verified.
+`GET /api/hubs/super` returned HTTP 200 with an empty list; no hubs are
+configured in the connected database. The signed-in admin UI was not verified.
+Startup created the application's default admin account; secure it before
+public use. Razorpay routes remain disabled until payment secrets are supplied.
+If Atlas rejects the TLS handshake again, check cluster availability and its
+Network Access IP access list; do not disable TLS certificate validation.
 
 ### 1. Install dependencies
 ```
