@@ -70,11 +70,11 @@ function MarketMovementCell({ direction }: Pick<MarketRow, "direction">) {
   }
 
   const isUp = direction === "up";
-  const tone = isUp ? "text-[#16834f]" : "text-[#d13e3e]";
+  const tone = isUp ? "text-[#16A34A]" : "text-[#DC2626]";
 
   return (
     <Triangle
-      className={`h-4 w-4 fill-current stroke-current ${tone} ${isUp ? "" : "rotate-180"}`}
+      className={`h-5 w-5 fill-current stroke-current ${tone} ${isUp ? "" : "rotate-180"}`}
       aria-label={isUp ? "Price trending up" : "Price trending down"}
       role="img"
     />
@@ -117,12 +117,23 @@ export function MarketBoard({ products }: MarketBoardProps) {
 
         <div className="overflow-x-auto scrollbar-hide">
           <div
-            className="min-w-[680px]"
+            className="min-w-full sm:min-w-[680px]"
             role="table"
             aria-label="Fresh market product prices and daily changes"
           >
             <div
-              className="grid grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(110px,1.1fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)] gap-2 bg-white px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.08em] text-[#1B324D]"
+              className="grid grid-cols-[minmax(58px,1.45fr)_minmax(72px,1.4fr)_minmax(48px,1fr)_minmax(35px,0.8fr)_minmax(33px,0.7fr)] gap-0.5 bg-white px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.02em] text-[#1B324D] sm:hidden"
+              role="row"
+            >
+              <span role="columnheader">Product</span>
+              <span className="text-center" role="columnheader">Range</span>
+              <span className="text-center" role="columnheader">Price</span>
+              <span className="text-center" role="columnheader">Weight</span>
+              <span className="text-center" role="columnheader">Trend</span>
+            </div>
+
+            <div
+              className="hidden grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(110px,1.1fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)] gap-2 bg-white px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.08em] text-[#1B324D] sm:grid"
               role="row"
             >
               <span role="columnheader">Product</span>
@@ -137,11 +148,32 @@ export function MarketBoard({ products }: MarketBoardProps) {
               <div>
                 {marketRows.map((row) => {
                   return (
-                    <div
-                      key={row.product.id}
-                      className="grid min-h-[42px] grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(110px,1.1fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)] items-center gap-2 border-b border-[#e8eeec] bg-white px-3 last:border-b-0"
-                      role="row"
-                    >
+                    <div key={row.product.id} className="contents">
+                      <div
+                        className="grid min-h-[38px] grid-cols-[minmax(58px,1.45fr)_minmax(72px,1.4fr)_minmax(48px,1fr)_minmax(35px,0.8fr)_minmax(33px,0.7fr)] items-center gap-0.5 border-b border-[#e8eeec] bg-white px-1 last:border-b-0 sm:hidden"
+                        role="row"
+                      >
+                        <span className="truncate text-[11px] font-semibold text-[#1B324D]" role="cell">
+                          {row.name}
+                        </span>
+                        <span className="whitespace-nowrap text-center text-[11px] tabular-nums text-[#435967]" role="cell">
+                          {row.low != null && row.high != null ? `${formatPrice(row.low)}–${formatPrice(row.high)}` : "—"}
+                        </span>
+                        <span className="whitespace-nowrap text-center text-[11px] font-semibold tabular-nums text-[#1B324D]" role="cell">
+                          {currency.format(row.price)}
+                        </span>
+                        <span className="whitespace-nowrap text-center text-[11px] text-[#667774]" role="cell">
+                          {row.weight ?? "—"}
+                        </span>
+                        <div className="flex justify-center" role="cell">
+                          <MarketMovementCell direction={row.direction} />
+                        </div>
+                      </div>
+
+                      <div
+                        className="hidden min-h-[42px] grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(110px,1.1fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)] items-center gap-2 border-b border-[#e8eeec] bg-white px-3 last:border-b-0 sm:grid"
+                        role="row"
+                      >
                       <span className="truncate text-sm font-semibold text-[#1B324D]" role="cell">
                         {row.name}
                       </span>
@@ -164,6 +196,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
 
                       <div className="flex justify-center" role="cell">
                         <MarketMovementCell direction={row.direction} />
+                      </div>
                       </div>
                     </div>
                   );
