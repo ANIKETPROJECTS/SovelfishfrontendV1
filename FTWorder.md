@@ -1,10 +1,10 @@
-# FishTokri UPI order lifecycle
+# Fresh Stock Xchange UPI order lifecycle
 
 ## Before Razorpay opens
 
-When a customer starts a UPI checkout, the server creates the Razorpay order and stores its recovery payload. Before returning the Razorpay order details to the browser, it also creates the FishTokri Order document with:
+When a customer starts a UPI checkout, the server creates the Razorpay order and stores its recovery payload. Before returning the Razorpay order details to the browser, it also creates the Fresh Stock Xchange Order document with:
 
-- A FishTokri order number and the Razorpay order ID.
+- A Fresh Stock Xchange order number and the Razorpay order ID.
 - `paymentStatus: "pending"`.
 - The expected UPI amount and checkout details.
 - `inventoryDeducted: false`; inventory remains under the Admin panel's control.

@@ -426,7 +426,7 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
   ${order.notes ? `<div class="notes-box"><div class="notes-label">Order Notes</div><div class="notes-text">${order.notes}</div></div>` : ''}
 
   <div class="footer">
-    <div class="footer-thank">Thank you for shopping with FishTokri!</div>
+    <div class="footer-thank">Thank you for shopping with Fresh Stock Xchange!</div>
     <div class="footer-sub">fishtokri.com &middot; Fresh Seafood &amp; Meat delivered to your door</div>
   </div>
 </div>
@@ -607,7 +607,7 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
             <div className="flex items-center justify-between mb-2">
               <div>
                 <p className="text-xs font-bold text-foreground uppercase tracking-widest">Tax Invoice</p>
-                <p className="text-[11px] text-muted-foreground">FishTokri · Mumbai</p>
+                <p className="text-[11px] text-muted-foreground">Fresh Stock Xchange · Mumbai</p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-semibold text-foreground">#{getDisplayOrderId(order)}</p>
@@ -714,7 +714,7 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
                       <p className="text-xs text-white/90">{order.notes}</p>
                     </div>
                   )}
-                  <p className="text-[11px] text-center text-muted-foreground pt-1">Thank you for shopping with FishTokri!</p>
+                  <p className="text-[11px] text-center text-muted-foreground pt-1">Thank you for shopping with Fresh Stock Xchange!</p>
 
                   <button
                     onClick={() => downloadInvoicePDF(order, items, subtotal, slotCharge, discount, total, date)}
@@ -1111,7 +1111,7 @@ export default function Profile() {
               style={{ filter: BRAND_BLUE_FILTER }}
             />
             <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground font-medium leading-none mb-0.5 whitespace-nowrap">Fishtokri Wallet</p>
+              <p className="text-[10px] text-muted-foreground font-medium leading-none mb-0.5 whitespace-nowrap">Fresh Stock Xchange Wallet</p>
               <p className="text-sm font-bold leading-none whitespace-nowrap" style={{ color: "#364F9F" }}>
                 ₹{(customer.walletBalance ?? 0).toLocaleString("en-IN")}
               </p>
@@ -1577,7 +1577,7 @@ export default function Profile() {
           </div>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-lg font-medium" style={{ color: "#364F9F" }}>
-              Logout from FishTokri?
+              Logout from Fresh Stock Xchange?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm">
               You'll need to login again to view your orders, addresses and continue shopping.
@@ -1628,7 +1628,7 @@ export default function Profile() {
             </div>
             <div className="w-full flex flex-col gap-2.5 mb-4">
               <a
-                href={`https://wa.me/919220200100?text=${encodeURIComponent("Hi FishTokri! I'd like to place an order for outstation delivery.")}`}
+                href={`https://wa.me/919220200100?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"

@@ -1,4 +1,4 @@
-# FishTokri
+# Fresh Stock Xchange
 
 A mobile-first, full-stack web application for an online fresh fish, seafood, and meat retailer based in Mumbai. Provides a premium, app-like storefront for customers and a protected admin panel for inventory and order management.
 
@@ -59,7 +59,7 @@ The app uses **multiple MongoDB databases** — one per hub (location), plus sha
 | `customers` | Customer profiles and addresses (shared) |
 | `<hub-dbName>` | Per-location products, sections, carousel, categories, combos |
 
-Each storefront API request includes an `X-Hub-DB` header (set by the frontend based on the selected location) to route reads and writes to the correct hub database. No "fishtokri" default database is created.
+Each storefront API request includes an `X-Hub-DB` header (set by the frontend based on the selected location) to route reads and writes to the correct hub database. No shared default database is created.
 
 Per-hub collections include: products, sections, carousel, categories, combos, and **timeslots**. Timeslots are auto-seeded with defaults on first fetch if the hub DB has none.
 

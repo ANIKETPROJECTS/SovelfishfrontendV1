@@ -1,12 +1,12 @@
-# FishTokri — SEO Brief for Claude
+# Fresh Stock Xchange — SEO Brief
 
-Use this document to generate a comprehensive SEO strategy (meta titles, descriptions, structured data, keywords, content plan) for FishTokri.
+Use this document to generate a comprehensive SEO strategy (meta titles, descriptions, structured data, keywords, content plan) for Fresh Stock Xchange.
 
 ---
 
 ## 1. Business Overview
 
-**Brand name:** FishTokri  
+**Brand name:** Fresh Stock Xchange
 **Tagline:** Freshly cut seafood & meat, hygienically packed and delivered to your doorstep  
 **Business type:** Online fresh fish, seafood & meat retailer — mobile-first e-commerce  
 **Geography served:** Mumbai (current hubs include Thane); expanding to more Mumbai locations  
@@ -98,12 +98,12 @@ Use this document to generate a comprehensive SEO strategy (meta titles, descrip
 - fresh seafood delivery same day Mumbai
 - online meat delivery Thane
 - fresh catch delivery Mumbai
-- fish tokri delivery Mumbai
+- fresh seafood delivery Mumbai
 
 ### Brand
-- fishtokri
+- fresh stock xchange
 - fish tokri Mumbai
-- fishtokri online order
+- fresh stock xchange online order
 
 ---
 
@@ -132,7 +132,7 @@ Use this document to generate a comprehensive SEO strategy (meta titles, descrip
 
 ## 9. Suggested SEO Content to Create
 
-1. **Homepage meta:** Title "FishTokri – Fresh Fish & Seafood Delivery in Mumbai" | Description about same-day delivery, fresh daily catch
+1. **Homepage meta:** Title "Fresh Stock Xchange – Fresh Fish & Seafood Delivery in Mumbai" | Description about same-day delivery, fresh daily catch
 2. **Category page metas:** Unique title+description per category (Fish, Prawns, Chicken, Mutton, Masalas)
 3. **Blog / content section (future):** "How to pick the freshest Pomfret", "Best fish for curry in Mumbai", "Seafood nutrition guide" — supports long-tail keywords
 4. **FAQ page:** Delivery timings, pincode coverage, payment options, freshness guarantee

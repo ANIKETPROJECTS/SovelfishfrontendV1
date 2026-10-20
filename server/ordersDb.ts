@@ -121,7 +121,7 @@ export function getOrderModel() {
 
 // ── Pending Checkout (webhook recovery store) ─────────────────────────────────
 // Stores the full order payload immediately when a Razorpay order is created
-// (before the modal opens). The webhook uses this to reconstruct the FishTokri
+  // (before the modal opens). The webhook uses this to reconstruct the Fresh Stock Xchange
 // order if the browser closes before the client-side handler fires.
 // TTL: 24 hours (Razorpay retries webhooks for up to 24 hours).
 

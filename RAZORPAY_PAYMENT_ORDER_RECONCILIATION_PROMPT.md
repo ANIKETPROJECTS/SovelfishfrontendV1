@@ -1,6 +1,6 @@
-# Prompt: Reconcile Razorpay payments with FishTokri storefront orders
+# Prompt: Reconcile Razorpay payments with Fresh Stock Xchange storefront orders
 
-Implement this feature in the existing **FishTokri Admin-panel Replit project**. Do not build a separate app. The goal is to catch storefront orders that were paid through Razorpay but did not appear in the normal Admin Orders list, and safely recover eligible orders.
+Implement this feature in the existing **Fresh Stock Xchange Admin-panel Replit project**. Do not build a separate app. The goal is to catch storefront orders that were paid through Razorpay but did not appear in the normal Admin Orders list, and safely recover eligible orders.
 
 The Admin project already has a **Razorpay Payments** page and Razorpay credentials. The attached reference screens show:
 
@@ -74,7 +74,7 @@ Do not automatically create or fulfill an order for a fully or partially refunde
 
 ## Admin UI
 
-Extend the existing Razorpay Payments page rather than replacing it. Keep payment transactions read-only; the repair action should create or repair a FishTokri order, not alter the Razorpay transaction.
+Extend the existing Razorpay Payments page rather than replacing it. Keep payment transactions read-only; the repair action should create or repair a Fresh Stock Xchange order, not alter the Razorpay transaction.
 
 Show an understandable reconciliation state for each relevant transaction, such as:
 

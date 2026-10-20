@@ -899,8 +899,8 @@ export async function registerRoutes(
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-FishTokri-Payment-Finalizer": "1",
-            "X-FishTokri-Pending-Payment": "1",
+              "X-FreshStockXchange-Payment-Finalizer": "1",
+              "X-FreshStockXchange-Pending-Payment": "1",
           },
           body: JSON.stringify(provisionalOrderPayload),
         });
@@ -1065,8 +1065,8 @@ export async function registerRoutes(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-FishTokri-Payment-Finalizer": "1",
-          ...(allowInventoryReview ? { "X-FishTokri-Paid-Recovery": "1" } : {}),
+              "X-FreshStockXchange-Payment-Finalizer": "1",
+              ...(allowInventoryReview ? { "X-FreshStockXchange-Paid-Recovery": "1" } : {}),
         },
         body: JSON.stringify(orderPayload),
       });
@@ -1474,7 +1474,7 @@ export async function registerRoutes(
   // ── Razorpay webhook ──────────────────────────────────────────────────────────
   // Safety net: if the browser closes after Razorpay captures the payment but
   // before the client-side handler can call /api/orders, this webhook creates
-  // the FishTokri order server-side so no paid order is ever lost.
+  // the Fresh Stock Xchange order server-side so no paid order is ever lost.
   //
   // Setup: Razorpay Dashboard → Settings → Webhooks → add your domain's
   //   POST /api/webhooks/razorpay URL, select "payment.captured", and copy
@@ -1798,12 +1798,12 @@ export async function registerRoutes(
         localAddress === "::1" ||
         localAddress === "::ffff:127.0.0.1";
       const isInternalPaymentFinalizer =
-        req.headers["x-fishtokri-payment-finalizer"] === "1" && isLocalRequest;
+    req.headers["x-freshstockxchange-payment-finalizer"] === "1" && isLocalRequest;
       const isPaidWebhookRecovery =
-        req.headers["x-fishtokri-paid-recovery"] === "1" &&
+    req.headers["x-freshstockxchange-paid-recovery"] === "1" &&
         isInternalPaymentFinalizer;
       const isPendingRazorpayCreation =
-        req.headers["x-fishtokri-pending-payment"] === "1" &&
+    req.headers["x-freshstockxchange-pending-payment"] === "1" &&
         isInternalPaymentFinalizer;
       const requestUpiReference =
         (input.payments ?? []).find((payment: any) => payment.mode === "upi" && payment.reference)?.reference ?? null;

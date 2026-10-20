@@ -558,7 +558,7 @@ export default function ComboDetail() {
   return (
     <div className="min-h-screen bg-background font-sans">
       <SeoHead
-        title={`Buy ${combo.name} Combo Online in Mumbai | Fresh Stock Xchange`}
+        title={`Buy ${combo.name} Combo Online in Mumbai`}
         description={`Order ${combo.name} combo online in Mumbai. Fresh seafood & meat bundle, hygienically packed and delivered same-day. Order now on Fresh Stock Xchange.`}
         canonical={`/combo/${id}`}
         ogType="product"

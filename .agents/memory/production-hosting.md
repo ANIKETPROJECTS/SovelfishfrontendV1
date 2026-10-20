@@ -1,6 +1,6 @@
 ---
 name: Production hosting
-description: Where the live FishTokri storefront is hosted and what that means for shipping code changes.
+description: Where the live Fresh Stock Xchange storefront is hosted and what that means for shipping code changes.
 ---
 
 The live `fishtokri.com` storefront is hosted on the user's VPS, not by a Replit deployment.

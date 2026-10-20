@@ -1,6 +1,6 @@
-# Fishtokri Wallet Integration — Customer Website Side
+# Fresh Stock Xchange Wallet Integration — Customer Website Side
 
-This document describes every change made on the **customer-facing website** (this Replit project) to support the Fishtokri Wallet feature. Share this with the admin-panel Replit project so it can align its logic and detect/resolve any conflicts.
+This document describes every change made on the **customer-facing website** (this Replit project) to support the Fresh Stock Xchange Wallet feature. Share this with the admin-panel Replit project so it can align its logic and detect/resolve any conflicts.
 
 ---
 
@@ -118,11 +118,11 @@ walletBalance: doc.walletBalance ?? 0,
 ## 6. Customer-Facing UI Changes
 
 ### Profile Page (`/profile`)
-- Top-right of the "My Profile" header shows a **Fishtokri Wallet badge** with the live balance pulled from `/api/customer/me`.
-- Displays: wallet icon + "Fishtokri Wallet" label + `₹{balance}` in brand blue `#364F9F`.
+- Top-right of the "My Profile" header shows a **Fresh Stock Xchange Wallet badge** with the live balance pulled from `/api/customer/me`.
+- Displays: wallet icon + "Fresh Stock Xchange Wallet" label + `₹{balance}` in brand blue `#364F9F`.
 
 ### Cart Drawer
-- A **"Use Fishtokri Wallet"** toggle appears in the order summary (below the Offers / coupon section) **only when the logged-in customer has `walletBalance > 0`**.
+- A **"Use Fresh Stock Xchange Wallet"** toggle appears in the order summary (below the Offers / coupon section) **only when the logged-in customer has `walletBalance > 0`**.
 - When toggled on:
   - `walletDeduction = Math.min(walletBalance, orderTotal)` — cannot exceed the order amount.
   - Bill Details shows a **−₹X Wallet** line in blue.
@@ -166,7 +166,7 @@ walletBalance: doc.walletBalance ?? 0,
 
 1. Customer `9619523254` has `walletBalance: 100` in MongoDB.
 2. Customer adds items totalling ₹400.
-3. Customer enables "Use Fishtokri Wallet" toggle in cart.
+3. Customer enables "Use Fresh Stock Xchange Wallet" toggle in cart.
 4. Cart shows: Subtotal ₹400 → Wallet −₹100 → **Total ₹300**.
 5. Customer places order.
 6. After order: check `customers` collection → `walletBalance` should be **0**.
