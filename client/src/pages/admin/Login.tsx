@@ -40,7 +40,7 @@ export default function Login() {
         <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white mb-4 shadow-xl shadow-primary/20">
           <Fish className="w-8 h-8" />
         </div>
-        <h1 className="text-3xl font-display font-bold">FishTokri Admin</h1>
+              <h1 className="text-3xl font-display font-bold">Fresh Stock Xchange Admin</h1>
       </div>
 
       <Card className="w-full max-w-sm shadow-2xl border-border/50 rounded-2xl">

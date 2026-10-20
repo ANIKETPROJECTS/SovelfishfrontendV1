@@ -107,7 +107,7 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-white flex flex-col font-sans">
       <SeoHead
         title={catSeo ? catSeo.title : `${categoryName} Online in Mumbai | Fresh & Hygienically Cut`}
-        description={catSeo ? catSeo.description : `Buy fresh ${categoryName.toLowerCase()} online in Mumbai. Hygienically cleaned, cut & delivered same-day. Order now on FishTokri.`}
+        description={catSeo ? catSeo.description : `Buy fresh ${categoryName.toLowerCase()} online in Mumbai. Hygienically cleaned, cut & delivered same-day. Order now on Fresh Stock Xchange.`}
         canonical={`/category/${encodeURIComponent(categoryName)}`}
         jsonLd={{
           "@context": "https://schema.org",

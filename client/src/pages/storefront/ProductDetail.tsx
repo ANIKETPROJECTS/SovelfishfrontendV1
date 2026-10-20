@@ -230,7 +230,7 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-background font-sans">
       <SeoHead
         title={`Buy ${product.name} Online in Mumbai | Fresh & Hygienically Cut`}
-        description={`Order ${product.name} online in Mumbai. 100% fresh ${catKeyword}, hygienically cleaned & cut, delivered same-day to your doorstep. Free delivery above ₹500. Order now on FishTokri.`}
+        description={`Order ${product.name} online in Mumbai. 100% fresh ${catKeyword}, hygienically cleaned & cut, delivered same-day to your doorstep. Free delivery above ₹500. Order now on Fresh Stock Xchange.`}
         canonical={`/product/${productId}`}
         ogImage={product.imageUrl ?? undefined}
         ogType="product"
@@ -251,7 +251,7 @@ export default function ProductDetail() {
             "image": product.imageUrl ?? "https://fishtokri.com/og-default.png",
             "description": `Fresh ${product.name}, hygienically cleaned and cut, delivered same-day across Mumbai.`,
             "category": product.category,
-            "brand": { "@type": "Brand", "name": "FishTokri" },
+              "brand": { "@type": "Brand", "name": "Fresh Stock Xchange" },
             "offers": {
               "@type": "Offer",
               "priceCurrency": "INR",

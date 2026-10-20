@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useEffect, useRef, useState } from "react";
-import { FishTokriLogo } from "@/components/storefront/FishTokriLogo";
+import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 
 import instaIcon from "@assets/instagram_(5)_1778180430452.png";
 import fbIcon from "@assets/facebook_(5)_1778180449916.png";
@@ -32,7 +32,7 @@ function LazyMap() {
     <div ref={ref} className="rounded-xl overflow-hidden border border-white/20 w-full flex-1" style={{ minHeight: "200px" }}>
       {visible ? (
         <iframe
-          title="FishTokri Location"
+          title="Fresh Stock Xchange Location"
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3767.5!2d72.9783!3d19.2183!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDEzJzA2LjAiTiA3MsKwNTgnNDIuMCJF!5e0!3m2!1sen!2sin!4v1!5m2!1sen!2sin&q=Shop+No+2+Wing+R7+214+Khartan+Road+Thane+West+400601"
           width="100%"
           height="100%"
@@ -60,7 +60,7 @@ export function Footer() {
           {/* Brand Column */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="inline-flex rounded-md bg-white p-2 mb-4">
-              <FishTokriLogo className="h-auto w-full max-w-[320px]" />
+              <FreshStockXchangeLogo className="h-auto w-full max-w-[320px]" />
             </div>
             <p className="text-white text-sm leading-relaxed mb-5">
               Thane's freshest fish, seafood & meat, cleaned, packed, and delivered straight to your doorstep.
@@ -175,7 +175,7 @@ export function Footer() {
         {/* Divider + bottom bar */}
         <div className="border-t border-white/20 pt-5 flex flex-col sm:grid sm:grid-cols-3 sm:items-center gap-1.5 sm:gap-0">
           <p className="text-white text-sm text-center sm:text-left order-2 sm:order-1">
-            © {new Date().getFullYear()} FishTokri. All rights reserved.
+            © {new Date().getFullYear()} Fresh Stock Xchange. All rights reserved.
           </p>
           <p className="text-white text-sm font-normal text-center order-1 sm:order-2">
             Designed and Developed by{" "}

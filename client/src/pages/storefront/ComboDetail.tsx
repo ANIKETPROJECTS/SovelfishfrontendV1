@@ -558,8 +558,8 @@ export default function ComboDetail() {
   return (
     <div className="min-h-screen bg-background font-sans">
       <SeoHead
-        title={`Buy ${combo.name} Combo Online in Mumbai | FishTokri`}
-        description={`Order ${combo.name} combo online in Mumbai. Fresh seafood & meat bundle, hygienically packed and delivered same-day. Order now on FishTokri.`}
+        title={`Buy ${combo.name} Combo Online in Mumbai | Fresh Stock Xchange`}
+        description={`Order ${combo.name} combo online in Mumbai. Fresh seafood & meat bundle, hygienically packed and delivered same-day. Order now on Fresh Stock Xchange.`}
         canonical={`/combo/${id}`}
         ogType="product"
       />

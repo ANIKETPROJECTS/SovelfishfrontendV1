@@ -11,7 +11,7 @@ import scooterImg from "@assets/animation-original_(51)_1779950354153.png";
 const BRAND_BLUE = "#1B324D";
 const PHONE = "+919220200100";
 const PHONE_DISPLAY = "+91 92202 00100";
-const WA_LINK = `https://wa.me/${PHONE.replace("+", "")}?text=${encodeURIComponent("Hi FishTokri! I'd like to place an order for outstation delivery.")}`;
+const WA_LINK = `https://wa.me/${PHONE.replace("+", "")}?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`;
 
 type CheckStatus = "idle" | "checking" | "eligible" | "ineligible";
 

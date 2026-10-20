@@ -177,7 +177,7 @@ export default function CombosPage() {
     <div className="min-h-screen bg-white flex flex-col font-sans">
       <SeoHead
         title="Combo Deals — Fresh Fish & Meat Bundles Online in Mumbai"
-        description="Order fresh seafood & meat combo deals online in Mumbai. Great value bundles of fish, prawns, chicken & mutton, hygienically packed and delivered same-day. Order now on FishTokri."
+        description="Order fresh seafood & meat combo deals online in Mumbai. Great value bundles of fish, prawns, chicken & mutton, hygienically packed and delivered same-day. Order now on Fresh Stock Xchange."
         canonical="/combos"
         noIndex
       />

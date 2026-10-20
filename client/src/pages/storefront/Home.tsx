@@ -311,7 +311,7 @@ export default function Home() {
     <div className="min-h-screen bg-white flex flex-col font-sans">
       <SeoHead
         title="Fresh Fish, Seafood, Chicken & Mutton Online in Mumbai"
-        description="Order 100% fresh fish, seafood, chicken & mutton online in Mumbai. Hygienically cut, cleaned & delivered to your doorstep. 60+ varieties. Free delivery above ₹500. Order now on FishTokri."
+        description="Order 100% fresh fish, seafood, chicken & mutton online in Mumbai. Hygienically cut, cleaned & delivered to your doorstep. 60+ varieties. Free delivery above ₹500. Order now on Fresh Stock Xchange."
         canonical="/"
       />
       <audio ref={audioRef} src={welcomeAudio} />

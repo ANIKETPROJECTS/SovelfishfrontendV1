@@ -13,7 +13,7 @@ import emptyAddressAnim from "@/assets/lottie/empty-address.json";
 import orderSuccessAnim from "@/assets/lottie/order-success.json";
 import confettiAnim from "@/assets/lottie/confetti.json";
 import emptyCartBagAnim from "@/assets/lottie/empty-cart-bag.json";
-import { FishTokriLogo } from "@/components/storefront/FishTokriLogo";
+import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 import iconWalletImg from "@assets/wallet_1776953301704.png";
 import headerCartImg from "@assets/shopping-bag_1774706595493.png";
 import iconBinImg from "@assets/bin_1776927610776.png";
@@ -1286,7 +1286,7 @@ export function CartDrawer() {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: rzpAmount,
         currency,
-        name: "FishTokri",
+        name: "Fresh Stock Xchange",
         description: "Fresh seafood & meat delivery",
         order_id,
         prefill: {
@@ -1762,7 +1762,7 @@ export function CartDrawer() {
                 <Lottie animationData={confettiAnim} loop autoplay style={{ width: "100%", height: "100%" }} />
               </div>
               <div className="relative z-10 mt-4 mb-8">
-                <FishTokriLogo className="h-auto w-[min(80vw,360px)]" />
+                <FreshStockXchangeLogo className="h-auto w-[min(80vw,360px)]" />
               </div>
               <div className="relative z-10 w-40 h-40 -mb-2">
                 <Lottie
@@ -2128,7 +2128,7 @@ export function CartDrawer() {
                       </div>
                     )}
 
-                    {/* Fishtokri Wallet — shown right below Offers */}
+{/* Fresh Stock Xchange Wallet — shown right below Offers */}
                     {customer && walletBalance > 0 && (
                       <div className="mx-4 mt-4">
                         <button
@@ -2147,7 +2147,7 @@ export function CartDrawer() {
                             style={{ filter: "brightness(0) saturate(100%) invert(28%) sepia(48%) saturate(1517%) hue-rotate(212deg) brightness(91%) contrast(89%)" }}
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground">Use Fishtokri Wallet</p>
+                            <p className="text-sm font-semibold text-foreground">Use Fresh Stock Xchange Wallet</p>
                             <p className="text-xs text-muted-foreground">
                               Balance: <span className="font-bold" style={{ color: "#364F9F" }}>₹{walletBalance.toLocaleString("en-IN")}</span>
                               {useWallet && walletDeduction > 0 && (
@@ -3023,7 +3023,7 @@ export function CartDrawer() {
 
             <div className="w-full flex flex-col gap-2.5 mb-4">
               <a
-                href={`https://wa.me/919220200100?text=${encodeURIComponent("Hi FishTokri! I'd like to place an order for outstation delivery.")}`}
+                href={`https://wa.me/919220200100?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"

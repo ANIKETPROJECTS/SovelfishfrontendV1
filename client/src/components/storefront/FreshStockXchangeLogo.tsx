@@ -1,4 +1,4 @@
-export function FishTokriLogo({ className }: { className?: string }) {
+export function FreshStockXchangeLogo({ className }: { className?: string }) {
   return (
     <img
       src="/brand/fresh-stock-xchange.png"

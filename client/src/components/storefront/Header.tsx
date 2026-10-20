@@ -9,7 +9,7 @@ import { CategoryMenuDropdown } from "@/components/storefront/CategoryMenu";
 import { OtpModal } from "@/components/storefront/OtpModal";
 import { LocationPicker } from "@/components/storefront/LocationPicker";
 
-import { FishTokriLogo } from "@/components/storefront/FishTokriLogo";
+import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 import cartImg from "@assets/shopping-bag_1774706595493.png";
 import userImg from "@assets/user_(1)_1774707188827.png";
 import searchImg from "@assets/search-interface-symbol_1774706690468.png";
@@ -156,11 +156,11 @@ export function Header({
         <div className="flex items-center shrink-0">
           {onLogoClick ? (
             <button onClick={onLogoClick} className="flex items-center group focus:outline-none">
-              <FishTokriLogo className="h-auto w-[calc(100vw-180px)] max-w-[450px] sm:w-[min(34vw,450px)] md:w-[min(40vw,450px)]" />
+              <FreshStockXchangeLogo className="h-auto w-[calc(100vw-180px)] max-w-[450px] sm:w-[min(34vw,450px)] md:w-[min(40vw,450px)]" />
             </button>
           ) : (
             <Link href="/" className="flex items-center group">
-              <FishTokriLogo className="h-auto w-[calc(100vw-180px)] max-w-[450px] sm:w-[min(34vw,450px)] md:w-[min(40vw,450px)]" />
+              <FreshStockXchangeLogo className="h-auto w-[calc(100vw-180px)] max-w-[450px] sm:w-[min(34vw,450px)] md:w-[min(40vw,450px)]" />
             </Link>
           )}
         </div>

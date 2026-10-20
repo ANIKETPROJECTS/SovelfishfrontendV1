@@ -24,7 +24,7 @@ export interface ProductDummyDetail {
 const COUPONS = [
   { code: "FRESH10", desc: "10% off on your first order", color: "bg-orange-50 border-orange-200 text-orange-700" },
   { code: "SAVE15", desc: "15% off on orders above ₹500", color: "bg-green-50 border-green-200 text-green-700" },
-  { code: "TOKRI20", desc: "20% off for FishTokri members", color: "bg-blue-50 border-blue-200 text-blue-700" },
+  { code: "TOKRI20", desc: "20% off for Fresh Stock Xchange members", color: "bg-blue-50 border-blue-200 text-blue-700" },
 ];
 
 export const CATEGORY_DUMMY: Record<string, ProductDummyDetail> = {
@@ -338,7 +338,7 @@ export const CATEGORY_DUMMY: Record<string, ProductDummyDetail> = {
 
   Masalas: {
     description:
-      "Authentic hand-ground masala blends crafted from the finest whole spices. No artificial colours, preservatives or fillers — just pure flavour in every pinch. Formulated by our in-house chef to complement FishTokri's premium seafood.",
+    "Authentic hand-ground masala blends crafted from the finest whole spices. No artificial colours, preservatives or fillers — just pure flavour in every pinch. Formulated by our in-house chef to complement Fresh Stock Xchange's premium seafood.",
     pieces: "1 Pack",
     serves: "Serves 8",
     discountPct: 5,

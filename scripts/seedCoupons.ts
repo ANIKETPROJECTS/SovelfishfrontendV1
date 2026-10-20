@@ -119,8 +119,8 @@ const COUPON_DEFINITIONS = [
   },
   {
     code: "TOKRI20",
-    title: "FishTokri Special",
-    description: "20% off for FishTokri members on orders above ₹800",
+    title: "Fresh Stock Xchange Special",
+    description: "20% off for Fresh Stock Xchange members on orders above ₹800",
     type: "percentage" as const,
     discountValue: 20,
     minOrderAmount: 800,

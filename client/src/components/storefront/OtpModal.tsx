@@ -8,7 +8,7 @@ import fishAnimation from "@assets/fish_1776404909449.json";
 import otpAnimation from "@/assets/lottie/otp-animation.json";
 import successAnimation from "@assets/animation-original_(10)_1777277220026.json";
 import flagImg from "@assets/flag_(1)_1776403319572.png";
-import { FishTokriLogo } from "@/components/storefront/FishTokriLogo";
+import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import userImg from "@assets/user_(1)_1774707188827.png";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -253,7 +253,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
         aria-describedby={undefined}
       >
         <VisuallyHidden>
-          <SheetTitle>Login to FishTokri</SheetTitle>
+          <SheetTitle>Login to Fresh Stock Xchange</SheetTitle>
         </VisuallyHidden>
 
         {/* Header — matches Order Summary style */}
@@ -273,7 +273,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
               className="absolute inset-0 z-50 flex flex-col items-center justify-start bg-white pt-16 px-6"
             >
               <div className="mt-4 mb-6">
-                <FishTokriLogo className="h-auto w-[min(80vw,360px)]" />
+                <FreshStockXchangeLogo className="h-auto w-[min(80vw,360px)]" />
               </div>
               <div className="w-72 h-72">
                 <Lottie animationData={successAnimation} loop={false} autoplay />
@@ -285,7 +285,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
         <div className="flex flex-col flex-1 px-7 pt-8 pb-8">
           {/* Logo — always visible */}
           <div className="flex justify-center mb-5">
-            <FishTokriLogo className="h-auto w-[min(80vw,360px)]" />
+              <FreshStockXchangeLogo className="h-auto w-[min(80vw,360px)]" />
           </div>
 
           {!otpSent ? (
