@@ -21,6 +21,7 @@ type MarketProduct = Product & {
 
 type MarketRow = {
   product: MarketProduct;
+  name: string;
   price: number;
   low: number | null;
   high: number | null;
@@ -43,14 +44,14 @@ function formatPrice(value: number) {
 }
 
 const PREVIEW_MARKET_VALUES = [
-  { price: 445, low: 410, high: 470, weight: "500 g", direction: "up" },
-  { price: 620, low: 610, high: 675, weight: "1 kg", direction: "down" },
-  { price: 385, low: 360, high: 405, weight: "500 g", direction: "up" },
-  { price: 175, low: 165, high: 190, weight: "500 ml", direction: "down" },
-  { price: 540, low: 520, high: 585, weight: "1 kg", direction: "up" },
-  { price: 295, low: 280, high: 320, weight: "500 g", direction: "down" },
-  { price: 510, low: 490, high: 560, weight: "1 kg", direction: "up" },
-  { price: 335, low: 325, high: 360, weight: "500 g", direction: "down" },
+  { name: "Surmai", price: 445, low: 410, high: 470, weight: "500 g", direction: "up" },
+  { name: "Paplet", price: 620, low: 610, high: 675, weight: "1 kg", direction: "down" },
+  { name: "Bangda", price: 385, low: 360, high: 405, weight: "500 g", direction: "up" },
+  { name: "Rawas", price: 175, low: 165, high: 190, weight: "500 ml", direction: "down" },
+  { name: "Bombil", price: 540, low: 520, high: 585, weight: "1 kg", direction: "up" },
+  { name: "Kolambi", price: 295, low: 280, high: 320, weight: "500 g", direction: "down" },
+  { name: "Halwa", price: 510, low: 490, high: 560, weight: "1 kg", direction: "up" },
+  { name: "Mandeli", price: 335, low: 325, high: 360, weight: "500 g", direction: "down" },
 ] satisfies Array<{
   price: number;
   low: number;
@@ -93,6 +94,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
     const preview = import.meta.env.DEV ? PREVIEW_MARKET_VALUES[index] : undefined;
     return {
       product,
+      name: preview?.name ?? product.name,
       price: preview?.price ?? product.price!,
       low: preview?.low ?? product.marketRange?.low ?? null,
       high: preview?.high ?? product.marketRange?.high ?? null,
@@ -140,7 +142,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
                       role="row"
                     >
                       <span className="truncate text-sm font-semibold text-[#1B324D]" role="cell">
-                        {row.product.name}
+                        {row.name}
                       </span>
 
                       <span className="whitespace-nowrap text-sm tabular-nums text-[#435967]" role="cell">
