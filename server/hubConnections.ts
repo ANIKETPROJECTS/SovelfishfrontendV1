@@ -12,6 +12,15 @@ const inventoryBatchSchema = new mongoose.Schema({
   remainingTime: { type: String, default: null },
 });
 
+const productPriceHistorySchema = new mongoose.Schema(
+  {
+    price: { type: Number, required: true },
+    changedAt: { type: Date, required: true },
+    source: { type: String, enum: ["created", "admin", "baseline"], required: true },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   category: { type: String, required: true },
@@ -19,6 +28,7 @@ const productSchema = new mongoose.Schema({
   status: { type: String, default: "available" },
   limitedStockNote: { type: String, default: null },
   price: { type: Number, default: null },
+  priceHistory: { type: [productPriceHistorySchema], default: [] },
   originalPrice: { type: Number, default: null },
   unit: { type: String, default: null },
   imageUrl: { type: String, default: null },

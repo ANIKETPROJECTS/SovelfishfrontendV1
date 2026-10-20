@@ -451,6 +451,9 @@ function ProductDialog({ open, onOpenChange, product }: { open: boolean, onOpenC
                     {autoDiscount && <span className="ml-2 text-xs font-normal text-green-600">{autoDiscount}% off</span>}
                   </FormLabel>
                   <FormControl><Input type="number" min="0" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Saving a changed price updates the storefront market board. The first update each day compares with yesterday’s close; later updates compare with today’s first price.
+                  </p>
                 </FormItem>
               )} />
 

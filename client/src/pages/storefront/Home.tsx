@@ -13,11 +13,12 @@ import { useCart } from "@/context/CartContext";
 import { useLocation } from "wouter";
 import { ChevronLeft, Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import type { CarouselSlide, Category, Section, Combo } from "@shared/schema";
+import type { Category, Section, Combo } from "@shared/schema";
 import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
 import { SeoHead } from "@/components/SeoHead";
 import { isNormalStorefrontProduct, isPreorderStorefrontProduct } from "@shared/productVisibility";
 import { DemoCatalogPreview } from "@/components/storefront/DemoCatalogPreview";
+import { MarketBoard } from "@/components/storefront/MarketBoard";
 
 function getFallbackImage(_category: string): string {
   return noImageImg;
@@ -59,13 +60,11 @@ function ComboImages({ images, imageUrl }: { images: string[]; imageUrl?: string
 
 export default function Home() {
   const { data: products, isLoading, isSuccess: productsLoaded } = useProducts();
-  const { data: carouselSlides = [], isSuccess: carouselLoaded } = useQuery<CarouselSlide[]>({ queryKey: ["/api/carousel"] });
   const { data: categories = [], isSuccess: categoriesLoaded } = useQuery<Category[]>({ queryKey: ["/api/categories"] });
   const { data: sections = [], isSuccess: sectionsLoaded } = useQuery<Section[]>({ queryKey: ["/api/sections"] });
   const { data: combos = [], isSuccess: combosLoaded } = useQuery<Combo[]>({ queryKey: ["/api/combos"] });
   const { addToCart, removeFromCart, updateQuantity, items: cartItems, computeMaxQty } = useCart();
   const [activeCategory, setActiveCategory] = useState("All");
-  const [currentBanner, setCurrentBanner] = useState(0);
   const [view, setView] = useState<"home" | "category">("home");
   const initialQ = (() => {
     if (typeof window === "undefined") return "";
@@ -76,7 +75,6 @@ export default function Home() {
   const demoPreview =
     import.meta.env.DEV &&
     productsLoaded && products?.length === 0 &&
-    carouselLoaded && carouselSlides.length === 0 &&
     categoriesLoaded && categories.length === 0 &&
     sectionsLoaded && sections.length === 0 &&
     combosLoaded && combos.length === 0;
@@ -85,15 +83,6 @@ export default function Home() {
     if (initialQ) setView("category");
   }, [initialQ]);
 
-
-  useEffect(() => {
-    if (view === "home" && carouselSlides.length > 0) {
-      const timer = setInterval(() => {
-        setCurrentBanner((prev) => (prev + 1) % carouselSlides.length);
-      }, 5000);
-      return () => clearInterval(timer);
-    }
-  }, [view, carouselSlides.length]);
 
   const handleCategoryClick = (catName: string) => {
     navigate(`/category/${encodeURIComponent(catName)}`);
@@ -305,29 +294,7 @@ export default function Home() {
           <DemoCatalogPreview />
         ) : (
           <>
-        {/* Banner Carousel */}
-        <div className="relative w-full aspect-[21/9] rounded-2xl overflow-hidden mb-5 shadow-lg">
-          {carouselSlides.map((slide, index) => (
-            <div
-              key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ${index === currentBanner ? 'opacity-100' : 'opacity-0'}`}
-            >
-              <img src={slide.imageUrl} alt={slide.title || `Banner ${index + 1}`} loading={index === 0 ? "eager" : "lazy"} decoding="async" className="w-full h-full object-cover" />
-            </div>
-          ))}
-          {carouselSlides.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {carouselSlides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentBanner(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${index === currentBanner ? 'bg-white w-5' : 'bg-white/50'}`}
-                  data-testid={`carousel-dot-${index}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <MarketBoard products={products ?? []} />
 
         {/* Category Row */}
         <div className="mb-6">

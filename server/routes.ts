@@ -19,6 +19,7 @@ import {
   findCheckoutStockIssues,
   type CheckoutStockLine,
 } from "./checkoutStock";
+import { getMarketMovement } from "./marketPricing";
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import {
@@ -487,6 +488,7 @@ export async function registerRoutes(
       id: doc._id.toString(), name: doc.name, category: doc.category,
       subCategory: doc.subCategory ?? null, status: effectiveStatus,
       limitedStockNote: doc.limitedStockNote ?? null, price: doc.price ?? null,
+      marketMovement: getMarketMovement(doc.price, doc.priceHistory, now),
       originalPrice: doc.originalPrice ?? null, unit: doc.unit ?? null,
       imageUrl: doc.imageUrl ?? null, isArchived: doc.isArchived ?? false,
       updatedAt: doc.updatedAt, sectionId: doc.sectionId ?? null,
@@ -561,7 +563,16 @@ export async function registerRoutes(
       const hub = await getReqHubModels(req);
       if (!hub) return res.status(400).json({ message: "No hub selected" });
       const input = api.products.create.input.parse(req.body);
-      const doc = await hub.Product.create({ ...input, status: input.status ?? "available", updatedAt: new Date() });
+      const now = new Date();
+      const priceHistory = input.price == null
+        ? []
+        : [{ price: input.price, changedAt: now, source: "created" }];
+      const doc = await hub.Product.create({
+        ...input,
+        priceHistory,
+        status: input.status ?? "available",
+        updatedAt: now,
+      });
       res.status(201).json(toProduct(doc));
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -576,10 +587,52 @@ export async function registerRoutes(
       const hub = await getReqHubModels(req);
       if (!hub) return res.status(400).json({ message: "No hub selected" });
       const input = api.products.update.input.parse(req.body);
+      const existing = await hub.Product.findById(req.params.id).lean() as any;
+      if (!existing) return res.status(404).json({ message: "Product not found" });
+
+      const now = new Date();
+      const priceChanged =
+        Object.prototype.hasOwnProperty.call(input, "price") &&
+        input.price !== (existing.price ?? null);
+      let update: Record<string, any> = { ...input, updatedAt: now };
+
+      if (priceChanged) {
+        const historyEntries: Array<{ price: number; changedAt: Date; source: "baseline" | "admin" }> = [];
+        const existingHistory = Array.isArray(existing.priceHistory) ? existing.priceHistory : [];
+        const previousPrice = existing.price == null ? null : Number(existing.price);
+
+        if (
+          existingHistory.length === 0 &&
+          previousPrice !== null &&
+          Number.isFinite(previousPrice)
+        ) {
+          historyEntries.push({
+            price: previousPrice,
+            changedAt: new Date(now.getTime() - 1),
+            source: "baseline",
+          });
+        }
+
+        if (input.price != null && Number.isFinite(input.price)) {
+          historyEntries.push({
+            price: input.price,
+            changedAt: now,
+            source: "admin",
+          });
+        }
+
+        update = {
+          $set: { ...input, updatedAt: now },
+          ...(historyEntries.length > 0
+            ? { $push: { priceHistory: { $each: historyEntries, $slice: -1000 } } }
+            : {}),
+        };
+      }
+
       const doc = await hub.Product.findByIdAndUpdate(
         req.params.id,
-        { ...input, updatedAt: new Date() },
-        { new: true }
+        update,
+        { new: true, runValidators: true }
       ).lean();
       if (!doc) return res.status(404).json({ message: "Product not found" });
       res.json(toProduct(doc));

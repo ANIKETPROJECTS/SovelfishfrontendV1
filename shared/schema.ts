@@ -74,6 +74,13 @@ export type Product = {
   recipes: Recipe[];
   preorderMode: PreorderMode;
   preorderAvailability?: PreorderAvailability | null;
+  marketMovement?: {
+    direction: "up" | "down" | "steady";
+    changeAmount: number;
+    changePercent: number;
+    referencePrice: number;
+    comparisonLabel: string;
+  } | null;
 };
 
 export type InsertProduct = {
