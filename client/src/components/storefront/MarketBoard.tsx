@@ -106,11 +106,11 @@ export function MarketBoard({ products }: MarketBoardProps) {
   return (
     <section
       aria-labelledby="market-board-title"
-      className="relative mb-4 overflow-hidden rounded-xl border border-[#e1e9e6] bg-white text-[#1B324D] shadow-[0_12px_30px_-22px_rgba(27,50,77,0.28)]"
+      className="relative mb-4 overflow-hidden bg-transparent text-[#1B324D] sm:rounded-xl sm:border sm:border-[#e1e9e6] sm:bg-white sm:shadow-[0_12px_30px_-22px_rgba(27,50,77,0.28)]"
     >
-      <div className="relative px-3 py-2 sm:px-4 sm:py-3">
-        <div className="mb-2 flex items-center border-b border-[#e4ebe8] pb-2">
-          <h1 id="market-board-title" className="font-display text-sm font-semibold leading-tight tracking-tight">
+      <div className="relative px-0 py-1 sm:px-4 sm:py-3">
+        <div className="mb-1 flex items-center border-b border-[#e4ebe8] pb-1 sm:mb-2 sm:pb-2">
+          <h1 id="market-board-title" className="font-display text-[10px] font-semibold leading-tight tracking-tight sm:text-sm">
             Fresh market prices
           </h1>
         </div>
@@ -122,11 +122,12 @@ export function MarketBoard({ products }: MarketBoardProps) {
             aria-label="Fresh market product prices and daily changes"
           >
             <div
-              className="grid grid-cols-[minmax(58px,1.45fr)_minmax(72px,1.4fr)_minmax(48px,1fr)_minmax(35px,0.8fr)_minmax(33px,0.7fr)] gap-0.5 bg-white px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.02em] text-[#1B324D] sm:hidden"
+              className="grid grid-cols-[minmax(48px,1.3fr)_minmax(38px,0.8fr)_minmax(38px,0.8fr)_minmax(42px,1fr)_minmax(31px,0.8fr)_minmax(30px,0.6fr)] gap-0.5 bg-white px-1 py-1.5 text-[10px] font-semibold uppercase tracking-normal text-[#1B324D] sm:hidden"
               role="row"
             >
               <span role="columnheader">Product</span>
-              <span className="text-center" role="columnheader">Range</span>
+              <span className="text-center" role="columnheader">Low</span>
+              <span className="text-center" role="columnheader">High</span>
               <span className="text-center" role="columnheader">Price</span>
               <span className="text-center" role="columnheader">Weight</span>
               <span className="text-center" role="columnheader">Trend</span>
@@ -150,19 +151,22 @@ export function MarketBoard({ products }: MarketBoardProps) {
                   return (
                     <div key={row.product.id} className="contents">
                       <div
-                        className="grid min-h-[38px] grid-cols-[minmax(58px,1.45fr)_minmax(72px,1.4fr)_minmax(48px,1fr)_minmax(35px,0.8fr)_minmax(33px,0.7fr)] items-center gap-0.5 border-b border-[#e8eeec] bg-white px-1 last:border-b-0 sm:hidden"
+                        className="grid min-h-[38px] grid-cols-[minmax(48px,1.3fr)_minmax(38px,0.8fr)_minmax(38px,0.8fr)_minmax(42px,1fr)_minmax(31px,0.8fr)_minmax(30px,0.6fr)] items-center gap-0.5 border-b border-[#e8eeec] bg-white px-1 last:border-b-0 sm:hidden"
                         role="row"
                       >
-                        <span className="truncate text-[11px] font-semibold text-[#1B324D]" role="cell">
+                        <span className="truncate text-[10px] font-semibold text-[#1B324D]" role="cell">
                           {row.name}
                         </span>
-                        <span className="whitespace-nowrap text-center text-[11px] tabular-nums text-[#435967]" role="cell">
-                          {row.low != null && row.high != null ? `${formatPrice(row.low)}–${formatPrice(row.high)}` : "—"}
+                        <span className="whitespace-nowrap text-center text-[10px] tabular-nums text-[#435967]" role="cell">
+                          {row.low != null ? formatPrice(row.low) : "—"}
                         </span>
-                        <span className="whitespace-nowrap text-center text-[11px] font-semibold tabular-nums text-[#1B324D]" role="cell">
+                        <span className="whitespace-nowrap text-center text-[10px] tabular-nums text-[#435967]" role="cell">
+                          {row.high != null ? formatPrice(row.high) : "—"}
+                        </span>
+                        <span className="whitespace-nowrap text-center text-[10px] font-semibold tabular-nums text-[#1B324D]" role="cell">
                           {currency.format(row.price)}
                         </span>
-                        <span className="whitespace-nowrap text-center text-[11px] text-[#667774]" role="cell">
+                        <span className="whitespace-nowrap text-center text-[10px] text-[#667774]" role="cell">
                           {row.weight ?? "—"}
                         </span>
                         <div className="flex justify-center" role="cell">
