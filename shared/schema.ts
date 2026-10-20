@@ -81,6 +81,10 @@ export type Product = {
     referencePrice: number;
     comparisonLabel: string;
   } | null;
+  marketRange?: {
+    low: number;
+    high: number;
+  } | null;
 };
 
 export type InsertProduct = {

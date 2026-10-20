@@ -19,7 +19,7 @@ import {
   findCheckoutStockIssues,
   type CheckoutStockLine,
 } from "./checkoutStock";
-import { getMarketMovement } from "./marketPricing";
+import { getDailyPriceRange, getMarketMovement } from "./marketPricing";
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import {
@@ -489,6 +489,7 @@ export async function registerRoutes(
       subCategory: doc.subCategory ?? null, status: effectiveStatus,
       limitedStockNote: doc.limitedStockNote ?? null, price: doc.price ?? null,
       marketMovement: getMarketMovement(doc.price, doc.priceHistory, now),
+      marketRange: getDailyPriceRange(doc.price, doc.priceHistory, now),
       originalPrice: doc.originalPrice ?? null, unit: doc.unit ?? null,
       imageUrl: doc.imageUrl ?? null, isArchived: doc.isArchived ?? false,
       updatedAt: doc.updatedAt, sectionId: doc.sectionId ?? null,

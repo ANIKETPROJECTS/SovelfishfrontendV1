@@ -12,6 +12,11 @@ export type MarketMovement = {
   comparisonLabel: string;
 };
 
+export type MarketPriceRange = {
+  low: number;
+  high: number;
+};
+
 const INDIA_TIME_ZONE = "Asia/Kolkata";
 
 function getIndiaDayStart(date: Date): Date {
@@ -113,5 +118,35 @@ export function getMarketMovement(
     changePercent,
     referencePrice: referenceEntry.price,
     comparisonLabel,
+  };
+}
+
+export function getDailyPriceRange(
+  currentPrice: number | null | undefined,
+  rawHistory: unknown,
+  now: Date = new Date(),
+): MarketPriceRange | null {
+  if (currentPrice == null || !Number.isFinite(Number(currentPrice))) return null;
+
+  const history = normalizeHistory(rawHistory);
+  if (!history.length) return null;
+
+  const dayStart = getIndiaDayStart(now).getTime();
+  const availableHistory = history.filter((entry) => entry.timestamp <= now.getTime());
+  const openingPrice = [...availableHistory]
+    .reverse()
+    .find((entry) => entry.timestamp < dayStart)?.price;
+  const prices = [
+    ...(openingPrice == null ? [] : [openingPrice]),
+    ...availableHistory
+      .filter((entry) => entry.timestamp >= dayStart)
+      .map((entry) => entry.price),
+  ];
+
+  if (!prices.length) return null;
+  const trackedPrices = [...prices, Number(currentPrice)];
+  return {
+    low: Math.min(...trackedPrices),
+    high: Math.max(...trackedPrices),
   };
 }

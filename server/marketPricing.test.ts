@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getMarketMovement } from "./marketPricing";
+import { getDailyPriceRange, getMarketMovement } from "./marketPricing";
 
 const today = new Date("2026-10-21T10:30:00+05:30");
 
@@ -61,4 +61,22 @@ test("shows a steady price against yesterday's close when there was no update to
     referencePrice: 500,
     comparisonLabel: "vs yesterday close",
   });
+});
+
+test("calculates the day's low and high from the prior close and today's recorded prices", () => {
+  const range = getDailyPriceRange(
+    510,
+    [
+      { price: 500, changedAt: "2026-10-20T12:00:00+05:30", source: "created" },
+      { price: 540, changedAt: "2026-10-21T08:00:00+05:30", source: "admin" },
+      { price: 510, changedAt: "2026-10-21T14:00:00+05:30", source: "admin" },
+    ],
+    new Date("2026-10-21T15:00:00+05:30"),
+  );
+
+  assert.deepEqual(range, { low: 500, high: 540 });
+});
+
+test("does not invent a low or high before price history is recorded", () => {
+  assert.equal(getDailyPriceRange(300, [], today), null);
 });
