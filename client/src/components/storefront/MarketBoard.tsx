@@ -122,14 +122,14 @@ export function MarketBoard({ products }: MarketBoardProps) {
             aria-label="Fresh market product prices and daily changes"
           >
             <div
-              className="grid grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] gap-2 bg-[#edf3f1] px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.08em] text-[#1B324D]"
+              className="grid grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] gap-2 bg-white px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.08em] text-[#1B324D]"
               role="row"
             >
               <span role="columnheader">Product</span>
-              <span role="columnheader">Low</span>
-              <span role="columnheader">High</span>
-              <span role="columnheader">Price</span>
-              <span role="columnheader">Trends</span>
+              <span className="text-center" role="columnheader">Low</span>
+              <span className="text-center" role="columnheader">High</span>
+              <span className="text-center" role="columnheader">Price</span>
+              <span className="text-center" role="columnheader">Trends</span>
             </div>
 
             {marketRows.length > 0 ? (
@@ -138,22 +138,22 @@ export function MarketBoard({ products }: MarketBoardProps) {
                   return (
                     <div
                       key={row.product.id}
-                      className="grid min-h-[42px] grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] items-center gap-2 border-b border-[#e8eeec] px-3 transition-colors odd:bg-white even:bg-[#f6f9f8] hover:bg-[#edf7f2] last:border-b-0"
+                      className="grid min-h-[42px] grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] items-center gap-2 border-b border-[#e8eeec] bg-white px-3 last:border-b-0"
                       role="row"
                     >
                       <span className="truncate text-sm font-semibold text-[#1B324D]" role="cell">
                         {row.name}
                       </span>
 
-                      <span className="whitespace-nowrap text-sm tabular-nums text-[#435967]" role="cell">
+                      <span className="whitespace-nowrap text-center text-sm tabular-nums text-[#435967]" role="cell">
                         {row.low != null ? formatPrice(row.low) : "—"}
                       </span>
 
-                      <span className="whitespace-nowrap text-sm tabular-nums text-[#435967]" role="cell">
+                      <span className="whitespace-nowrap text-center text-sm tabular-nums text-[#435967]" role="cell">
                         {row.high != null ? formatPrice(row.high) : "—"}
                       </span>
 
-                      <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-[#1B324D]" role="cell">
+                      <span className="whitespace-nowrap text-center text-sm font-semibold tabular-nums text-[#1B324D]" role="cell">
                         {currency.format(row.price)}
                         {row.weight && (
                           <span className="ml-1 text-sm font-normal text-[#667774]">
@@ -162,7 +162,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
                         )}
                       </span>
 
-                      <div role="cell">
+                      <div className="flex justify-center" role="cell">
                         <MarketMovementCell direction={row.direction} />
                       </div>
                     </div>
