@@ -61,7 +61,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
     product.status !== "expired" &&
     product.status !== "unavailable" &&
     product.status !== "archived"
-  );
+  ).slice(0, 8);
   const trackedProducts = marketProducts.filter((product) => product.marketMovement);
   const risingCount = trackedProducts.filter((product) => product.marketMovement?.direction === "up").length;
   const fallingCount = trackedProducts.filter((product) => product.marketMovement?.direction === "down").length;
@@ -142,16 +142,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
                       className="grid min-h-[68px] grid-cols-[minmax(220px,1.7fr)_minmax(140px,1fr)_minmax(130px,0.9fr)_minmax(95px,0.6fr)_minmax(190px,1.2fr)] items-center gap-4 rounded-lg px-3 transition-colors hover:bg-white/[0.045]"
                       role="row"
                     >
-                      <div className="flex min-w-0 items-center gap-3" role="cell">
-                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-white/10 bg-white/10">
-                          {product.imageUrl ? (
-                            <img src={product.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-[#8ee0be]">
-                              {product.category.slice(0, 2).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
+                      <div className="min-w-0" role="cell">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-white">{product.name}</p>
                           <p className="mt-0.5 truncate text-[10px] uppercase tracking-[0.12em] text-white/45">
