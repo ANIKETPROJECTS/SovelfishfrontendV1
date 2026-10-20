@@ -15,7 +15,7 @@ interface PolicyConfig {
   sections: Section[];
 }
 
-const CONTACT_BLOCK = `Fresh Stock Xchange is a brand owned and operated by ATHA FOODS PRIVATE LIMITED, having its registered/operating address at RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400701.
+const CONTACT_BLOCK = `Fresh Stock Xchange operates from RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400701.
 
 Phone: 088795 14551
 Email: freshstockxchange@gmail.com
@@ -24,11 +24,11 @@ Hours: Mon - Sun: 6:00 AM - 9:00 PM`;
 const POLICIES: Record<string, PolicyConfig> = {
   terms: {
     title: "Terms of Service",
-    subtitle: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED)",
+    subtitle: "Fresh Stock Xchange",
     lastUpdated: "1st July 2026",
     sections: [
       {
-        body: 'These Terms of Service govern your access to and use of the Fresh Stock Xchange website, mobile application, and any related ordering channels operated by Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED) (together, the "Platform"). "You" or "User" refers to any person who accesses the Platform or purchases products through it. By using the Platform, you agree to be bound by this Agreement.\n\nIf you do not agree to these Terms, please stop using the Platform immediately.',
+        body: 'These Terms of Service govern your access to and use of the Fresh Stock Xchange website, mobile application, and any related ordering channels (together, the "Platform"). "You" or "User" refers to any person who accesses the Platform or purchases products through it. By using the Platform, you agree to be bound by this Agreement.\n\nIf you do not agree to these Terms, please stop using the Platform immediately.',
       },
       {
         heading: "1. Eligibility",
@@ -56,7 +56,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "7. Intellectual Property",
-        body: "The Fresh Stock Xchange name, logo, and all related branding are the exclusive property of Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED). Nothing in this Agreement grants you any right to use our trademarks or branding without our prior written permission.",
+        body: "The Fresh Stock Xchange name, logo, and all related branding are the property of Fresh Stock Xchange. Nothing in this Agreement grants you any right to use our trademarks or branding without our prior written permission.",
       },
       {
         heading: "8. Disclaimer of Warranties",
@@ -91,11 +91,11 @@ const POLICIES: Record<string, PolicyConfig> = {
 
   privacy: {
     title: "Privacy Policy",
-    subtitle: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED)",
+    subtitle: "Fresh Stock Xchange",
     lastUpdated: "1st July 2026",
     sections: [
       {
-        body: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED) operates the Fresh Stock Xchange website, mobile application, and related ordering channels through which we offer fresh fish, seafood, meat, and related products for delivery. This Privacy Policy explains what personal information we collect, how we use it, and the choices you have.\n\nWe may update this Policy from time to time to reflect changes in our practices or applicable law. We encourage you to review this page periodically. Continued use of the Platform after an update constitutes your acceptance of the revised Policy.",
+        body: "Fresh Stock Xchange operates this website, mobile application, and related ordering channels through which we offer fresh fish, seafood, meat, and related products for delivery. This Privacy Policy explains what personal information we collect, how we use it, and the choices you have.\n\nWe may update this Policy from time to time to reflect changes in our practices or applicable law. We encourage you to review this page periodically. Continued use of the Platform after an update constitutes your acceptance of the revised Policy.",
       },
       {
         heading: "1. Information We Collect",
@@ -138,11 +138,11 @@ const POLICIES: Record<string, PolicyConfig> = {
 
   refund: {
     title: "Order Cancellation & Refund Policy",
-    subtitle: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED)",
+    subtitle: "Fresh Stock Xchange",
     lastUpdated: "1st July 2026",
     sections: [
       {
-        body: "This Order Cancellation and Reschedule Policy applies to all orders placed on the Fresh Stock Xchange Platform, operated by Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED). By placing an order, you agree to this Policy.",
+        body: "This Order Cancellation and Reschedule Policy applies to all orders placed on the Fresh Stock Xchange Platform. By placing an order, you agree to this Policy.",
       },
       {
         heading: "1. Cancellation of Orders",
@@ -169,7 +169,7 @@ const POLICIES: Record<string, PolicyConfig> = {
 
   faq: {
     title: "Frequently Asked Questions",
-    subtitle: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED)",
+    subtitle: "Fresh Stock Xchange",
     sections: [
       {
         body: "For any queries not answered below, please reach out to us at freshstockxchange@gmail.com or call us at 088795 14551 (Mon - Sun: 6:00 AM - 9:00 PM).",
