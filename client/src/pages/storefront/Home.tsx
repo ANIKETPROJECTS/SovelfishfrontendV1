@@ -3,7 +3,6 @@ import { Link } from "wouter";
 import { Header } from "@/components/storefront/Header";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
-import { SwipeHint } from "@/components/storefront/SwipeHint";
 import { DragScrollDiv } from "@/components/storefront/DragScrollDiv";
 import { Footer } from "@/components/storefront/Footer";
 import { useProducts } from "@/hooks/use-products";
@@ -144,7 +143,6 @@ export default function Home() {
             </div>
           ))}
         </DragScrollDiv>
-        <SwipeHint />
       </section>
     );
   };
@@ -299,7 +297,7 @@ export default function Home() {
         {/* Keep the homepage category grid focused while catalog content is being finalized. */}
         <div className="mb-6">
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
-            {categories.slice(0, 9).map((cat) => (
+            {categories.slice(0, 12).map((cat) => (
               <button
                 key={cat.name}
                 onClick={() => handleCategoryClick(cat.name)}
@@ -484,7 +482,6 @@ export default function Home() {
                         );
                       })}
                     </DragScrollDiv>
-                    <SwipeHint />
                   </>
                 )}
               </section>
@@ -533,7 +530,6 @@ export default function Home() {
                           )
                     }
                   </DragScrollDiv>
-                  {sectionProducts.length > 0 && <SwipeHint />}
                 </>
               )}
             </section>

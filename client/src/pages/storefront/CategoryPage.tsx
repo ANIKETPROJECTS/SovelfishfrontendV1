@@ -7,7 +7,6 @@ import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { ProductCard } from "@/components/storefront/ProductCard";
-import { SwipeHint } from "@/components/storefront/SwipeHint";
 import { DragScrollDiv } from "@/components/storefront/DragScrollDiv";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -162,7 +161,6 @@ export default function CategoryPage() {
                 </div>
               ))}
             </DragScrollDiv>
-            <SwipeHint />
           </section>
         )}
 
@@ -239,7 +237,6 @@ export default function CategoryPage() {
                 );
               })}
             </div>
-            <SwipeHint />
           </div>
         )}
 

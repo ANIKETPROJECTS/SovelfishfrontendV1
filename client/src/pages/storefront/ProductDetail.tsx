@@ -18,7 +18,6 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { SwipeHint } from "@/components/storefront/SwipeHint";
 import type { Product } from "@shared/schema";
 import { isNormalStorefrontProduct } from "@shared/productVisibility";
 
@@ -615,7 +614,6 @@ export default function ProductDetail() {
                   </div>
                 ))}
               </div>
-              <SwipeHint scrollRef={recipeScrollRef} />
             </div>
           </section>
         )}
@@ -642,7 +640,6 @@ export default function ProductDetail() {
                   </div>
                 ))}
               </div>
-              <SwipeHint scrollRef={similarScrollRef} />
             </div>
           </section>
         )}

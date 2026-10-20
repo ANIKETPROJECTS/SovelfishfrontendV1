@@ -21,7 +21,6 @@ import iconTimeImg from "@assets/time_1776949603776.png";
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { SwipeHint } from "@/components/storefront/SwipeHint";
 import type { Combo, Product } from "@shared/schema";
 import { isNormalStorefrontProduct } from "@shared/productVisibility";
 import { getActiveHubDb } from "@/lib/queryClient";
@@ -832,7 +831,6 @@ export default function ComboDetail() {
                   </div>
                 ))}
               </div>
-              <SwipeHint scrollRef={productRecipesScrollRef} />
             </div>
           </section>
         )}
@@ -852,7 +850,6 @@ export default function ComboDetail() {
                   <ComboCard key={c.id} combo={c} productMap={productMap} />
                 ))}
               </div>
-              <SwipeHint scrollRef={combosScrollRef} />
             </div>
           </section>
         )}
@@ -873,7 +870,6 @@ export default function ComboDetail() {
                   </div>
                 ))}
               </div>
-              <SwipeHint scrollRef={similarScrollRef} />
             </div>
           </section>
         )}
