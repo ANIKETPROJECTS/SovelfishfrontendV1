@@ -19,6 +19,16 @@ type MarketProduct = Product & {
   marketRange?: MarketRange | null;
 };
 
+type MarketRow = {
+  product: MarketProduct;
+  price: number;
+  low: number | null;
+  high: number | null;
+  weight: string | null;
+  direction: MarketMovement["direction"] | null;
+  changePercent: number | null;
+};
+
 type MarketBoardProps = {
   products: Product[];
 };
@@ -33,23 +43,39 @@ function formatPrice(value: number) {
   return currency.format(value);
 }
 
-function MarketMovementCell({ product }: { product: MarketProduct }) {
-  const movement = product.marketMovement;
+const PREVIEW_MARKET_VALUES = [
+  { price: 445, low: 410, high: 470, weight: "500 g", direction: "up", changePercent: 4.7 },
+  { price: 620, low: 610, high: 675, weight: "1 kg", direction: "down", changePercent: 2.1 },
+  { price: 385, low: 360, high: 405, weight: "500 g", direction: "up", changePercent: 3.8 },
+  { price: 175, low: 165, high: 190, weight: "500 ml", direction: "down", changePercent: 1.6 },
+  { price: 540, low: 520, high: 585, weight: "1 kg", direction: "up", changePercent: 5.2 },
+  { price: 295, low: 280, high: 320, weight: "500 g", direction: "down", changePercent: 1.3 },
+  { price: 510, low: 490, high: 560, weight: "1 kg", direction: "up", changePercent: 2.9 },
+  { price: 335, low: 325, high: 360, weight: "500 g", direction: "steady", changePercent: 0 },
+] satisfies Array<{
+  price: number;
+  low: number;
+  high: number;
+  weight: string;
+  direction: MarketMovement["direction"];
+  changePercent: number;
+}>;
 
-  if (!movement) {
+function MarketMovementCell({ direction, changePercent }: Pick<MarketRow, "direction" | "changePercent">) {
+  if (!direction || changePercent == null) {
     return <span className="text-white/45">—</span>;
   }
 
-  const isUp = movement.direction === "up";
-  const isDown = movement.direction === "down";
+  const isUp = direction === "up";
+  const isDown = direction === "down";
   const tone = isUp ? "text-[#73ddb5]" : isDown ? "text-[#ff9d8f]" : "text-white/65";
   const Icon = isUp ? ArrowUpRight : isDown ? ArrowDownRight : Minus;
   const sign = isUp ? "+" : isDown ? "−" : "";
 
   return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold tabular-nums ${tone}`} aria-label={`${movement.direction} ${Math.abs(movement.changePercent).toFixed(1)} percent`}>
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold tabular-nums ${tone}`} aria-label={`${direction} ${Math.abs(changePercent).toFixed(1)} percent`}>
       <Icon className="h-4 w-4" aria-hidden="true" />
-      {sign}{Math.abs(movement.changePercent).toFixed(1)}%
+      {sign}{Math.abs(changePercent).toFixed(1)}%
     </span>
   );
 }
@@ -63,6 +89,18 @@ export function MarketBoard({ products }: MarketBoardProps) {
     product.status !== "unavailable" &&
     product.status !== "archived"
   ).slice(0, 8);
+  const marketRows: MarketRow[] = marketProducts.map((product, index) => {
+    const preview = import.meta.env.DEV ? PREVIEW_MARKET_VALUES[index] : undefined;
+    return {
+      product,
+      price: preview?.price ?? product.price!,
+      low: preview?.low ?? product.marketRange?.low ?? null,
+      high: preview?.high ?? product.marketRange?.high ?? null,
+      weight: preview?.weight ?? product.netWeight?.trim() ?? product.grossWeight?.trim() ?? null,
+      direction: preview?.direction ?? product.marketMovement?.direction ?? null,
+      changePercent: preview?.changePercent ?? product.marketMovement?.changePercent ?? null,
+    };
+  });
 
   return (
     <section
@@ -93,40 +131,38 @@ export function MarketBoard({ products }: MarketBoardProps) {
               <span role="columnheader">Trends</span>
             </div>
 
-            {marketProducts.length > 0 ? (
+            {marketRows.length > 0 ? (
               <div className="overflow-hidden rounded-b-md border border-t-0 border-white/10">
-                {marketProducts.map((product) => {
-                  const movement = product.marketMovement;
-                  const range = product.marketRange;
+                {marketRows.map((row) => {
                   return (
                     <div
-                      key={product.id}
+                      key={row.product.id}
                       className="grid min-h-[38px] grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] items-center gap-2 border-b border-white/10 px-3 transition-colors odd:bg-[#234d76] even:bg-[#1B324D] hover:bg-[#315f87] last:border-b-0"
                       role="row"
                     >
                       <span className="truncate text-xs font-semibold text-white sm:text-sm" role="cell">
-                        {product.name}
+                        {row.product.name}
                       </span>
 
                       <span className="whitespace-nowrap text-[11px] tabular-nums text-white/75" role="cell">
-                        {range ? formatPrice(range.low) : "—"}
+                        {row.low != null ? formatPrice(row.low) : "—"}
                       </span>
 
                       <span className="whitespace-nowrap text-[11px] tabular-nums text-white/75" role="cell">
-                        {range ? formatPrice(range.high) : "—"}
+                        {row.high != null ? formatPrice(row.high) : "—"}
                       </span>
 
                       <span className="whitespace-nowrap text-xs font-semibold tabular-nums text-white sm:text-sm" role="cell">
-                        {currency.format(product.price!)}
-                        {product.unit && (
+                        {currency.format(row.price)}
+                        {row.weight && (
                           <span className="ml-1 text-[9px] font-normal text-white/55">
-                            / {product.unit.replace(/^per\s+/i, "")}
+                            · {row.weight}
                           </span>
                         )}
                       </span>
 
                       <div role="cell">
-                        <MarketMovementCell product={product} />
+                        <MarketMovementCell direction={row.direction} changePercent={row.changePercent} />
                       </div>
                     </div>
                   );
