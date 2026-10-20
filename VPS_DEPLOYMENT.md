@@ -19,7 +19,7 @@ the client. Keep `.env` on the server only; it is excluded from Git.
 Then run:
 
 ```sh
-npm install
+npm ci --registry=https://registry.npmjs.org/ --no-audit --no-fund
 npm run build
 npx pm2 start ecosystem.config.cjs
 ```
@@ -28,7 +28,7 @@ If PM2 is already installed globally, `pm2 start ecosystem.config.cjs` works
 instead. Check the app with `pm2 status` and `pm2 logs sohailfishwebsite`.
 The port can be changed by setting `PORT` in `.env`.
 
-## If `npm install` appears stuck
+## If dependency installation appears stuck
 
 The project has no install-time build or postinstall script. A long pause is
 usually npm waiting on the VPS's registry/network connection. Stop the current
@@ -36,8 +36,8 @@ command with Ctrl+C, then check:
 
 ```sh
 npm config get registry
-npm ping --fetch-timeout=20000
-npm install --verbose --no-audit --no-fund --fetch-retries=0 --fetch-timeout=60000
+npm ping --registry=https://registry.npmjs.org/ --fetch-timeout=20000
+npm ci --verbose --registry=https://registry.npmjs.org/ --no-audit --no-fund --fetch-retries=0 --fetch-timeout=60000
 ```
 
 If `npm ping` times out, check DNS, outbound HTTPS access to the configured
