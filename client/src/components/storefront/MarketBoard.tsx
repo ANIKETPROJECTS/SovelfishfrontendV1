@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Minus, Waves } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import type { Product } from "@shared/schema";
 
 type MarketMovement = {
@@ -81,18 +81,9 @@ export function MarketBoard({ products }: MarketBoardProps) {
       <div className="relative px-4 py-5 sm:px-6 sm:py-6">
         <div className="flex flex-col gap-5 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-[#8ee0be]">
-              <Waves className="h-4 w-4" aria-hidden="true" />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.24em]">
-                Fresh Stock Xchange · Market Watch
-              </span>
-            </div>
             <h1 id="market-board-title" className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
               Fresh market prices
             </h1>
-            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/65 sm:text-sm">
-              First price update of the day compares with yesterday’s close. Later updates compare with today’s first price.
-            </p>
           </div>
 
           <dl className="grid grid-cols-4 gap-2 sm:flex sm:gap-5">
@@ -122,7 +113,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
             aria-label="Fresh market product prices and daily changes"
           >
             <div
-              className="grid grid-cols-[minmax(220px,1.7fr)_minmax(140px,1fr)_minmax(130px,0.9fr)_minmax(95px,0.6fr)_minmax(190px,1.2fr)] gap-4 px-3 pb-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-white/45"
+              className="grid grid-cols-[minmax(220px,1.7fr)_minmax(140px,1fr)_minmax(130px,0.9fr)_minmax(95px,0.6fr)_minmax(190px,1.2fr)] gap-4 rounded-t-md bg-[#2c5a85] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-white/80"
               role="row"
             >
               <span role="columnheader">Product</span>
@@ -133,13 +124,13 @@ export function MarketBoard({ products }: MarketBoardProps) {
             </div>
 
             {marketProducts.length > 0 ? (
-              <div className="divide-y divide-white/[0.08]">
+              <div className="overflow-hidden rounded-b-md border border-t-0 border-white/10">
                 {marketProducts.map((product) => {
                   const movement = product.marketMovement;
                   return (
                     <div
                       key={product.id}
-                      className="grid min-h-[68px] grid-cols-[minmax(220px,1.7fr)_minmax(140px,1fr)_minmax(130px,0.9fr)_minmax(95px,0.6fr)_minmax(190px,1.2fr)] items-center gap-4 rounded-lg px-3 transition-colors hover:bg-white/[0.045]"
+                      className="grid min-h-[60px] grid-cols-[minmax(220px,1.7fr)_minmax(140px,1fr)_minmax(130px,0.9fr)_minmax(95px,0.6fr)_minmax(190px,1.2fr)] items-center gap-4 border-b border-white/10 px-3 transition-colors odd:bg-[#234d76] even:bg-[#1B324D] hover:bg-[#315f87] last:border-b-0"
                       role="row"
                     >
                       <div className="min-w-0" role="cell">
@@ -199,9 +190,6 @@ export function MarketBoard({ products }: MarketBoardProps) {
           </div>
         </div>
 
-        <p className="mt-3 text-[10px] text-white/40">
-          Price movements reflect product price changes saved by the admin. Comparisons use India Standard Time.
-        </p>
       </div>
     </section>
   );
