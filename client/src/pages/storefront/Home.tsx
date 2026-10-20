@@ -135,7 +135,7 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {preorderProducts.map((product) => (
             <div key={product.id} className="min-w-0">
               <ProductCard product={product} preorderContext />
@@ -356,7 +356,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground py-4">No combos available yet.</p>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
                       {availableCombos.map(combo => {
                         const comboImages = combo.includes
                           .map(inc => {
@@ -498,7 +498,7 @@ export default function Home() {
                   {section.title}
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
                 {isLoading
                   ? [1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-[3/4] rounded-3xl" />)
                   : sectionProducts.length > 0
