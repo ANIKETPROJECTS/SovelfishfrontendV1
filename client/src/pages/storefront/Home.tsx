@@ -296,38 +296,37 @@ export default function Home() {
           <>
         <MarketBoard products={products ?? []} />
 
-        {/* Category Row */}
+        {/* Keep the homepage category grid focused while catalog content is being finalized. */}
         <div className="mb-6">
-          <DragScrollDiv className="flex overflow-x-auto gap-6 scrollbar-hide">
-            {categories.map((cat) => (
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
+            {categories.slice(0, 9).map((cat) => (
               <button
                 key={cat.name}
                 onClick={() => handleCategoryClick(cat.name)}
-                className="flex-none flex flex-col items-center gap-2 group"
+                className="group flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-[#edf1ef] bg-white p-2 text-center transition-shadow hover:shadow-md sm:p-3"
                 data-testid={`category-${cat.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <div className="w-28 h-28 sm:w-32 sm:h-32 overflow-hidden transition-all duration-300 group-hover:scale-105">
+                <div className="aspect-square w-full overflow-hidden rounded-xl bg-[#f7faf8]">
                   {cat.imageUrl ? (
                     <img
                       src={cat.imageUrl}
                       alt={cat.name}
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="w-full h-full bg-muted rounded-full flex items-center justify-center text-2xl">
+                    <div className="flex h-full w-full items-center justify-center text-2xl">
                       🐟
                     </div>
                   )}
                 </div>
-                <span className="text-sm sm:text-base font-medium text-foreground whitespace-nowrap">
+                <span className="w-full break-words text-xs font-medium text-foreground sm:text-sm">
                   {cat.name}
                 </span>
               </button>
             ))}
-          </DragScrollDiv>
-          <SwipeHint />
+          </div>
         </div>
 
         {/* Preserve the existing preorder placement for hubs that have not
