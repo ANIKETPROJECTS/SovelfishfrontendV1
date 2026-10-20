@@ -36,7 +36,7 @@ type MarketBoardProps = {
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 0,
 });
 
 function formatPrice(value: number) {
@@ -117,18 +117,19 @@ export function MarketBoard({ products }: MarketBoardProps) {
 
         <div className="overflow-x-auto scrollbar-hide">
           <div
-            className="min-w-[600px]"
+            className="min-w-[680px]"
             role="table"
             aria-label="Fresh market product prices and daily changes"
           >
             <div
-              className="grid grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] gap-2 bg-white px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.08em] text-[#1B324D]"
+              className="grid grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(110px,1.1fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)] gap-2 bg-white px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.08em] text-[#1B324D]"
               role="row"
             >
               <span role="columnheader">Product</span>
               <span className="text-center" role="columnheader">Low</span>
               <span className="text-center" role="columnheader">High</span>
               <span className="text-center" role="columnheader">Price</span>
+              <span className="text-center" role="columnheader">Weight</span>
               <span className="text-center" role="columnheader">Trends</span>
             </div>
 
@@ -138,7 +139,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
                   return (
                     <div
                       key={row.product.id}
-                      className="grid min-h-[42px] grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] items-center gap-2 border-b border-[#e8eeec] bg-white px-3 last:border-b-0"
+                      className="grid min-h-[42px] grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(110px,1.1fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)] items-center gap-2 border-b border-[#e8eeec] bg-white px-3 last:border-b-0"
                       role="row"
                     >
                       <span className="truncate text-sm font-semibold text-[#1B324D]" role="cell">
@@ -155,11 +156,10 @@ export function MarketBoard({ products }: MarketBoardProps) {
 
                       <span className="whitespace-nowrap text-center text-sm font-semibold tabular-nums text-[#1B324D]" role="cell">
                         {currency.format(row.price)}
-                        {row.weight && (
-                          <span className="ml-1 text-sm font-normal text-[#667774]">
-                            · {row.weight}
-                          </span>
-                        )}
+                      </span>
+
+                      <span className="whitespace-nowrap text-center text-sm text-[#667774]" role="cell">
+                        {row.weight ?? "—"}
                       </span>
 
                       <div className="flex justify-center" role="cell">
