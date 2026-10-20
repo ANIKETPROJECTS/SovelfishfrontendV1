@@ -3,7 +3,6 @@ import { Link } from "wouter";
 import { Header } from "@/components/storefront/Header";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
-import { DragScrollDiv } from "@/components/storefront/DragScrollDiv";
 import { Footer } from "@/components/storefront/Footer";
 import { useProducts } from "@/hooks/use-products";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,13 +135,13 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6">
           {preorderProducts.map((product) => (
-            <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
+            <div key={product.id} className="min-w-0">
               <ProductCard product={product} preorderContext />
             </div>
           ))}
-        </DragScrollDiv>
+        </div>
       </section>
     );
   };
@@ -357,7 +356,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground py-4">No combos available yet.</p>
                 ) : (
                   <>
-                    <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-5 scrollbar-hide pb-2">
+                    <div className="grid grid-cols-2 gap-4 sm:gap-6">
                       {availableCombos.map(combo => {
                         const comboImages = combo.includes
                           .map(inc => {
@@ -370,7 +369,7 @@ export default function Home() {
                           : 0;
                         const showPct = combo.discount && combo.discount > 0 ? combo.discount : computedPct;
                         return (
-                          <div key={combo.id} className="w-[340px] sm:w-[400px] flex-none">
+                          <div key={combo.id} className="min-w-0">
                             <div className="group relative bg-card flex flex-col h-full transition-all duration-300 cursor-pointer">
                               <Link href={`/combo/${combo.id}`}>
                                 <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden mb-3 border border-border/20 rounded-xl">
@@ -481,7 +480,7 @@ export default function Home() {
                           </div>
                         );
                       })}
-                    </DragScrollDiv>
+                    </div>
                   </>
                 )}
               </section>
@@ -491,8 +490,6 @@ export default function Home() {
           // "products" type section
           const normalizedTitle = section.title.trim().toLowerCase().replace(/[^a-z]/g, "");
           const isAllProducts = normalizedTitle === "allproducts";
-          const isBestSeller = normalizedTitle === "bestseller";
-          const usesGridLayout = isAllProducts || isBestSeller;
           const sectionProducts = getSectionProducts(section.id, isAllProducts);
           return (
             <section key={section.id} className="mb-7">
@@ -501,37 +498,18 @@ export default function Home() {
                   {section.title}
                 </h2>
               </div>
-              {usesGridLayout ? (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {isLoading
-                    ? [1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="aspect-[3/4] rounded-3xl" />)
-                    : sectionProducts.length > 0
-                      ? sectionProducts.map(product => (
-                          <ProductCard key={product.id} product={product} />
-                        ))
-                      : (
-                          <p className="text-sm text-muted-foreground py-4 col-span-2 lg:col-span-4">No products in this section yet.</p>
-                        )
-                  }
-                </div>
-              ) : (
-                <>
-                  <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
-                    {isLoading
-                      ? [1,2,3,4,5,6].map(i => <Skeleton key={i} className="min-w-[240px] sm:min-w-[280px] h-[340px] sm:h-[380px] rounded-3xl" />)
-                      : sectionProducts.length > 0
-                        ? sectionProducts.map(product => (
-                            <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
-                              <ProductCard product={product} />
-                            </div>
-                          ))
-                        : (
-                            <p className="text-sm text-muted-foreground py-4">No products in this section yet.</p>
-                          )
-                    }
-                  </DragScrollDiv>
-                </>
-              )}
+              <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                {isLoading
+                  ? [1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-[3/4] rounded-3xl" />)
+                  : sectionProducts.length > 0
+                    ? sectionProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))
+                    : (
+                        <p className="col-span-2 py-4 text-sm text-muted-foreground">No products in this section yet.</p>
+                      )
+                }
+              </div>
             </section>
           );
         })}
