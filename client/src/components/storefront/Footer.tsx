@@ -1,11 +1,7 @@
 import { Link } from "wouter";
 import { useEffect, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
-
-import instaIcon from "@assets/instagram_(5)_1778180430452.png";
-import fbIcon from "@assets/facebook_(5)_1778180449916.png";
-import ytIcon from "@assets/youtube_(2)_1778180468466.png";
-import waIcon from "@assets/logo_(14)_1778180502395.png";
 
 import phoneIcon from "@assets/telephone_1778180674008.png";
 import mailIcon from "@assets/email_1778180701088.png";
@@ -33,7 +29,7 @@ function LazyMap() {
       {visible ? (
         <iframe
           title="Fresh Stock Xchange Location"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3767.5!2d72.9783!3d19.2183!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDEzJzA2LjAiTiA3MsKwNTgnNDIuMCJF!5e0!3m2!1sen!2sin!4v1!5m2!1sen!2sin&q=Shop+No+2+Wing+R7+214+Khartan+Road+Thane+West+400601"
+          src="https://www.google.com/maps?q=RH%2018%2C%20Sairaj%20Society%2C%20Plot%2022%2C%20Sector%206%2C%20Airoli%2C%20Navi%20Mumbai%2C%20Maharashtra%20400701&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0, minHeight: "200px", display: "block" }}
@@ -62,27 +58,9 @@ export function Footer() {
             <div className="inline-flex rounded-md bg-white p-2 mb-4">
               <FreshStockXchangeLogo className="h-auto w-full max-w-[320px]" />
             </div>
-            <p className="text-white text-sm leading-relaxed mb-5">
-              Thane's freshest fish, seafood & meat, cleaned, packed, and delivered straight to your doorstep.
+            <p className="text-white text-sm leading-relaxed">
+              Fresh fish, seafood & meat, cleaned, packed, and delivered straight to your doorstep.
             </p>
-            <div className="flex items-center gap-3">
-              <a href="https://www.instagram.com/fishtokri/" target="_blank" rel="noreferrer" aria-label="Instagram"
-                className="w-10 h-10 flex-shrink-0 rounded-xl overflow-hidden transition-all duration-200 hover:scale-110 hover:opacity-90">
-                <img src={instaIcon} alt="Instagram" className="w-10 h-10 object-cover" />
-              </a>
-              <a href="https://www.facebook.com/fishtokri/" target="_blank" rel="noreferrer" aria-label="Facebook"
-                className="w-10 h-10 flex-shrink-0 rounded-xl overflow-hidden transition-all duration-200 hover:scale-110 hover:opacity-90">
-                <img src={fbIcon} alt="Facebook" className="w-10 h-10 object-contain" />
-              </a>
-              <a href="https://wa.me/9220200100" target="_blank" rel="noreferrer" aria-label="WhatsApp"
-                className="w-10 h-10 flex-shrink-0 rounded-xl overflow-hidden transition-all duration-200 hover:scale-110 hover:opacity-90">
-                <img src={waIcon} alt="WhatsApp" className="w-10 h-10 object-cover" />
-              </a>
-              <a href="https://www.youtube.com/@fishtokri" target="_blank" rel="noreferrer" aria-label="YouTube"
-                className="w-10 h-10 flex-shrink-0 rounded-xl overflow-hidden transition-all duration-200 hover:scale-110 hover:opacity-90">
-                <img src={ytIcon} alt="YouTube" className="w-10 h-10 object-cover" />
-              </a>
-            </div>
           </div>
 
           {/* Quick Links */}
@@ -139,14 +117,20 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center gap-2.5">
                 <img src={phoneIcon} alt="" aria-hidden className="w-4 h-4 shrink-0" style={whiteFilter} />
-                <a href="tel:+919220200100" className="text-white text-sm hover:opacity-75 transition-opacity">
-                  +91 92202 00100
+                <a href="tel:+918879514551" className="text-white text-sm hover:opacity-75 transition-opacity">
+                  088795 14551
                 </a>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <MapPin aria-hidden className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="text-white text-sm leading-snug">
+                  RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400701
+                </span>
               </li>
               <li className="flex items-center gap-2.5">
                 <img src={mailIcon} alt="" aria-hidden className="w-4 h-4 shrink-0" style={whiteFilter} />
-                <a href="mailto:info@fishtokri.com" className="text-white text-sm hover:opacity-75 transition-opacity">
-                  info@fishtokri.com
+                <a href="mailto:freshstockxchange@gmail.com" className="text-white text-sm hover:opacity-75 transition-opacity">
+                  freshstockxchange@gmail.com
                 </a>
               </li>
               <li className="flex items-start gap-2.5">
@@ -154,10 +138,6 @@ export function Footer() {
                 <span className="text-white text-sm leading-snug">
                   Mon – Sun: 6:00 AM – 9:00 PM
                 </span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="text-white text-sm font-medium">GSTIN:</span>
-                <span className="text-white text-sm font-medium tracking-wide">27AAOCA7628P1ZT</span>
               </li>
             </ul>
           </div>

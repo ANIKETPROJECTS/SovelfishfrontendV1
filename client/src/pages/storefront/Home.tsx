@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Header } from "@/components/storefront/Header";
 import { ProductCard } from "@/components/storefront/ProductCard";
@@ -22,8 +22,6 @@ import { DemoCatalogPreview } from "@/components/storefront/DemoCatalogPreview";
 function getFallbackImage(_category: string): string {
   return noImageImg;
 }
-
-import welcomeAudio from "@assets/ElevenLabs_2026-03-05T15_00_59_Bella_-_Professional,_Bright,_W_1772722955169.mp3";
 
 function ComboImages({ images, imageUrl }: { images: string[]; imageUrl?: string | null }) {
   if (imageUrl?.trim()) {
@@ -74,7 +72,6 @@ export default function Home() {
     return new URLSearchParams(window.location.search).get("q") ?? "";
   })();
   const [searchQuery, setSearchQuery] = useState(initialQ);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [, navigate] = useLocation();
   const demoPreview =
     import.meta.env.DEV &&
@@ -88,21 +85,6 @@ export default function Home() {
     if (initialQ) setView("category");
   }, [initialQ]);
 
-
-  useEffect(() => {
-    const hasVisited = localStorage.getItem("fishtokri_visited");
-    if (!hasVisited) {
-      const playAudio = () => {
-        if (audioRef.current) {
-          audioRef.current.play().catch(err => console.log("Audio play failed:", err));
-          localStorage.setItem("fishtokri_visited", "true");
-          window.removeEventListener("click", playAudio);
-        }
-      };
-      window.addEventListener("click", playAudio);
-      return () => window.removeEventListener("click", playAudio);
-    }
-  }, []);
 
   useEffect(() => {
     if (view === "home" && carouselSlides.length > 0) {
@@ -192,7 +174,6 @@ export default function Home() {
     const hasResults = filteredProducts.length > 0 || filteredCombos.length > 0;
     return (
       <div className="min-h-screen bg-white flex flex-col font-sans">
-        <audio ref={audioRef} src={welcomeAudio} />
         <Header onSearch={(q) => { setSearchQuery(q); if (!q) setView("home"); }} onLogoClick={handleLogoClick} initialSearchValue={searchQuery} />
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -314,7 +295,6 @@ export default function Home() {
         description="Order 100% fresh fish, seafood, chicken & mutton online in Mumbai. Hygienically cut, cleaned & delivered to your doorstep. 60+ varieties. Free delivery above ₹500. Order now on Fresh Stock Xchange."
         canonical="/"
       />
-      <audio ref={audioRef} src={welcomeAudio} />
       <Header onSearch={demoPreview ? undefined : (q) => {
         setSearchQuery(q);
         if (q) setView("category");

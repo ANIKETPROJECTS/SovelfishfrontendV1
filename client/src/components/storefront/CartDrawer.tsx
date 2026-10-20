@@ -3023,7 +3023,7 @@ export function CartDrawer() {
 
             <div className="w-full flex flex-col gap-2.5 mb-4">
               <a
-                href={`https://wa.me/919220200100?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
+                href={`https://wa.me/918879514551?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
@@ -3032,18 +3032,18 @@ export function CartDrawer() {
                 <img src={whatsappIcon} alt="WhatsApp" className="w-7 h-7 rounded-lg flex-shrink-0" />
                 <div className="text-left">
                   <p className="text-white text-xs font-semibold leading-none mb-0.5">Chat on WhatsApp</p>
-                  <p className="text-white/90 text-xs font-normal">+91 92202 00100</p>
+                  <p className="text-white/90 text-xs font-normal">088795 14551</p>
                 </div>
               </a>
               <a
-                href="tel:+919220200100"
+                href="tel:+918879514551"
                 className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
                 style={{ backgroundColor: "#2196F3" }}
               >
                 <img src={callIcon} alt="Call" className="w-7 h-7 rounded-full flex-shrink-0" />
                 <div className="text-left">
                   <p className="text-white text-xs font-semibold leading-none mb-0.5">Call Us</p>
-                  <p className="text-white/90 text-xs font-normal">+91 92202 00100</p>
+                  <p className="text-white/90 text-xs font-normal">088795 14551</p>
                 </div>
               </a>
             </div>

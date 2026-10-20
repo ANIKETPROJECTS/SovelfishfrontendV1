@@ -15,12 +15,11 @@ interface PolicyConfig {
   sections: Section[];
 }
 
-const CONTACT_BLOCK = `Fresh Stock Xchange is a brand owned and operated by ATHA FOODS PRIVATE LIMITED, having its registered/operating address at Shop No. 2, Wing R7/214, Khartan Road, Thane West - 400601.
+const CONTACT_BLOCK = `Fresh Stock Xchange is a brand owned and operated by ATHA FOODS PRIVATE LIMITED, having its registered/operating address at RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400701.
 
-Phone: +91 92202 00100
-Email: info@fishtokri.com
-Hours: Mon - Sun: 6:00 AM - 9:00 PM
-GSTIN: 27AAOCA7628P1ZT`;
+Phone: 088795 14551
+Email: freshstockxchange@gmail.com
+Hours: Mon - Sun: 6:00 AM - 9:00 PM`;
 
 const POLICIES: Record<string, PolicyConfig> = {
   terms: {
@@ -29,7 +28,7 @@ const POLICIES: Record<string, PolicyConfig> = {
     lastUpdated: "1st July 2026",
     sections: [
       {
-        body: 'These Terms of Service govern your access to and use of www.fishtokri.com, the Fresh Stock Xchange mobile application, and any related ordering channels operated by Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED) (together, the "Platform"). "You" or "User" refers to any person who accesses the Platform or purchases products through it. By using the Platform, you agree to be bound by this Agreement.\n\nIf you do not agree to these Terms, please stop using the Platform immediately.',
+        body: 'These Terms of Service govern your access to and use of the Fresh Stock Xchange website, mobile application, and any related ordering channels operated by Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED) (together, the "Platform"). "You" or "User" refers to any person who accesses the Platform or purchases products through it. By using the Platform, you agree to be bound by this Agreement.\n\nIf you do not agree to these Terms, please stop using the Platform immediately.',
       },
       {
         heading: "1. Eligibility",
@@ -49,7 +48,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "5. User Account",
-        body: "You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. Please notify us immediately at info@fishtokri.com if you suspect unauthorised use of your account. Providing false information, or using the Platform for fraudulent or unlawful purposes, will result in immediate termination of this Agreement.",
+        body: "You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. Please notify us immediately at freshstockxchange@gmail.com if you suspect unauthorised use of your account. Providing false information, or using the Platform for fraudulent or unlawful purposes, will result in immediate termination of this Agreement.",
       },
       {
         heading: "6. Payments",
@@ -96,7 +95,7 @@ const POLICIES: Record<string, PolicyConfig> = {
     lastUpdated: "1st July 2026",
     sections: [
       {
-        body: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED) operates the website www.fishtokri.com, the Fresh Stock Xchange mobile application, and related ordering channels through which we offer fresh fish, seafood, meat, and related products for delivery. This Privacy Policy explains what personal information we collect, how we use it, and the choices you have.\n\nWe may update this Policy from time to time to reflect changes in our practices or applicable law. We encourage you to review this page periodically. Continued use of the Platform after an update constitutes your acceptance of the revised Policy.",
+        body: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED) operates the Fresh Stock Xchange website, mobile application, and related ordering channels through which we offer fresh fish, seafood, meat, and related products for delivery. This Privacy Policy explains what personal information we collect, how we use it, and the choices you have.\n\nWe may update this Policy from time to time to reflect changes in our practices or applicable law. We encourage you to review this page periodically. Continued use of the Platform after an update constitutes your acceptance of the revised Policy.",
       },
       {
         heading: "1. Information We Collect",
@@ -120,7 +119,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "6. Your Rights & Choices",
-        body: 'You may access, correct, update, or request deletion of your personal information, or withdraw your consent to its use, by writing to us at info@fishtokri.com with "Privacy Request" in the subject line.',
+        body: 'You may access, correct, update, or request deletion of your personal information, or withdraw your consent to its use, by writing to us at freshstockxchange@gmail.com with "Privacy Request" in the subject line.',
       },
       {
         heading: "7. Children's Privacy",
@@ -151,7 +150,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "2. Refunds",
-        body: "Once a refund is approved, it is typically credited to your original payment method within 5-7 business days, depending on your bank. Wallet credits may be processed faster.\n\nRefunds are considered where:\n\u2022 The item is delivered after its expiry;\n\u2022 The packaging is damaged in transit;\n\u2022 The wrong item was delivered.\n\nPlease raise any such concern at the time of delivery or shortly after by calling +91 92202 00100.",
+        body: "Once a refund is approved, it is typically credited to your original payment method within 5-7 business days, depending on your bank. Wallet credits may be processed faster.\n\nRefunds are considered where:\n\u2022 The item is delivered after its expiry;\n\u2022 The packaging is damaged in transit;\n\u2022 The wrong item was delivered.\n\nPlease raise any such concern at the time of delivery or shortly after by calling 088795 14551.",
       },
       {
         heading: "3. Rescheduling of Orders",
@@ -173,7 +172,7 @@ const POLICIES: Record<string, PolicyConfig> = {
     subtitle: "Fresh Stock Xchange (operated by ATHA FOODS PRIVATE LIMITED)",
     sections: [
       {
-        body: "For any queries not answered below, please reach out to us at info@fishtokri.com or call us at +91 92202 00100 (Mon - Sun: 6:00 AM - 9:00 PM).",
+        body: "For any queries not answered below, please reach out to us at freshstockxchange@gmail.com or call us at 088795 14551 (Mon - Sun: 6:00 AM - 9:00 PM).",
       },
       { heading: "Orders & Payments", body: "" },
       {
@@ -194,7 +193,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "I was charged but did not receive an order confirmation.",
-        body: "This can occasionally happen due to a delay on your bank's end. In most cases the amount is auto-reversed within 72 hours. If it is not, please write to us at info@fishtokri.com or call +91 92202 00100.",
+        body: "This can occasionally happen due to a delay on your bank's end. In most cases the amount is auto-reversed within 72 hours. If it is not, please write to us at freshstockxchange@gmail.com or call 088795 14551.",
       },
       {
         heading: "I'm getting an error at checkout.",
@@ -228,7 +227,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "My order arrived damaged, expired, or incorrect. What do I do?",
-        body: "Please raise this with us at the time of delivery, or shortly after, by calling +91 92202 00100. Returns/refunds are considered where the item is delivered after its expiry, the packaging is damaged in transit, or the wrong item was delivered.",
+        body: "Please raise this with us at the time of delivery, or shortly after, by calling 088795 14551. Returns/refunds are considered where the item is delivered after its expiry, the packaging is damaged in transit, or the wrong item was delivered.",
       },
       {
         heading: "How long do refunds take?",
@@ -253,7 +252,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "I can't log in to my account.",
-        body: "Please try the OTP login option first. If the issue continues, write to us at info@fishtokri.com with your registered mobile number.",
+        body: "Please try the OTP login option first. If the issue continues, write to us at freshstockxchange@gmail.com with your registered mobile number.",
       },
       {
         heading: "How do I update my delivery address?",
@@ -261,7 +260,7 @@ const POLICIES: Record<string, PolicyConfig> = {
       },
       {
         heading: "How do I unsubscribe from promotional messages?",
-        body: "Use the unsubscribe link in any promotional email, or write to us at info@fishtokri.com and we will update your preferences.",
+        body: "Use the unsubscribe link in any promotional email, or write to us at freshstockxchange@gmail.com and we will update your preferences.",
       },
     ],
   },
