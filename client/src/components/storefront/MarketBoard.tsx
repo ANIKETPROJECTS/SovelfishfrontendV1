@@ -121,7 +121,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
             aria-label="Fresh market product prices and daily changes"
           >
             <div
-              className="grid grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] gap-2 rounded-t-md bg-[#2c5a85] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/80 sm:text-[10px]"
+              className="grid grid-cols-[minmax(180px,2fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(130px,1.25fr)_minmax(100px,0.9fr)] gap-2 bg-[#2c5a85] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/80 sm:text-[10px]"
               role="row"
             >
               <span role="columnheader">Product</span>
@@ -132,7 +132,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
             </div>
 
             {marketRows.length > 0 ? (
-              <div className="overflow-hidden rounded-b-md border border-t-0 border-white/10">
+              <div>
                 {marketRows.map((row) => {
                   return (
                     <div
@@ -169,7 +169,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
                 })}
               </div>
             ) : (
-              <div className="rounded-b-md border border-t-0 border-white/15 px-4 py-5 text-center">
+              <div className="border-t border-white/10 px-3 py-4 text-center">
                 <p className="text-xs font-medium text-white/70">No current prices</p>
               </div>
             )}
