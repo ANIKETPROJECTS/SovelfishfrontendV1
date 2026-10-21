@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { isNormalStorefrontProduct } from "@shared/productVisibility";
+import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
 
 import weighScaleIcon from "@assets/weight-scale_1774801344716.png";
 import piecesIcon from "@assets/cutlery_1774801395283.png";
@@ -144,7 +145,7 @@ export default function ProductDetail() {
   const similarScrollRef = useRef<HTMLDivElement>(null);
 
   const productId = params?.id;
-  const product = products?.find((p) => p.id === productId && !p.batchExpired);
+  const product = products?.find((p) => p.id === productId && !p.batchExpired && isStorefrontProductVisible(p));
   const isUnavailable = product?.status === "unavailable";
 
   // Auto-redirect to home when the product disappears from the list (went out of stock
@@ -152,7 +153,7 @@ export default function ProductDetail() {
   useEffect(() => {
     if (!isLoading && products !== undefined && !product && productId) {
       toast({
-        title: "This item is now out of stock",
+        title: "This item is no longer available",
         description: "You've been redirected to the home screen.",
         variant: "destructive",
       });
@@ -193,7 +194,7 @@ export default function ProductDetail() {
     : 0;
   const strikePrice = hasDiscount ? product!.originalPrice : null;
 
-  const availableProducts = products?.filter((p) => !p.isArchived && p.id !== productId && isNormalStorefrontProduct(p)) ?? [];
+  const availableProducts = products?.filter((p) => !p.isArchived && p.id !== productId && isNormalStorefrontProduct(p) && isStorefrontProductVisible(p)) ?? [];
   const sameCategory = availableProducts.filter((p) => p.category === product?.category);
   const otherCategory = availableProducts.filter((p) => p.category !== product?.category);
   const recommended = [...sameCategory, ...otherCategory].slice(0, 10);

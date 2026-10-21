@@ -16,6 +16,7 @@ import {
   isNormalStorefrontProduct,
   isPreorderStorefrontProduct,
 } from "@shared/productVisibility";
+import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
 
 import fishImg from "@assets/Gemini_Generated_Image_w6wqkkw6wqkkw6wq_(1)_1772713077919.png";
 import prawnsImg from "@assets/Gemini_Generated_Image_5xy0sd5xy0sd5xy0_1772713090650.png";
@@ -50,14 +51,14 @@ export default function CategoryPage() {
   const activeSub = subFilter ? decodeURIComponent(subFilter) : "All";
 
   const categoryProducts = isAll
-    ? (products?.filter((p) => !p.isArchived && !p.batchExpired && isNormalStorefrontProduct(p)) || [])
-    : (products?.filter((p) => !p.isArchived && !p.batchExpired && isNormalStorefrontProduct(p) && p.category === categoryName) || []);
+    ? (products?.filter((p) => !p.isArchived && !p.batchExpired && isNormalStorefrontProduct(p) && isStorefrontProductVisible(p)) || [])
+    : (products?.filter((p) => !p.isArchived && !p.batchExpired && isNormalStorefrontProduct(p) && isStorefrontProductVisible(p) && p.category === categoryName) || []);
 
   // Keep preorder inventory out of the normal category product grid, but
   // surface it first in its own section for the selected category.
   const preorderProducts = isAll
-    ? (products?.filter((p) => !p.isArchived && !p.batchExpired && isPreorderStorefrontProduct(p)) || [])
-    : (products?.filter((p) => !p.isArchived && !p.batchExpired && isPreorderStorefrontProduct(p) && p.category === categoryName) || []);
+    ? (products?.filter((p) => !p.isArchived && !p.batchExpired && isPreorderStorefrontProduct(p) && isStorefrontProductVisible(p)) || [])
+    : (products?.filter((p) => !p.isArchived && !p.batchExpired && isPreorderStorefrontProduct(p) && isStorefrontProductVisible(p) && p.category === categoryName) || []);
 
   const currentCategory = categories.find((c) => c.name === categoryName);
   const subCategories = currentCategory?.subCategories ?? [];

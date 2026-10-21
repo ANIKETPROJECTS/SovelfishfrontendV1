@@ -15,6 +15,7 @@ import type { Category, Section, Combo } from "@shared/schema";
 import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
 import { SeoHead } from "@/components/SeoHead";
 import { isNormalStorefrontProduct, isPreorderStorefrontProduct } from "@shared/productVisibility";
+import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
 import { DemoCatalogPreview } from "@/components/storefront/DemoCatalogPreview";
 import { MarketBoard } from "@/components/storefront/MarketBoard";
 
@@ -87,7 +88,7 @@ export default function Home() {
   };
 
   const filteredProducts = products?.filter((p) => {
-    if (p.isArchived || p.batchExpired || !isNormalStorefrontProduct(p)) return false;
+    if (p.isArchived || p.batchExpired || !isNormalStorefrontProduct(p) || !isStorefrontProductVisible(p)) return false;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          p.category.toLowerCase().includes(searchQuery.toLowerCase());
     if (activeCategory === "All") return matchesSearch;
@@ -110,7 +111,7 @@ export default function Home() {
 
   const getSectionProducts = (sectionId: string, unlimited = false) => {
     const filtered = products?.filter(p => {
-      if (p.isArchived || p.batchExpired || !isNormalStorefrontProduct(p)) return false;
+      if (p.isArchived || p.batchExpired || !isNormalStorefrontProduct(p) || !isStorefrontProductVisible(p)) return false;
       if (Array.isArray(p.sectionId)) return p.sectionId.includes(sectionId);
       return p.sectionId === sectionId;
     }) || [];
@@ -118,7 +119,7 @@ export default function Home() {
   };
 
   const preorderProducts = (products ?? []).filter(
-    (p) => !p.isArchived && !p.batchExpired && isPreorderStorefrontProduct(p),
+    (p) => !p.isArchived && !p.batchExpired && isPreorderStorefrontProduct(p) && isStorefrontProductVisible(p),
   );
 
   const renderPreorderSection = (key: string, title: string) => {
