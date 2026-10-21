@@ -43,6 +43,12 @@ function formatPrice(value: number) {
   return currency.format(value);
 }
 
+function formatWeight(value: unknown): string | null {
+  if (typeof value === "string") return value.trim() || null;
+  if (typeof value === "number" && Number.isFinite(value)) return `${value} g`;
+  return null;
+}
+
 const PREVIEW_MARKET_VALUES = [
   { name: "Surmai", price: 445, low: 410, high: 470, weight: "500 g", direction: "up" },
   { name: "Paplet", price: 620, low: 610, high: 675, weight: "1 kg", direction: "down" },
@@ -98,7 +104,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
       price: preview?.price ?? product.price!,
       low: preview?.low ?? product.marketRange?.low ?? null,
       high: preview?.high ?? product.marketRange?.high ?? null,
-      weight: preview?.weight ?? (product.netWeight?.trim() || product.grossWeight?.trim() || null),
+      weight: preview?.weight ?? formatWeight(product.netWeight) ?? formatWeight(product.grossWeight),
       direction: preview?.direction ?? product.marketMovement?.direction ?? null,
     };
   });
