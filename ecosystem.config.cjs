@@ -30,6 +30,7 @@ const environment = {
   VITE_GOOGLE_MAPS_API_KEY: process.env.VITE_GOOGLE_MAPS_API_KEY,
   ADMARK_API_KEY: process.env.ADMARK_API_KEY,
   ADMARK_PHONE_NUMBER_ID: process.env.ADMARK_PHONE_NUMBER_ID,
+  OTP_TEST_PHONE: process.env.OTP_TEST_PHONE,
 };
 
 module.exports = {

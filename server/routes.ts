@@ -3776,10 +3776,14 @@ export async function registerRoutes(
     }
     const normalised = String(phone).trim();
 
-    // Use a fixed OTP only in the Replit development workflow for checkout testing.
-    // Production continues to generate and send random OTPs.
-    const isDevelopmentOtp = process.env.NODE_ENV === "development";
-    const otp = isDevelopmentOtp ? "1111" : String(Math.floor(1000 + Math.random() * 9000));
+    const testOtpPhone = String(process.env.OTP_TEST_PHONE ?? "")
+      .replace(/\D/g, "")
+      .slice(-10);
+    const isAllowlistedTestPhone =
+      testOtpPhone.length === 10 && normalised === testOtpPhone;
+    const otp = isAllowlistedTestPhone
+      ? "1234"
+      : String(Math.floor(1000 + Math.random() * 9000));
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
     await OtpModel.findOneAndUpdate(
       { phone: normalised },
@@ -3787,7 +3791,7 @@ export async function registerRoutes(
       { upsert: true, new: true }
     );
 
-    if (isDevelopmentOtp) {
+    if (isAllowlistedTestPhone) {
       return res.json({ message: "OTP sent" });
     }
 
