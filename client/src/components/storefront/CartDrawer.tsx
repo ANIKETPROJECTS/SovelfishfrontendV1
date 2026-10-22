@@ -340,7 +340,7 @@ export function CartDrawer() {
     setIsCartOpen(false);
   };
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("online");
-  const [onlineGateway, setOnlineGateway] = useState<"razorpay" | "phonepe">("razorpay");
+  const onlineGateway = "phonepe" as const;
   const [phonePeEnabled, setPhonePeEnabled] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showUnserviceablePopup, setShowUnserviceablePopup] = useState(false);
@@ -356,9 +356,6 @@ export function CartDrawer() {
         if (active) {
           const enabled = data.enabled === true;
           setPhonePeEnabled(enabled);
-          if (enabled) {
-            setOnlineGateway((current) => current === "razorpay" ? "phonepe" : current);
-          }
         }
       })
       .catch(() => {
@@ -2763,48 +2760,26 @@ export function CartDrawer() {
                         />
                         Payment Method
                       </h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setOnlineGateway("razorpay")}
-                          aria-pressed={onlineGateway === "razorpay"}
-                          className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all text-left ${
-                            onlineGateway === "razorpay"
-                              ? "border-primary bg-primary/5"
-                              : "border-border bg-white"
-                          }`}
-                          data-testid="payment-online"
-                        >
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            onlineGateway === "razorpay" ? "border-primary" : "border-muted-foreground/40"
-                          }`}>
-                            {onlineGateway === "razorpay" && <div className="w-2 h-2 rounded-full bg-primary" />}
-                          </div>
-                          <span className="text-sm font-medium text-foreground">Razorpay UPI</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setOnlineGateway("phonepe")}
-                          disabled={!phonePeEnabled}
-                          aria-pressed={onlineGateway === "phonepe"}
-                          className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-                            onlineGateway === "phonepe"
-                              ? "border-primary bg-primary/5"
-                              : "border-border bg-white"
-                          }`}
-                          data-testid="payment-phonepe"
-                        >
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            onlineGateway === "phonepe" ? "border-primary" : "border-muted-foreground/40"
-                          }`}>
-                            {onlineGateway === "phonepe" && <div className="w-2 h-2 rounded-full bg-primary" />}
-                          </div>
-                          <span className="text-sm font-medium text-foreground">PhonePe · Live</span>
-                        </button>
+                      <div
+                        aria-label="UPI"
+                        aria-disabled={!phonePeEnabled}
+                        className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 ${
+                          phonePeEnabled
+                            ? "border-primary bg-primary/5"
+                            : "border-border bg-white opacity-60"
+                        }`}
+                        data-testid="payment-upi"
+                      >
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                          phonePeEnabled ? "border-primary" : "border-muted-foreground/40"
+                        }`}>
+                          {phonePeEnabled && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        </div>
+                        <span className="text-sm font-medium text-foreground">UPI</span>
                       </div>
                       {!phonePeEnabled && (
                         <p className="text-xs text-muted-foreground">
-                          PhonePe is unavailable until its live credentials are configured on this server.
+                          UPI is unavailable until live payment credentials are configured on this server.
                         </p>
                       )}
                     </div>
@@ -2834,15 +2809,22 @@ export function CartDrawer() {
                       </div>
                       <Button
                         onClick={placeOrder}
-                        disabled={isPending || isProcessingPayment || !customer || savedAddresses.length === 0 || !isHubReady}
+                        disabled={
+                          isPending ||
+                          isProcessingPayment ||
+                          !customer ||
+                          savedAddresses.length === 0 ||
+                          !isHubReady ||
+                          (paymentMethod === "online" && finalTotal > 0 && !phonePeEnabled)
+                        }
                         className="h-12 px-8 !rounded-full font-bold bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 flex items-center gap-2"
                         data-testid="button-place-order"
                       >
                         {!isHubReady
                           ? <><Loader2 className="w-4 h-4 animate-spin" />Loading delivery details...</>
                           : isPending || isProcessingPayment
-                          ? <><Loader2 className="w-4 h-4 animate-spin" />{paymentMethod === "online" && isProcessingPayment && finalTotal > 0 ? `Opening ${onlineGateway === "phonepe" ? "PhonePe" : "UPI"}...` : "Placing..."}</>
-                          : <>{paymentMethod === "online" && finalTotal > 0 ? onlineGateway === "phonepe" ? "Pay with PhonePe" : "Pay via UPI" : "Place Order"} <ChevronRight className="w-4 h-4" /></>
+                         ? <><Loader2 className="w-4 h-4 animate-spin" />{paymentMethod === "online" && isProcessingPayment && finalTotal > 0 ? "Opening payment..." : "Placing..."}</>
+                          : <>{paymentMethod === "online" && finalTotal > 0 ? "Pay Now" : "Place Order"} <ChevronRight className="w-4 h-4" /></>
                         }
                       </Button>
                     </div>
