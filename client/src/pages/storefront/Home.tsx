@@ -115,7 +115,10 @@ export default function Home() {
       if (Array.isArray(p.sectionId)) return p.sectionId.includes(sectionId);
       return p.sectionId === sectionId;
     }) || [];
-    return unlimited ? filtered : filtered.slice(0, 10);
+    const testItemFirst = [...filtered].sort(
+      (a, b) => Number(Boolean(b.isPhonePeTestItem)) - Number(Boolean(a.isPhonePeTestItem)),
+    );
+    return unlimited ? testItemFirst : testItemFirst.slice(0, 10);
   };
 
   const preorderProducts = (products ?? []).filter(

@@ -6,9 +6,64 @@ import { createServer } from "http";
 import { startInventorySyncScheduler } from "./inventorySync";
 import { SubHubModel } from "./adminDb";
 import { getHubModels } from "./hubConnections";
+import { getPhonePeClient } from "./phonepe";
 
 const app = express();
 const httpServer = createServer(app);
+
+async function ensurePhonePeTestItem() {
+  if (
+    process.env.PHONEPE_TEST_ITEM_ENABLED !== "true" ||
+    !getPhonePeClient()
+  ) {
+    return;
+  }
+
+  const dbName = "Thane";
+  const itemName = "PhonePe Test Item - ₹1";
+  const hub = await getHubModels(dbName);
+  const section = await hub.Section.findOne({
+    title: "Today's Special",
+    type: "products",
+    isActive: true,
+  }).sort({ sortOrder: 1 }).lean() as any;
+  if (!section) {
+    throw new Error(`Cannot enable PhonePe test item: no active Today's Special in ${dbName}.`);
+  }
+
+  const imageSource = await hub.Product.findOne({
+    name: "Surmai Slices - Mixed",
+  }).select("category imageUrl").lean() as any;
+  const now = new Date();
+
+  await hub.Product.findOneAndUpdate(
+    { name: itemName, isPhonePeTestItem: true },
+    {
+      $set: {
+        name: itemName,
+        category: imageSource?.category ?? "Surmai",
+        status: "available",
+        price: 1,
+        originalPrice: null,
+        unit: "1 piece",
+        imageUrl: imageSource?.imageUrl ?? null,
+        isPhonePeTestItem: true,
+        isArchived: true,
+        updatedAt: now,
+        sectionId: String(section._id),
+        description: "Temporary ₹1 PhonePe payment test item. Do not fulfill.",
+        quantity: 100,
+        preorderMode: "normal",
+        inventoryBatches: [],
+      },
+      $setOnInsert: {
+        priceHistory: [{ price: 1, changedAt: now, source: "created" }],
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  console.log("[PhonePe] ₹1 test item enabled for Thane Today's Special.");
+}
 
 app.use((req, res, next) => {
   if (req.path === "/combos" || req.path === "/combos/") {
@@ -114,6 +169,7 @@ app.use((req, res, next) => {
 
 (async () => {
   await registerRoutes(httpServer, app);
+  await ensurePhonePeTestItem();
   startInventorySyncScheduler();
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {

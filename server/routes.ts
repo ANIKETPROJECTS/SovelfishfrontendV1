@@ -289,6 +289,10 @@ export async function registerRoutes(
     }
     res.status(401).json({ message: "Unauthorized" });
   };
+  const isPhonePeTestItemAvailable = () =>
+    Boolean(getPhonePeClient()) &&
+    (process.env.NODE_ENV !== "production" ||
+      process.env.PHONEPE_TEST_ITEM_ENABLED === "true");
 
   // Auth routes
   app.post(api.auth.login.path, passport.authenticate("local"), (req, res) => {
@@ -404,7 +408,15 @@ export async function registerRoutes(
           hub.Combo.find({ _id: { $in: sourceIds } }).lean() as Promise<any[]>,
         ])
       : [[], []];
-    const sourceProductsById = new Map(sourceProducts.map((product: any) => [String(product._id), product]));
+    const safeCheckoutProduct = (product: any) => {
+      if (!product.isPhonePeTestItem) return product;
+      return isPhonePeTestItemAvailable()
+        ? { ...product, isArchived: false, status: "available" }
+        : { ...product, isArchived: true, status: "unavailable" };
+    };
+    const sourceProductsById = new Map(
+      sourceProducts.map((product: any) => [String(product._id), safeCheckoutProduct(product)]),
+    );
     const sourceCombosById = new Map(sourceCombos.map((combo: any) => [String(combo._id), combo]));
 
     const aggregated = new Map<string, CheckoutStockLine>();
@@ -454,7 +466,7 @@ export async function registerRoutes(
       : [];
     const productsById = new Map(sourceProductsById);
     for (const product of additionalProducts) {
-      productsById.set(String(product._id), product);
+      productsById.set(String(product._id), safeCheckoutProduct(product));
     }
     const lines = [...aggregated.values()];
     const unavailableItems = findCheckoutStockIssues(lines, productsById, missingNames);
@@ -490,7 +502,12 @@ export async function registerRoutes(
 
     // Match the same authoritative inventory source used by checkout. The
     // separate POS `batches` field is not decremented by storefront orders.
-    const availableQty = getCheckoutAvailableQuantity(doc, now);
+    const availableQty = getCheckoutAvailableQuantity(
+      isPhonePeTestItemAvailable() && doc.isPhonePeTestItem
+        ? { ...doc, isArchived: false, status: "available" }
+        : doc,
+      now,
+    );
     return {
       id: doc._id.toString(), name: doc.name, category: doc.category,
       subCategory: doc.subCategory ?? null, status: effectiveStatus,
@@ -498,8 +515,12 @@ export async function registerRoutes(
       marketMovement: getMarketMovement(doc.price, doc.priceHistory, now),
       marketRange: getDailyPriceRange(doc.price, doc.priceHistory, now),
       originalPrice: doc.originalPrice ?? null, unit: doc.unit ?? null,
-      imageUrl: doc.imageUrl ?? null, isArchived: doc.isArchived ?? false,
+      imageUrl: doc.imageUrl ?? null,
+      isArchived: isPhonePeTestItemAvailable() && doc.isPhonePeTestItem
+        ? false
+        : doc.isArchived ?? false,
       updatedAt: doc.updatedAt, sectionId: doc.sectionId ?? null,
+      isPhonePeTestItem: doc.isPhonePeTestItem === true,
       description: doc.description ?? null,
       grossWeight: doc.grossWeight ?? null, netWeight: doc.netWeight ?? null,
       pieces: doc.pieces ?? null, serves: doc.serves ?? null,
@@ -559,10 +580,24 @@ export async function registerRoutes(
   app.get(api.products.list.path, async (req, res) => {
     const hub = await getReqHubModels(req);
     if (!hub) return res.json([]);
-    const docs = await hub.Product.find({
-      isArchived: { $ne: true },
-      quantity: { $ne: 0 },
-    }).lean();
+    const productFilter: Record<string, unknown> = { quantity: { $ne: 0 } };
+    if (process.env.NODE_ENV === "production") {
+      if (isPhonePeTestItemAvailable()) {
+        productFilter.$or = [
+          { isPhonePeTestItem: { $ne: true }, isArchived: { $ne: true } },
+          { isPhonePeTestItem: true },
+        ];
+      } else {
+        productFilter.isArchived = { $ne: true };
+        productFilter.isPhonePeTestItem = { $ne: true };
+      }
+    } else {
+      productFilter.$or = [
+        { isArchived: { $ne: true } },
+        ...(isPhonePeTestItemAvailable() ? [{ isPhonePeTestItem: true }] : []),
+      ];
+    }
+    const docs = await hub.Product.find(productFilter).lean();
     res.json(docs.map(toProduct));
   });
 
@@ -1106,7 +1141,15 @@ export async function registerRoutes(
         const combo = combosById.get(id);
         if (product) {
           const price = Number(product.price);
-          if (product.isArchived || product.status === "unavailable" || !Number.isFinite(price) || price < 0) {
+          const testItemAvailable =
+            product.isPhonePeTestItem && isPhonePeTestItemAvailable();
+          if (
+            (product.isPhonePeTestItem && !testItemAvailable) ||
+            (product.isArchived && !testItemAvailable) ||
+            product.status === "unavailable" ||
+            !Number.isFinite(price) ||
+            price < 0
+          ) {
             throw Object.assign(new Error(`"${product.name}" is not available for online payment.`), { statusCode: 400 });
           }
           return {
