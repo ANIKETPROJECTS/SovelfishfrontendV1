@@ -353,7 +353,13 @@ export function CartDrawer() {
     fetch("/api/phonepe/config")
       .then((response) => response.ok ? response.json() : { enabled: false })
       .then((data) => {
-        if (active) setPhonePeEnabled(data.enabled === true);
+        if (active) {
+          const enabled = data.enabled === true;
+          setPhonePeEnabled(enabled);
+          if (enabled) {
+            setOnlineGateway((current) => current === "razorpay" ? "phonepe" : current);
+          }
+        }
       })
       .catch(() => {
         if (active) setPhonePeEnabled(false);
