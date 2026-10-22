@@ -3108,14 +3108,20 @@ export async function registerRoutes(
     }
     const normalised = String(phone).trim();
 
-    // Generate a secure 4-digit OTP and persist to MongoDB (survives restarts + multi-instance)
-    const otp = String(Math.floor(1000 + Math.random() * 9000));
+    // Use a fixed OTP only in the Replit development workflow for checkout testing.
+    // Production continues to generate and send random OTPs.
+    const isDevelopmentOtp = process.env.NODE_ENV === "development";
+    const otp = isDevelopmentOtp ? "1111" : String(Math.floor(1000 + Math.random() * 9000));
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
     await OtpModel.findOneAndUpdate(
       { phone: normalised },
       { otp, expiresAt },
       { upsert: true, new: true }
     );
+
+    if (isDevelopmentOtp) {
+      return res.json({ message: "OTP sent" });
+    }
 
     // Send OTP via Admark WhatsApp
     const admarkApiKey = process.env.ADMARK_API_KEY;
