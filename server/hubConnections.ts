@@ -32,7 +32,6 @@ const productSchema = new mongoose.Schema({
   originalPrice: { type: Number, default: null },
   unit: { type: String, default: null },
   imageUrl: { type: String, default: null },
-  isPhonePeTestItem: { type: Boolean, default: false },
   isArchived: { type: Boolean, default: false },
   updatedAt: { type: Date, default: Date.now },
   sectionId: { type: mongoose.Schema.Types.Mixed, default: null },

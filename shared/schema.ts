@@ -57,7 +57,6 @@ export type Product = {
   originalPrice: number | null;
   unit: string | null;
   imageUrl: string | null;
-  isPhonePeTestItem?: boolean;
   isArchived: boolean;
   updatedAt: Date;
   sectionId: string | string[] | null;
