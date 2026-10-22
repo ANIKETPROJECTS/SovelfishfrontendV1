@@ -77,6 +77,7 @@ const orderSchema = new mongoose.Schema(
     inventoryReviewRequired: { type: Boolean, default: false },
     upiTransactionId: { type: String, default: null },
     razorpayOrderId: { type: String, default: null },
+    phonepeOrderId: { type: String, default: null },
     pendingPaymentExpiresAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
@@ -91,6 +92,14 @@ orderSchema.index(
     unique: true,
     partialFilterExpression: { razorpayOrderId: { $type: "string" } },
     name: "uniq_razorpay_order_id",
+  },
+);
+orderSchema.index(
+  { phonepeOrderId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { phonepeOrderId: { $type: "string" } },
+    name: "uniq_phonepe_order_id",
   },
 );
 orderSchema.index(
@@ -164,6 +173,36 @@ export function getPendingCheckoutModel() {
   }
   return ordersConnection.models["PendingCheckout"] ||
     ordersConnection.model("PendingCheckout", pendingCheckoutSchema);
+}
+
+const phonePePendingCheckoutSchema = new mongoose.Schema(
+  {
+    phonepeOrderId: { type: String, required: true, unique: true, index: true },
+    providerOrderId: { type: String, default: null },
+    redirectUrl: { type: String, default: null },
+    orderPayload: { type: mongoose.Schema.Types.Mixed, required: true },
+    amountPaise: { type: Number, required: true },
+    currency: { type: String, default: "INR" },
+    status: { type: String, default: "initiating" },
+    finalizationStatus: { type: String, default: "pending" },
+    finalizationAttempts: { type: Number, default: 0 },
+    finalizationLockAt: { type: Date, default: null },
+    finalizedOrderId: { type: String, default: null },
+    lastError: { type: String, default: null },
+    createdAt: { type: Date, default: Date.now, expires: 86400 },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { versionKey: false },
+);
+phonePePendingCheckoutSchema.index({ status: 1, createdAt: 1 });
+phonePePendingCheckoutSchema.index({ finalizationStatus: 1, finalizationLockAt: 1 });
+
+export function getPhonePePendingCheckoutModel() {
+  if (!ordersConnection) {
+    throw new Error("Orders DB not connected. Call connectOrdersDb() first.");
+  }
+  return ordersConnection.models["PhonePePendingCheckout"] ||
+    ordersConnection.model("PhonePePendingCheckout", phonePePendingCheckoutSchema);
 }
 
 /**

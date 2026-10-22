@@ -8,7 +8,7 @@
     "build": "npx tsx script/build.ts",
     "start": "node script/start-with-ecosystem.mjs",
     "check": "tsc",
-    "test:payments": "node --import tsx --test server/razorpayPayment.test.ts"
+    "test:payments": "node --import tsx --test server/razorpayPayment.test.ts server/phonepe.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

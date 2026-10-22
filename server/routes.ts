@@ -7,7 +7,13 @@ import { normalizePreorderMode } from "../shared/productVisibility";
 import { isPreorderDateAvailable, isPreorderDateAvailableForAll, normalizePreorderAvailability } from "../shared/preorderAvailability";
 import passport from "passport";
 import { setupAuth } from "./auth";
-import { connectOrdersDb, generateOrderId, getOrderModel, getPendingCheckoutModel } from "./ordersDb";
+import {
+  connectOrdersDb,
+  generateOrderId,
+  getOrderModel,
+  getPendingCheckoutModel,
+  getPhonePePendingCheckoutModel,
+} from "./ordersDb";
 import { setImage, getImage, deleteImage } from "./imageStore";
 import { insertCarouselSlideSchema, insertCategorySchema, insertSectionSchema, insertComboSchema, insertCustomerAddressSchema, updateCustomerSchema, insertInventoryBatchSchema } from "@shared/schema";
 import { SuperHubModel, SubHubModel, OtpModel } from "./adminDb";
@@ -22,6 +28,7 @@ import {
 import { getDailyPriceRange, getMarketMovement } from "./marketPricing";
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { getPhonePeClient } from "./phonepe";
 import {
   buildFailedRazorpayPaymentState,
   buildSuccessfulRazorpayPaymentState,
@@ -995,6 +1002,561 @@ export async function registerRoutes(
     }
   });
 
+  const verifyPhonePePayment = async (phonepeOrderId: string, pending: any) => {
+    const client = getPhonePeClient();
+    if (!client) throw Object.assign(new Error("PhonePe is not configured."), { statusCode: 503 });
+    const status = await client.getOrderStatus(phonepeOrderId);
+    if (String(status.state ?? "").toUpperCase() !== "COMPLETED") {
+      return { status, payment: null };
+    }
+
+    const amountPaise = Number(status.amount);
+    if (!Number.isSafeInteger(amountPaise) || amountPaise !== Number(pending.amountPaise)) {
+      throw Object.assign(new Error("PhonePe payment amount does not match this checkout."), { statusCode: 409 });
+    }
+    const completedPayment = [...(status.paymentDetails ?? [])]
+      .reverse()
+      .find((payment) =>
+        String(payment.state ?? "").toUpperCase() === "COMPLETED" &&
+        typeof payment.transactionId === "string" &&
+        payment.transactionId.length > 0
+      );
+    if (!completedPayment?.transactionId) {
+      throw Object.assign(new Error("PhonePe did not return a completed transaction reference."), { statusCode: 503 });
+    }
+
+    return {
+      status,
+      payment: {
+        merchantOrderId: phonepeOrderId,
+        transactionId: completedPayment.transactionId,
+        amountPaise,
+        amount: amountPaise / 100,
+        currency: "INR",
+      },
+    };
+  };
+
+  app.get("/api/phonepe/config", (_req, res) => {
+    return res.json({ enabled: Boolean(getPhonePeClient()) });
+  });
+
+  app.post("/api/phonepe/create-payment", async (req, res) => {
+    const client = getPhonePeClient();
+    if (!client) return res.status(503).json({ message: "PhonePe payment is not configured." });
+    const sessionPhone = String(req.session.customerPhone ?? "").replace(/\D/g, "").slice(-10);
+    if (!sessionPhone) {
+      return res.status(401).json({ message: "Please log in before starting PhonePe checkout." });
+    }
+
+    try {
+      const parsedOrder = api.orders.create.input.safeParse(req.body?.orderPayload);
+      if (!parsedOrder.success) {
+        return res.status(400).json({ message: "The checkout details are incomplete. Please review your order." });
+      }
+      const orderPayload = parsedOrder.data as any;
+      const orderPhone = String(orderPayload.phone ?? "").replace(/\D/g, "").slice(-10);
+      if (!orderPhone || orderPhone !== sessionPhone) {
+        return res.status(403).json({ message: "The checkout customer does not match the signed-in account." });
+      }
+      const amount = Number(req.body?.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return res.status(400).json({ message: "Invalid payment amount." });
+      }
+
+      const hub = await getCheckoutHubModels(orderPayload.hubDbName);
+      if (!hub) {
+        return res.status(400).json({ message: "Please select a valid delivery hub." });
+      }
+      const stockResult = await validateCheckoutStock(hub, orderPayload.items);
+      if (!stockResult.inStock) {
+        const names = stockResult.unavailableItems.map((item: any) => item.name).join(", ");
+        return res.status(409).json({
+          code: "STOCK_UNAVAILABLE",
+          message: names
+            ? `${names} ${stockResult.unavailableItems.length === 1 ? "is" : "are"} no longer available in the requested quantity.`
+            : "One or more items are no longer available in the requested quantity.",
+          unavailableItems: stockResult.unavailableItems,
+        });
+      }
+
+      const slotError = await validateTimeslotBeforeCheckout({
+        hubDbName: orderPayload.hubDbName,
+        timeslotId: orderPayload.timeslotId,
+        deliveryDate: orderPayload.deliveryDate,
+        scheduleType: orderPayload.scheduleType,
+      });
+      if (slotError) return res.status(400).json({ message: slotError });
+
+      const productIds = [...new Set(
+        (orderPayload.items ?? []).map((item: any) => String(item.productId ?? "").trim()),
+      )];
+      const validProductIds = productIds.filter((id) => /^[a-f\d]{24}$/i.test(id));
+      const [productDocs, comboDocs] = validProductIds.length
+        ? await Promise.all([
+            hub.Product.find({ _id: { $in: validProductIds } }).lean() as Promise<any[]>,
+            hub.Combo.find({ _id: { $in: validProductIds } }).lean() as Promise<any[]>,
+          ])
+        : [[], []];
+      const productsById = new Map(productDocs.map((product: any) => [String(product._id), product]));
+      const combosById = new Map(comboDocs.map((combo: any) => [String(combo._id), combo]));
+      const trustedItems = (orderPayload.items ?? []).map((item: any) => {
+        const id = String(item.productId ?? "").trim();
+        const product = productsById.get(id);
+        const combo = combosById.get(id);
+        if (product) {
+          const price = Number(product.price);
+          if (product.isArchived || product.status === "unavailable" || !Number.isFinite(price) || price < 0) {
+            throw Object.assign(new Error(`"${product.name}" is not available for online payment.`), { statusCode: 400 });
+          }
+          return {
+            ...item,
+            name: String(product.name),
+            price,
+            unit: product.unit ?? item.unit ?? null,
+            imageUrl: product.imageUrl ?? item.imageUrl ?? null,
+          };
+        }
+        if (combo && combo.isActive !== false) {
+          const price = Number(combo.discountedPrice);
+          if (!Number.isFinite(price) || price < 0) {
+            throw Object.assign(new Error(`"${combo.name}" has an invalid price.`), { statusCode: 400 });
+          }
+          return {
+            ...item,
+            name: String(combo.name),
+            price,
+            imageUrl: combo.imageUrl ?? item.imageUrl ?? null,
+          };
+        }
+        throw Object.assign(new Error("One or more checkout items are no longer available."), { statusCode: 400 });
+      });
+      orderPayload.items = trustedItems;
+      const subtotal = trustedItems.reduce(
+        (sum: number, item: any) => sum + Number(item.price) * Number(item.quantity),
+        0,
+      );
+
+      let discount = 0;
+      const couponCode = String(orderPayload.couponCode ?? "").trim().toUpperCase();
+      if (couponCode) {
+        const coupon = await hub.Coupon.findOne({ code: couponCode, isActive: true }).lean() as any;
+        if (!coupon) {
+          return res.status(400).json({ message: "The applied coupon is no longer valid." });
+        }
+        if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+          return res.status(400).json({ message: "The applied coupon has expired." });
+        }
+        if (Number(coupon.minOrderAmount ?? 0) > subtotal) {
+          return res.status(400).json({ message: `Minimum order of ₹${coupon.minOrderAmount} is required for this coupon.` });
+        }
+        const customerRecord = await CustomerDbModel.findOne(
+          { phone: sessionPhone },
+          { activeCoupons: 1, usedCoupons: 1 },
+        ).lean() as any;
+        const couponId = String(coupon._id);
+        const activeEntry = (customerRecord?.activeCoupons ?? []).find(
+          (entry: any) => String(entry.couponId) === couponId,
+        );
+        const activeCount = activeEntry
+          ? (activeEntry.usedCount != null ? Number(activeEntry.usedCount) : 1)
+          : 0;
+        const historicalCount = (customerRecord?.usedCoupons ?? []).filter(
+          (entry: any) => String(entry.couponId) === couponId,
+        ).length;
+        const limit = coupon.isFirstTimeOnly || couponCode === "WELCOME100"
+          ? 1
+          : Number(coupon.maxUsage ?? 0) > 0
+          ? Number(coupon.maxUsage)
+          : null;
+        if (limit !== null && activeCount + historicalCount >= limit) {
+          return res.status(400).json({ message: "This coupon has reached its usage limit." });
+        }
+        discount = coupon.type === "flat"
+          ? Math.min(Number(coupon.discountValue), subtotal)
+          : Math.round((subtotal * Number(coupon.discountValue)) / 100);
+      }
+      let slotCharge = Number(orderPayload.slotCharge ?? orderPayload.instantDeliveryCharge ?? 0);
+
+      // Match the authoritative delivery fee used when persisting orders so
+      // PhonePe never charges the stale client-side estimate.
+      if (orderPayload.hubDbName && (orderPayload.deliveryType ?? "delivery") === "delivery") {
+        try {
+          const pincode = orderPayload.deliveryAddressDetail?.pincode;
+          const subHub = await SubHubModel.findOne({ dbName: orderPayload.hubDbName }).lean() as any;
+          let pincodeConfig = pincode
+            ? (subHub?.pincodes ?? []).find((entry: any) => String(entry.pincode).trim() === String(pincode).trim())
+            : null;
+          if (!pincodeConfig && pincode) {
+            pincodeConfig = await hub.Pincode.findOne({
+              pincode: String(pincode).trim(),
+              isActive: { $ne: false },
+            }).lean() as any;
+          }
+          if (pincodeConfig) {
+            let instantCharge = 0;
+            if (orderPayload.timeslotId) {
+              const timeslot = await hub.Timeslot.findById(orderPayload.timeslotId).lean() as any;
+              if (timeslot?.isInstant) instantCharge = Number(timeslot.extraCharge ?? 0);
+            }
+            slotCharge = Number(pincodeConfig.charge ?? 0) + instantCharge;
+          }
+        } catch (chargeError) {
+          console.error("[PhonePe] Could not recompute delivery fee before checkout.");
+          return res.status(503).json({ message: "Could not verify the delivery fee. Please try again." });
+        }
+      }
+
+      const checkoutTotal = subtotal - discount + slotCharge;
+      const walletAmount = (Array.isArray(orderPayload.payments) ? orderPayload.payments : [])
+        .filter((payment: any) => payment?.mode === "wallet")
+        .reduce((sum: number, payment: any) => sum + Number(payment.amount ?? 0), 0);
+      const expectedAmountPaise = Math.round((checkoutTotal - walletAmount) * 100);
+      if (
+        !Number.isFinite(subtotal) ||
+        !Number.isFinite(discount) ||
+        !Number.isFinite(slotCharge) ||
+        !Number.isFinite(walletAmount) ||
+        walletAmount < 0 ||
+        walletAmount > checkoutTotal ||
+        checkoutTotal <= 0 ||
+        expectedAmountPaise <= 0 ||
+        Math.round(amount * 100) !== expectedAmountPaise
+      ) {
+        return res.status(400).json({ message: "Payment amount does not match the verified checkout total." });
+      }
+
+      const normalizedOrderPayload = {
+        ...orderPayload,
+        couponCode: couponCode || null,
+        subtotal,
+        discount,
+        discountAmount: discount,
+        slotCharge,
+        total: checkoutTotal,
+      };
+      const requestOrigin = String(req.get("origin") ?? `${req.protocol}://${req.get("host") ?? ""}`);
+      let returnUrl: URL;
+      try {
+        const originUrl = new URL(requestOrigin);
+        const isLocalHttp =
+          originUrl.protocol === "http:" &&
+          ["localhost", "127.0.0.1"].includes(originUrl.hostname);
+        if (originUrl.protocol !== "https:" && !isLocalHttp) {
+          return res.status(400).json({ message: "A secure checkout return URL is required." });
+        }
+        returnUrl = new URL("/", originUrl.origin);
+      } catch {
+        return res.status(400).json({ message: "A valid checkout return URL is required." });
+      }
+
+      const phonepeOrderId = `FSX_${Date.now()}_${randomBytes(8).toString("hex")}`;
+      returnUrl.searchParams.set("phonepeOrderId", phonepeOrderId);
+      const PendingPhonePe = getPhonePePendingCheckoutModel();
+      await PendingPhonePe.create({
+        phonepeOrderId,
+        orderPayload: normalizedOrderPayload,
+        amountPaise: expectedAmountPaise,
+        currency: "INR",
+        status: "initiating",
+        finalizationStatus: "pending",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      try {
+        const checkout = await client.createPayment({
+          phonepeOrderId,
+          amountPaise: expectedAmountPaise,
+          redirectUrl: returnUrl.toString(),
+        });
+        if (!checkout.redirectUrl) {
+          throw new Error("PhonePe did not return a checkout URL.");
+        }
+        await PendingPhonePe.updateOne(
+          { phonepeOrderId },
+          {
+            $set: {
+              providerOrderId: checkout.orderId ?? null,
+              redirectUrl: checkout.redirectUrl,
+              status: "pending",
+              updatedAt: new Date(),
+            },
+          },
+        );
+        return res.json({ phonepeOrderId, redirectUrl: checkout.redirectUrl });
+      } catch (paymentCreateError: any) {
+        await PendingPhonePe.updateOne(
+          { phonepeOrderId },
+          {
+            $set: {
+              status: "initiating",
+              lastError: "PhonePe checkout initialization did not complete.",
+              updatedAt: new Date(),
+            },
+          },
+        );
+        console.error("[PhonePe] Checkout initialization failed.");
+        return res.status(503).json({ message: "Could not open PhonePe checkout. Please try again." });
+      }
+    } catch (error: any) {
+      console.error("[PhonePe] Could not prepare checkout:", error?.message ?? "unknown error");
+      return res.status(503).json({
+        message: error?.statusCode === 400 || error?.statusCode === 409
+          ? error.message
+          : "Could not prepare PhonePe checkout. Please try again.",
+      });
+    }
+  });
+
+  const finalizePhonePeCheckout = async (phonepeOrderId: string) => {
+    const PendingPhonePe = getPhonePePendingCheckoutModel();
+    const OrderModel = getOrderModel();
+    const pending = await PendingPhonePe.findOne({ phonepeOrderId }).lean() as any;
+    if (!pending?.orderPayload) {
+      throw Object.assign(new Error("PhonePe checkout was not found."), { statusCode: 404 });
+    }
+
+    const existingOrder = await OrderModel.findOne({ phonepeOrderId }).lean() as any;
+    if (existingOrder && ["paid", "completed"].includes(String(existingOrder.paymentStatus))) {
+      await PendingPhonePe.updateOne(
+        { phonepeOrderId },
+        {
+          $set: {
+            status: "completed",
+            finalizationStatus: "finalized",
+            finalizedOrderId: String(existingOrder.orderId ?? ""),
+            updatedAt: new Date(),
+          },
+        },
+      );
+      return { paid: true, order: existingOrder };
+    }
+
+    let status: any;
+    let payment: any;
+    try {
+      ({ status, payment } = await verifyPhonePePayment(phonepeOrderId, pending));
+    } catch (error: any) {
+      if (error?.statusCode === 409) {
+        await PendingPhonePe.updateOne(
+          { phonepeOrderId },
+          {
+            $set: {
+              status: "completed",
+              finalizationStatus: "manual_review",
+              finalizationLockAt: null,
+              lastError: "Provider payment details did not match the initiated checkout.",
+              updatedAt: new Date(),
+            },
+          },
+        );
+        return { paid: false, state: "MANUAL_REVIEW" };
+      }
+      throw error;
+    }
+    const providerState = String(status.state ?? "PENDING").toUpperCase();
+    if (!payment) {
+      if (["FAILED", "EXPIRED", "CANCELLED", "DECLINED"].includes(providerState)) {
+        await PendingPhonePe.updateOne(
+          { phonepeOrderId },
+          {
+            $set: {
+              status: "failed",
+              finalizationStatus: "failed",
+              lastError: null,
+              updatedAt: new Date(),
+            },
+          },
+        );
+      }
+      return { paid: false, state: providerState };
+    }
+
+    const now = new Date();
+    const staleLockBefore = new Date(now.getTime() - 2 * 60 * 1000);
+    const claimed = await PendingPhonePe.findOneAndUpdate(
+      {
+        phonepeOrderId,
+        finalizationStatus: { $in: ["pending", "retryable", "processing"] },
+        $or: [
+          { finalizationStatus: { $ne: "processing" } },
+          { finalizationLockAt: { $lte: staleLockBefore } },
+          { finalizationLockAt: null },
+        ],
+      },
+      {
+        $set: {
+          status: "completed",
+          finalizationStatus: "processing",
+          finalizationLockAt: now,
+          lastError: null,
+          updatedAt: now,
+        },
+        $inc: { finalizationAttempts: 1 },
+      },
+      { new: true },
+    ).lean();
+    if (!claimed) {
+      const finalized = await OrderModel.findOne({ phonepeOrderId }).lean() as any;
+      if (finalized && ["paid", "completed"].includes(String(finalized.paymentStatus))) {
+        return { paid: true, order: finalized };
+      }
+      throw Object.assign(new Error("PhonePe order finalization is already running. Retry shortly."), { statusCode: 503 });
+    }
+
+    try {
+      const walletPayments = (pending.orderPayload.payments ?? [])
+        .filter((entry: any) => entry?.mode === "wallet");
+      const orderPayload = {
+        ...pending.orderPayload,
+        phonepeOrderId,
+        paymentMode: "upi",
+        paymentStatus: "paid",
+        payments: [
+          ...walletPayments,
+          {
+            mode: "upi",
+            amount: payment.amount,
+            reference: payment.transactionId,
+            paidAt: new Date().toISOString(),
+          },
+        ],
+        paidAmount: walletPayments.reduce(
+          (sum: number, entry: any) => sum + Number(entry.amount ?? 0),
+          0,
+        ) + payment.amount,
+        dueAmount: 0,
+      };
+      const port = process.env.PORT || "5000";
+      const postOrder = (allowInventoryReview: boolean) => fetch(
+        `http://127.0.0.1:${port}/api/orders`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-FreshStockXchange-Payment-Finalizer": "1",
+            "X-FreshStockXchange-PhonePe-Finalizer": "1",
+            ...(allowInventoryReview ? { "X-FreshStockXchange-Paid-Recovery": "1" } : {}),
+          },
+          body: JSON.stringify(orderPayload),
+        },
+      );
+
+      let response = await postOrder(false);
+      if (response.status === 409) {
+        const conflict = await response.json().catch(() => ({})) as any;
+        if (conflict.code === "STOCK_UNAVAILABLE") {
+          response = await postOrder(true);
+        } else {
+          await PendingPhonePe.updateOne(
+            { phonepeOrderId, finalizationStatus: "processing" },
+            {
+              $set: {
+                status: "completed",
+                finalizationStatus: "manual_review",
+                finalizationLockAt: null,
+                lastError: "The verified payment could not be matched to an order.",
+                updatedAt: new Date(),
+              },
+            },
+          );
+          return { paid: false, state: "MANUAL_REVIEW" };
+        }
+      }
+      if (!response.ok) {
+        if (response.status >= 400 && response.status < 500) {
+          await PendingPhonePe.updateOne(
+            { phonepeOrderId, finalizationStatus: "processing" },
+            {
+              $set: {
+                status: "completed",
+                finalizationStatus: "manual_review",
+                finalizationLockAt: null,
+                lastError: "The verified payment needs manual order review.",
+                updatedAt: new Date(),
+              },
+            },
+          );
+          return { paid: false, state: "MANUAL_REVIEW" };
+        }
+        throw new Error(`PhonePe order finalization returned HTTP ${response.status}.`);
+      }
+      const order = await response.json() as any;
+      if (!["paid", "completed"].includes(String(order.paymentStatus))) {
+        throw new Error("The PhonePe order was not saved as paid.");
+      }
+      await PendingPhonePe.updateOne(
+        { phonepeOrderId },
+        {
+          $set: {
+            status: "completed",
+            finalizationStatus: "finalized",
+            finalizationLockAt: null,
+            finalizedOrderId: String(order.orderId ?? ""),
+            lastError: null,
+            updatedAt: new Date(),
+          },
+        },
+      );
+      return { paid: true, order };
+    } catch (error) {
+      await PendingPhonePe.updateOne(
+        { phonepeOrderId, finalizationStatus: "processing" },
+        {
+          $set: {
+            status: "completed",
+            finalizationStatus: "retryable",
+            finalizationLockAt: null,
+            lastError: "The verified payment needs order finalization.",
+            updatedAt: new Date(),
+          },
+        },
+      );
+      throw error;
+    }
+  };
+
+  app.get("/api/phonepe/order-status/:phonepeOrderId", async (req, res) => {
+    const phonepeOrderId = String(req.params.phonepeOrderId ?? "");
+    if (!/^FSX_[A-Za-z0-9_-]{8,80}$/.test(phonepeOrderId)) {
+      return res.status(400).json({ message: "Invalid PhonePe order ID." });
+    }
+    try {
+      const result = await finalizePhonePeCheckout(phonepeOrderId);
+      return res.json({
+        paid: result.paid,
+        state: result.paid ? "COMPLETED" : result.state,
+        orderId: result.paid ? String(result.order?.orderId ?? "") : undefined,
+      });
+    } catch (error: any) {
+      const statusCode = error?.statusCode === 404 ? 404 : 503;
+      return res.status(statusCode).json({ message: error?.message || "Could not verify PhonePe payment." });
+    }
+  });
+
+  const phonePeReconciliationTimer = setInterval(async () => {
+    const client = getPhonePeClient();
+    if (!client) return;
+    try {
+      const pendingCheckouts = await getPhonePePendingCheckoutModel().find({
+        status: { $in: ["initiating", "pending", "completed"] },
+        finalizationStatus: { $in: ["pending", "retryable", "processing"] },
+        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      }).sort({ createdAt: 1 }).limit(20).lean() as any[];
+      for (const pending of pendingCheckouts) {
+        try {
+          await finalizePhonePeCheckout(String(pending.phonepeOrderId));
+        } catch (error: any) {
+          console.warn("[PhonePe] Pending checkout reconciliation will retry:", error?.message ?? "unknown error");
+        }
+      }
+    } catch (error: any) {
+      console.warn("[PhonePe] Could not scan pending checkouts:", error?.message ?? "unknown error");
+    }
+  }, 60_000);
+  phonePeReconciliationTimer.unref?.();
+
   const finalizeCapturedRazorpayPayment = async (
     razorpayOrderId: string,
     razorpayPaymentId: string,
@@ -1853,6 +2415,8 @@ export async function registerRoutes(
         localAddress === "::ffff:127.0.0.1";
       const isInternalPaymentFinalizer =
     req.headers["x-freshstockxchange-payment-finalizer"] === "1" && isLocalRequest;
+      const isInternalPhonePeFinalizer =
+        req.headers["x-freshstockxchange-phonepe-finalizer"] === "1" && isInternalPaymentFinalizer;
       const isPaidWebhookRecovery =
     req.headers["x-freshstockxchange-paid-recovery"] === "1" &&
         isInternalPaymentFinalizer;
@@ -1861,9 +2425,19 @@ export async function registerRoutes(
         isInternalPaymentFinalizer;
       const requestUpiReference =
         (input.payments ?? []).find((payment: any) => payment.mode === "upi" && payment.reference)?.reference ?? null;
+      const phonepeOrderId = input.phonepeOrderId ? String(input.phonepeOrderId) : null;
 
       // All Razorpay order writes must pass through the serialized finalizer.
-      if ((input.razorpayOrderId || requestUpiReference) && !isInternalPaymentFinalizer) {
+      if (input.razorpayOrderId && phonepeOrderId) {
+        return res.status(400).json({ message: "Choose one payment provider for this order." });
+      }
+      if (phonepeOrderId && !isInternalPhonePeFinalizer) {
+        return res.status(403).json({ message: "PhonePe orders must use the payment finalization endpoint." });
+      }
+      if (
+        (input.razorpayOrderId || (requestUpiReference && !phonepeOrderId)) &&
+        !isInternalPaymentFinalizer
+      ) {
         return res.status(403).json({ message: "Razorpay orders must use the payment finalization endpoint." });
       }
 
@@ -1882,8 +2456,42 @@ export async function registerRoutes(
       }
 
       let verifiedRazorpayPayment: Awaited<ReturnType<typeof fetchVerifiedRazorpayPayment>> | null = null;
+      let verifiedPhonePePayment: {
+        merchantOrderId: string;
+        transactionId: string;
+        amountPaise: number;
+        amount: number;
+        currency: string;
+      } | null = null;
       let inventoryReviewRequired = isPaidWebhookRecovery;
-      if (input.razorpayOrderId || requestUpiReference) {
+      if (phonepeOrderId) {
+        if (!isInternalPhonePeFinalizer || !requestUpiReference) {
+          return res.status(400).json({ message: "Incomplete PhonePe payment details." });
+        }
+        const pendingPhonePe = await getPhonePePendingCheckoutModel()
+          .findOne({ phonepeOrderId })
+          .lean() as any;
+        if (!pendingPhonePe) {
+          return res.status(404).json({ message: "PhonePe checkout recovery data was not found." });
+        }
+        try {
+          const verification = await verifyPhonePePayment(phonepeOrderId, pendingPhonePe);
+          if (!verification.payment) {
+            return res.status(400).json({ message: "PhonePe payment is not completed." });
+          }
+          if (String(requestUpiReference) !== verification.payment.transactionId) {
+            return res.status(400).json({ message: "PhonePe transaction reference does not match." });
+          }
+          verifiedPhonePePayment = verification.payment;
+        } catch (paymentErr: any) {
+          if (paymentErr?.statusCode === 409) {
+            return res.status(409).json({ message: paymentErr.message });
+          }
+          console.error("[PhonePe] Payment verification lookup failed.");
+          return res.status(502).json({ message: "Could not verify PhonePe payment." });
+        }
+      }
+      if (!phonepeOrderId && (input.razorpayOrderId || requestUpiReference)) {
         if (isPendingRazorpayCreation) {
           // The internal create-order route is writing the provisional record
           // before the customer can reach Razorpay; there is no payment ID yet.
@@ -1904,7 +2512,18 @@ export async function registerRoutes(
           }
         }
       }
-      const runPrePaymentGuards = shouldValidatePrePaymentGuards(!!verifiedRazorpayPayment);
+      if (phonepeOrderId) {
+        const alreadySaved = await getOrderModel().findOne({ phonepeOrderId }).lean() as any;
+        if (alreadySaved) {
+          if (["paid", "completed"].includes(String(alreadySaved.paymentStatus))) {
+            return res.status(200).json({ ...alreadySaved, id: String(alreadySaved._id) });
+          }
+          return res.status(409).json({ message: "This PhonePe order is already being finalized." });
+        }
+      }
+      const runPrePaymentGuards = shouldValidatePrePaymentGuards(
+        !!verifiedRazorpayPayment || !!verifiedPhonePePayment,
+      );
 
       // Preorder dates are product eligibility metadata, not a client-trusted
       // calendar choice. Re-read the current products and validate the one
@@ -1993,7 +2612,9 @@ export async function registerRoutes(
       // this is the server-side safety net in case the client-side guard is ever
       // bypassed (double network retry, multiple tabs, etc.).
       let pendingExistingOrderId: string | null = null;
-      const upiReference = (input.payments ?? []).find((p: any) => p.mode === "upi" && p.reference)?.reference;
+      const upiReference = phonepeOrderId
+        ? null
+        : (input.payments ?? []).find((p: any) => p.mode === "upi" && p.reference)?.reference;
       if (upiReference) {
         const existing = await getOrderModel().findOne({
           $or: [
@@ -2103,7 +2724,7 @@ export async function registerRoutes(
         const inventoryHub = await getHubModels(input.hubDbName);
         const stockResult = await validateCheckoutStock(inventoryHub, input.items);
         if (!stockResult.inStock) {
-          if (verifiedRazorpayPayment) {
+          if (verifiedRazorpayPayment || verifiedPhonePePayment) {
             // Payment is already captured: retain the order for Admin to review
             // and perform the inventory deduction rather than discarding a paid order.
             inventoryReviewRequired = true;
@@ -2195,7 +2816,12 @@ export async function registerRoutes(
       // that value, only falling back to the client-submitted figure if lookup is impossible
       // (e.g. pickup/takeaway orders with no hub, or a legacy pincode not in the config yet).
       let slotCharge = clientSlotCharge;
-      if (!verifiedRazorpayPayment && input.hubDbName && (input.deliveryType ?? "delivery") === "delivery") {
+      if (
+        !verifiedRazorpayPayment &&
+        !verifiedPhonePePayment &&
+        input.hubDbName &&
+        (input.deliveryType ?? "delivery") === "delivery"
+      ) {
         try {
           const pincode = input.deliveryAddressDetail?.pincode;
           const subHubForCharge = await SubHubModel.findOne({ dbName: input.hubDbName }).lean() as any;
@@ -2246,6 +2872,14 @@ export async function registerRoutes(
       // trusting a client-submitted total, so a stale/incorrect delivery charge can never
       // silently carry through into the amount actually charged/recorded.
       const total = subtotal - discount + slotCharge;
+      if (verifiedPhonePePayment) {
+        const walletPaid = (input.payments ?? [])
+          .filter((payment: any) => payment.mode === "wallet")
+          .reduce((sum: number, payment: any) => sum + Number(payment.amount ?? 0), 0);
+        if (Math.round((total - walletPaid) * 100) !== verifiedPhonePePayment.amountPaise) {
+          return res.status(409).json({ message: "The paid amount no longer matches the order total. Please contact support." });
+        }
+      }
 
       // Build coupon arrays
       const couponIds = resolvedCoupon ? [resolvedCoupon.couponId.toString()] : [];
@@ -2313,6 +2947,33 @@ export async function registerRoutes(
             paymentId: verifiedRazorpayPayment.id,
             existingPayments: input.payments,
           })
+        : verifiedPhonePePayment
+        ? (() => {
+            const walletPayments = (input.payments ?? [])
+              .filter((payment: any) => payment.mode === "wallet");
+            const payments = [
+              ...walletPayments,
+              {
+                mode: "upi",
+                amount: verifiedPhonePePayment!.amount,
+                reference: verifiedPhonePePayment!.transactionId,
+                paidAt: new Date().toISOString(),
+              },
+            ];
+            const paidAmount = payments.reduce(
+              (sum: number, payment: any) => sum + Number(payment.amount ?? 0),
+              0,
+            );
+            return {
+              paymentStatus: paidAmount >= total ? "paid" : "partial",
+              payments,
+              paidAmount,
+              dueAmount: Math.max(0, total - paidAmount),
+              paymentMode: "upi",
+              upiVariant: input.upiVariant ?? null,
+              upiTransactionId: verifiedPhonePePayment!.transactionId,
+            };
+          })()
         : {
             paymentStatus: input.paymentStatus ?? "unpaid",
             payments: input.payments ?? [],
@@ -2359,6 +3020,7 @@ export async function registerRoutes(
         timeslotStart: input.timeslotStart ?? null,
         timeslotEnd: input.timeslotEnd ?? null,
         razorpayOrderId: verifiedRazorpayPayment?.orderId ?? input.razorpayOrderId ?? null,
+        phonepeOrderId: verifiedPhonePePayment?.merchantOrderId ?? input.phonepeOrderId ?? null,
       };
 
       const OrderModel = getOrderModel();

@@ -196,6 +196,7 @@ export type OrderRequest = {
   superHubId?: string | null;
   subHubId?: string | null;
   subHubName?: string | null;
+  phonepeOrderId?: string | null;
 };
 
 export type DeliveryAddressDetail = {
@@ -248,6 +249,7 @@ export type InsertOrderRequest = {
   subHubId?: string | null;
   subHubName?: string | null;
   razorpayOrderId?: string | null;
+  phonepeOrderId?: string | null;
 };
 
 export type InventoryBatch = {
@@ -371,6 +373,7 @@ export const insertOrderRequestSchema = z.object({
   dueAmount: z.number().nullable().optional(),
   paymentStatus: z.string().nullable().optional(),
   razorpayOrderId: z.string().nullable().optional(),
+  phonepeOrderId: z.string().nullable().optional(),
 });
 
 export const insertUserSchema = z.object({

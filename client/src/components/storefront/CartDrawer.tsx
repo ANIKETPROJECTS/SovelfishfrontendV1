@@ -340,12 +340,29 @@ export function CartDrawer() {
     setIsCartOpen(false);
   };
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("online");
+  const [onlineGateway, setOnlineGateway] = useState<"razorpay" | "phonepe">("razorpay");
+  const [phonePeEnabled, setPhonePeEnabled] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showUnserviceablePopup, setShowUnserviceablePopup] = useState(false);
   const [unserviceablePincode, setUnserviceablePincode] = useState("");
   const [selectedTimeslotId, setSelectedTimeslotId] = useState<string | null>(null);
   const [expandedInstructions, setExpandedInstructions] = useState<Record<number, boolean>>({});
   const [useWallet, setUseWallet] = useState(false);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/phonepe/config")
+      .then((response) => response.ok ? response.json() : { enabled: false })
+      .then((data) => {
+        if (active) setPhonePeEnabled(data.enabled === true);
+      })
+      .catch(() => {
+        if (active) setPhonePeEnabled(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const showRazorpaySuccess = useCallback(() => {
     orderClaimedRef.current = true;
     paymentSucceededRef.current = true;
@@ -366,6 +383,97 @@ export function CartDrawer() {
       paymentSucceededRef.current = false;
     }, 1500);
   }, [clearCart, setIsCartOpen, setUseWallet]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const phonepeOrderId = params.get("phonepeOrderId");
+    if (!phonepeOrderId) return;
+
+    let cancelled = false;
+    let timer: number | undefined;
+    let attempts = 0;
+    setIsProcessingPayment(true);
+
+    const cleanReturnUrl = () => {
+      const current = new URL(window.location.href);
+      current.searchParams.delete("phonepeOrderId");
+      window.history.replaceState(
+        {},
+        "",
+        `${current.pathname}${current.search}${current.hash}`,
+      );
+    };
+
+    const checkPayment = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      try {
+        const response = await fetch(
+          `/api/phonepe/order-status/${encodeURIComponent(phonepeOrderId)}`,
+          { credentials: "include" },
+        );
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.message || "Could not verify PhonePe payment.");
+        if (result.paid === true) {
+          cleanReturnUrl();
+          queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/customer/me"] });
+          showRazorpaySuccess();
+          return;
+        }
+        if (String(result.state).toUpperCase() === "MANUAL_REVIEW") {
+          cleanReturnUrl();
+          setIsProcessingPayment(false);
+          setIsCartOpen(true);
+          toast({
+            title: "Payment needs confirmation",
+            description: "Do not try to pay again. Contact support to confirm this payment and order.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (["FAILED", "EXPIRED", "CANCELLED", "DECLINED"].includes(String(result.state).toUpperCase())) {
+          cleanReturnUrl();
+          setIsProcessingPayment(false);
+          setIsCartOpen(true);
+          toast({
+            title: "PhonePe payment was not completed",
+            description: "Your cart is still available. You can try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (attempts >= 60) {
+          setIsProcessingPayment(false);
+          setIsCartOpen(true);
+          toast({
+            title: "Payment is still being confirmed",
+            description: "Please don’t pay again. Refresh this page to check the order status.",
+          });
+          return;
+        }
+        timer = window.setTimeout(checkPayment, 2_000);
+      } catch (error: any) {
+        if (attempts >= 60) {
+          setIsProcessingPayment(false);
+          setIsCartOpen(true);
+          toast({
+            title: "Could not confirm the payment yet",
+            description: error?.message || "Please refresh this page before trying to pay again.",
+            variant: "destructive",
+          });
+          return;
+        }
+        timer = window.setTimeout(checkPayment, 2_000);
+      }
+    };
+
+    void checkPayment();
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [queryClient, setIsCartOpen, showRazorpaySuccess, toast]);
   const requestPendingRazorpayOrderCleanup = useCallback(async (
     orderId: string | null | undefined,
     cancelToken: string | null | undefined,
@@ -1188,6 +1296,51 @@ export function CartDrawer() {
           toast({ title: err?.message || "Could not place order. Please try again.", variant: "destructive" });
         },
       });
+      return;
+    }
+
+    if (onlineGateway === "phonepe") {
+      setIsProcessingPayment(true);
+      try {
+        const response = await fetch("/api/phonepe/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            amount: finalTotal,
+            orderPayload: buildOrderPayload(selected),
+          }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (result.code === "STOCK_UNAVAILABLE") {
+            openStockIssueDialog({
+              inStock: false,
+              unavailableItems: result.unavailableItems ?? [],
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+          } else {
+            toast({
+              title: result.message || "Could not start PhonePe checkout.",
+              variant: "destructive",
+            });
+          }
+          setIsProcessingPayment(false);
+          setIsCartOpen(true);
+          return;
+        }
+        if (!result.redirectUrl) {
+          throw new Error("PhonePe did not provide a checkout link.");
+        }
+        window.location.assign(result.redirectUrl);
+      } catch (error: any) {
+        setIsProcessingPayment(false);
+        setIsCartOpen(true);
+        toast({
+          title: error?.message || "Could not start PhonePe checkout.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -2604,18 +2757,50 @@ export function CartDrawer() {
                         />
                         Payment Method
                       </h3>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <button
-                            type="button"
-                            className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-primary bg-primary/5 transition-all text-left"
-                            data-testid="payment-online"
-                          >
-                            <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center flex-shrink-0">
-                              <div className="w-2 h-2 rounded-full bg-primary" />
-                            </div>
-                            <span className="text-sm font-medium text-foreground">UPI</span>
-                          </button>
+                          type="button"
+                          onClick={() => setOnlineGateway("razorpay")}
+                          aria-pressed={onlineGateway === "razorpay"}
+                          className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all text-left ${
+                            onlineGateway === "razorpay"
+                              ? "border-primary bg-primary/5"
+                              : "border-border bg-white"
+                          }`}
+                          data-testid="payment-online"
+                        >
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                            onlineGateway === "razorpay" ? "border-primary" : "border-muted-foreground/40"
+                          }`}>
+                            {onlineGateway === "razorpay" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          <span className="text-sm font-medium text-foreground">Razorpay UPI</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOnlineGateway("phonepe")}
+                          disabled={!phonePeEnabled}
+                          aria-pressed={onlineGateway === "phonepe"}
+                          className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                            onlineGateway === "phonepe"
+                              ? "border-primary bg-primary/5"
+                              : "border-border bg-white"
+                          }`}
+                          data-testid="payment-phonepe"
+                        >
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                            onlineGateway === "phonepe" ? "border-primary" : "border-muted-foreground/40"
+                          }`}>
+                            {onlineGateway === "phonepe" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          <span className="text-sm font-medium text-foreground">PhonePe · Live</span>
+                        </button>
                       </div>
+                      {!phonePeEnabled && (
+                        <p className="text-xs text-muted-foreground">
+                          PhonePe is unavailable until its live credentials are configured on this server.
+                        </p>
+                      )}
                     </div>
                     )}
                   </div>
@@ -2650,8 +2835,8 @@ export function CartDrawer() {
                         {!isHubReady
                           ? <><Loader2 className="w-4 h-4 animate-spin" />Loading delivery details...</>
                           : isPending || isProcessingPayment
-                          ? <><Loader2 className="w-4 h-4 animate-spin" />{paymentMethod === "online" && isProcessingPayment && finalTotal > 0 ? "Opening UPI..." : "Placing..."}</>
-                          : <>{paymentMethod === "online" && finalTotal > 0 ? "Pay via UPI" : "Place Order"} <ChevronRight className="w-4 h-4" /></>
+                          ? <><Loader2 className="w-4 h-4 animate-spin" />{paymentMethod === "online" && isProcessingPayment && finalTotal > 0 ? `Opening ${onlineGateway === "phonepe" ? "PhonePe" : "UPI"}...` : "Placing..."}</>
+                          : <>{paymentMethod === "online" && finalTotal > 0 ? onlineGateway === "phonepe" ? "Pay with PhonePe" : "Pay via UPI" : "Place Order"} <ChevronRight className="w-4 h-4" /></>
                         }
                       </Button>
                     </div>
