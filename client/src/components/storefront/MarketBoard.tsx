@@ -282,24 +282,21 @@ export function MarketBoard({ products }: MarketBoardProps) {
             >
               <div className="market-featured-top">
                 <span className="market-feature-label">TOP DEAL TODAY</span>
-                <span className={`market-tag ${featuredRow.direction === "down" ? "is-dropped" : featuredRow.direction === "up" ? "is-rising" : "is-steady"}`}>
-                  {featuredRow.direction === "down" ? "Price Dropped" : featuredRow.direction === "up" ? "Price Rising" : "Steady"}
-                </span>
               </div>
               <div className="market-featured-name">
-                <div>
-                  <h2>{featuredRow.name}</h2>
-                  <span className="market-weight-chip">{featuredRow.weight ?? "Fresh catch"}</span>
+                <h2>{featuredRow.name}</h2>
+              </div>
+              <div className="market-featured-metrics">
+                <span className="market-weight-chip">{featuredRow.weight ?? "Fresh catch"}</span>
+                <div className="market-featured-price">
+                  <span aria-hidden="true">₹</span>
+                  <span
+                    className="market-price-count"
+                    style={{ "--market-target": Math.round(featuredRow.price) } as CSSProperties & { "--market-target": number }}
+                    aria-label={formatPrice(featuredRow.price)}
+                  />
                 </div>
                 <TrendBadge row={featuredRow} />
-              </div>
-              <div className="market-featured-price">
-                <span aria-hidden="true">₹</span>
-                <span
-                  className="market-price-count"
-                  style={{ "--market-target": Math.round(featuredRow.price) } as CSSProperties & { "--market-target": number }}
-                  aria-label={formatPrice(featuredRow.price)}
-                />
               </div>
               <p className="market-featured-caption">Today&apos;s market price</p>
               <Sparkline row={featuredRow} featured />
@@ -315,9 +312,9 @@ export function MarketBoard({ products }: MarketBoardProps) {
                 >
                   <div className="market-mini-top">
                     <h3>{row.name}</h3>
-                    <span className="market-weight-chip">{row.weight ?? "Fresh catch"}</span>
                   </div>
                   <div className="market-mini-price-row">
+                    <span className="market-weight-chip">{row.weight ?? "Fresh catch"}</span>
                     <div className="market-mini-price">
                       <span aria-hidden="true">₹</span>
                       <span
@@ -328,9 +325,6 @@ export function MarketBoard({ products }: MarketBoardProps) {
                     </div>
                     <TrendBadge row={row} />
                   </div>
-                  <span className={`market-tag ${row.direction === "down" ? "is-dropped" : row.direction === "up" ? "is-rising" : "is-steady"}`}>
-                    {row.direction === "down" ? "Price Dropped" : row.direction === "up" ? "Price Rising" : "Steady"}
-                  </span>
                   <Sparkline row={row} />
                   <MarketRangeBar row={row} />
                 </article>
