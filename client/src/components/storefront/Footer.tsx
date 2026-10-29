@@ -29,7 +29,7 @@ function LazyMap() {
       {visible ? (
         <iframe
           title="Fresh Stock Xchange Location"
-          src="https://www.google.com/maps?q=RH%2018%2C%20Sairaj%20Society%2C%20Plot%2022%2C%20Sector%206%2C%20Airoli%2C%20Navi%20Mumbai%2C%20Maharashtra%20400701&output=embed"
+          src="https://www.google.com/maps?q=RH%2018%2C%20Sairaj%20Society%2C%20Plot%2022%2C%20Sector%206%2C%20Airoli%2C%20Navi%20Mumbai%2C%20Maharashtra%20400708&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0, minHeight: "200px", display: "block" }}
@@ -117,20 +117,20 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center gap-2.5">
                 <img src={phoneIcon} alt="" aria-hidden className="w-4 h-4 shrink-0" style={whiteFilter} />
-                <a href="tel:+918879514551" className="text-white text-sm hover:opacity-75 transition-opacity">
-                  088795 14551
+                <a href="tel:+919619590694" className="text-white text-sm hover:opacity-75 transition-opacity">
+                  +91 9619590694
                 </a>
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin aria-hidden className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="text-white text-sm leading-snug">
-                  RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400701
+                  RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400708
                 </span>
               </li>
               <li className="flex items-center gap-2.5">
                 <img src={mailIcon} alt="" aria-hidden className="w-4 h-4 shrink-0" style={whiteFilter} />
-                <a href="mailto:freshstockxchange@gmail.com" className="text-white text-sm hover:opacity-75 transition-opacity">
-                  freshstockxchange@gmail.com
+                <a href="mailto:info@freshstockxchange.com" className="text-white text-sm hover:opacity-75 transition-opacity">
+                  info@freshstockxchange.com
                 </a>
               </li>
               <li className="flex items-start gap-2.5">

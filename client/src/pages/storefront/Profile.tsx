@@ -376,8 +376,8 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
       <img src="/brand/fresh-stock-xchange.png" alt="Fresh Stock Xchange" style="height:48px;width:auto;display:block;" />
        <div class="brand-sub">Fresh Seafood &amp; Meat &middot; Airoli, Navi Mumbai</div>
       <div class="company-details">
-        <p><span class="detail-label">ADD :</span> RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400701</p>
-        <p><span class="detail-label">Mob No :</span> 088795 14551</p>
+        <p><span class="detail-label">ADD :</span> RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400708</p>
+        <p><span class="detail-label">Mob No :</span> +91 9619590694</p>
         <p><span class="detail-label">FSSAI :</span> 75050106800481</p>
       </div>
     </div>
@@ -1627,7 +1627,7 @@ export default function Profile() {
             </div>
             <div className="w-full flex flex-col gap-2.5 mb-4">
               <a
-                href={`https://wa.me/918879514551?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
+                href={`https://wa.me/919619590694?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
@@ -1636,18 +1636,18 @@ export default function Profile() {
                 <img src={whatsappIcon} alt="WhatsApp" className="w-7 h-7 rounded-lg flex-shrink-0" />
                 <div className="text-left">
                   <p className="text-white text-xs font-semibold leading-none mb-0.5">Chat on WhatsApp</p>
-                  <p className="text-white/90 text-xs font-normal">088795 14551</p>
+                  <p className="text-white/90 text-xs font-normal">+91 9619590694</p>
                 </div>
               </a>
               <a
-                href="tel:+918879514551"
+                href="tel:+919619590694"
                 className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
                 style={{ backgroundColor: "#2196F3" }}
               >
                 <img src={callIcon} alt="Call" className="w-7 h-7 rounded-full flex-shrink-0" />
                 <div className="text-left">
                   <p className="text-white text-xs font-semibold leading-none mb-0.5">Call Us</p>
-                  <p className="text-white/90 text-xs font-normal">088795 14551</p>
+                  <p className="text-white/90 text-xs font-normal">+91 9619590694</p>
                 </div>
               </a>
             </div>

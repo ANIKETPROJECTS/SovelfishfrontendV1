@@ -9,8 +9,8 @@ import callIcon from "@assets/call_(2)_1779950579819.png";
 import scooterImg from "@assets/animation-original_(51)_1779950354153.png";
 
 const BRAND_BLUE = "#1B324D";
-const PHONE = "+918879514551";
-const PHONE_DISPLAY = "088795 14551";
+const PHONE = "+919619590694";
+const PHONE_DISPLAY = "+91 9619590694";
 const WA_LINK = `https://wa.me/${PHONE.replace("+", "")}?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`;
 
 type CheckStatus = "idle" | "checking" | "eligible" | "ineligible";
