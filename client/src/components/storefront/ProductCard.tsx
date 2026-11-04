@@ -149,6 +149,12 @@ function SingleProductCard({
           {product.name}
         </h3>
 
+        {isSaleVariantCard && product.unit && (
+          <p className="mb-2 text-sm leading-snug text-muted-foreground">
+            {product.unit}
+          </p>
+        )}
+
         {!isSaleVariantCard && (
           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground mb-2.5 font-normal">
             {product.grossWeight && (
@@ -172,7 +178,7 @@ function SingleProductCard({
         <div className="flex items-center justify-between mt-auto pt-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg sm:text-xl font-semibold text-foreground">₹{formatStorePrice(displayPrice)}</span>
-            <span className="text-xs text-muted-foreground">{product.unit}</span>
+            {!isSaleVariantCard && <span className="text-xs text-muted-foreground">{product.unit}</span>}
             {strikePrice && <span className="text-sm text-muted-foreground line-through">₹{strikePrice}</span>}
             {discountPct && <span className="text-sm font-semibold text-green-600">{discountPct}% off</span>}
           </div>
