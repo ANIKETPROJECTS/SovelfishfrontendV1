@@ -142,6 +142,19 @@ function isExpressOrder(order: OrderRequest) {
   return label.includes("porter") || label.includes("instant") || label.includes("express");
 }
 
+function getPreorderDeliveryDateLabel(order: OrderRequest): string | null {
+  const deliveryDate = (order as any).deliveryDate as string | null | undefined;
+  if ((order as any).orderType !== "preorder" || !deliveryDate) return null;
+  const date = new Date(`${deliveryDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function getOrderTotal(order: OrderRequest) {
   if (order.total != null) return order.total;
   const items: OrderItem[] = Array.isArray(order.items) ? order.items as OrderItem[] : [];
@@ -418,6 +431,7 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
 
   <hr class="divider"/>
 
+  ${getPreorderDeliveryDateLabel(order) ? `<div class="info-row"><span class="info-label">Delivery Date</span><span class="info-val">${getPreorderDeliveryDateLabel(order)}</span></div>` : ''}
   ${order.timeslotLabel ? `<div class="info-row"><span class="info-label">Delivery Slot</span><span class="info-val">${order.timeslotLabel}</span></div>` : ''}
   <div class="info-row"><span class="info-label">Payment Method</span><span class="info-val">${paymentMethod}</span></div>
   <div class="info-row" style="border-bottom:none;"><span class="info-label">Payment Status</span><span class="badge" style="background:${statusColor};">${statusLabel}</span></div>
@@ -510,7 +524,7 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
         <img src={headerLocationImg} alt="" className="w-3.5 h-3.5 object-contain mt-0.5 shrink-0" />
         <p className="text-xs text-muted-foreground leading-relaxed">{order.address}, {order.deliveryArea}</p>
       </div>
-      {order.timeslotLabel && (() => {
+      {(order.timeslotLabel || getPreorderDeliveryDateLabel(order)) && (() => {
         const deliveryDate = (order as any).deliveryDate as string | null | undefined;
         const orderDay = order.createdAt ? new Date(order.createdAt).toISOString().slice(0, 10) : null;
         const isScheduledNextDay = deliveryDate && orderDay && deliveryDate !== orderDay;
@@ -521,8 +535,10 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
           <div className="px-4 pb-3 flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <p className="text-xs text-muted-foreground">
-              {dateLabel ? <span className="font-medium text-slate-600">{dateLabel} · </span> : null}
-              {order.timeslotLabel}
+              {getPreorderDeliveryDateLabel(order)
+                ? <span className="font-medium text-slate-600">Delivery {getPreorderDeliveryDateLabel(order)} · </span>
+                : dateLabel ? <span className="font-medium text-slate-600">{dateLabel} · </span> : null}
+              {order.timeslotLabel ?? ""}
             </p>
           </div>
         );
@@ -689,6 +705,12 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
                     <div className="flex justify-between text-sm font-bold text-foreground pt-2 border-t border-slate-200">
                       <span>Total</span><span>₹{Math.max(0, total - walletPaidAmt).toLocaleString()}</span>
                     </div>
+                    {getPreorderDeliveryDateLabel(order) && (
+                      <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-100">
+                        <span className="text-muted-foreground">Delivery Date</span>
+                        <span className="font-semibold text-foreground text-right">{getPreorderDeliveryDateLabel(order)}</span>
+                      </div>
+                    )}
                     {order.timeslotLabel && (
                       <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-100">
                         <span className="text-muted-foreground">Delivery Slot</span>

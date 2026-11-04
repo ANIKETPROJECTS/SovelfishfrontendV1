@@ -6,7 +6,7 @@ import {
   CheckCircle2, Minus, Plus, ShoppingBag, Trash2,
   MapPin, Banknote, CreditCard, ChevronRight, ClipboardList,
   X, Home, Briefcase, Tag, Navigation, Loader2, AlertCircle, Search,
-  Clock, Zap, Ticket, ChevronDown, ChevronUp
+  Ticket, ChevronDown, ChevronUp
 } from "lucide-react";
 import popperAnim from "@/assets/lottie/popper.json";
 import emptyAddressAnim from "@/assets/lottie/empty-address.json";
@@ -20,8 +20,6 @@ import iconBinImg from "@assets/bin_1776927610776.png";
 import iconHomeTypeImg from "@assets/home_1776927604826.png";
 import iconBriefcaseImg from "@assets/briefcase_1776927648499.png";
 import iconShippingHomeImg from "@assets/home_1776927604826.png";
-import iconTimeImg from "@assets/time_1776949603776.png";
-import iconScheduleImg from "@assets/schedule_1777284518383.png";
 import notesIconImg from "@/assets/notes.png";
 import giftCardIconImg from "@/assets/gift-card.png";
 import tagIconImg from "@/assets/tag.png";
@@ -47,7 +45,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { CustomerAddress, Timeslot, Coupon } from "@shared/schema";
+import type { CustomerAddress, Coupon } from "@shared/schema";
 import { isPreorderDateAvailableForAll, normalizePreorderAvailability } from "@shared/preorderAvailability";
 import { format } from "date-fns";
 
@@ -162,20 +160,6 @@ function formatPreorderAvailability(item: any): string {
   if (rule.startDate) return `Available from ${format(dateFromKey(rule.startDate), "dd MMM yyyy")}${weekdaySuffix}`;
   if (rule.endDate) return `Available until ${format(dateFromKey(rule.endDate), "dd MMM yyyy")}${weekdaySuffix}`;
   return "Available on all future dates";
-}
-
-function isPreorderTimeslotAllowedForItems(
-  slot: Timeslot,
-  date: Date,
-  preorderItems: any[],
-): boolean {
-  const weekday = String(date.getDay());
-  return preorderItems.every((item) => {
-    const rules = normalizePreorderAvailability(item.preorderAvailability);
-    const perDay = rules.timeslotIdsByWeekday?.[weekday];
-    // No key means all active slots are allowed for that product/day.
-    return perDay === undefined || perDay.includes(String(slot.id));
-  });
 }
 
 type StockCheckItem = { productId: string; quantity: number; name: string };
@@ -345,7 +329,6 @@ export function CartDrawer() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showUnserviceablePopup, setShowUnserviceablePopup] = useState(false);
   const [unserviceablePincode, setUnserviceablePincode] = useState("");
-  const [selectedTimeslotId, setSelectedTimeslotId] = useState<string | null>(null);
   const [expandedInstructions, setExpandedInstructions] = useState<Record<number, boolean>>({});
   const [useWallet, setUseWallet] = useState(false);
   useEffect(() => {
@@ -527,8 +510,6 @@ export function CartDrawer() {
   const [couponError, setCouponError] = useState("");
   const [showAllCoupons, setShowAllCoupons] = useState(false);
   const [couponExpanded, setCouponExpanded] = useState(true);
-  const [timeslotExpanded, setTimeslotExpanded] = useState(false);
-  const [isNextDay, setIsNextDay] = useState(false);
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(startOfTomorrow);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -637,93 +618,6 @@ export function CartDrawer() {
     }
   }, [items.length]);
 
-  const { data: timeslots = [], isLoading: timeslotsLoading } = useQuery<Timeslot[]>({
-    queryKey: ["/api/timeslots"],
-    enabled: isCartOpen,
-    refetchInterval: isCartOpen ? 1_000 : false,
-    refetchIntervalInBackground: true,
-  });
-
-  // Convert a time string to a Date (handles both "21:30" 24h and "9:30 PM" 12h formats)
-  const parseTimeStr = useCallback((timeStr: string): Date | null => {
-    if (!timeStr) return null;
-    const parts = timeStr.trim().split(" ");
-    const [hStr, mStr] = parts[0].split(":");
-    const period = parts[1]?.toUpperCase();
-    let h = parseInt(hStr, 10);
-    const m = parseInt(mStr, 10);
-    if (isNaN(h) || isNaN(m)) return null;
-    if (period === "PM" && h !== 12) h += 12;
-    if (period === "AM" && h === 12) h = 0;
-    // No AM/PM → treat as 24-hour (no conversion needed)
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    return d;
-  }, []);
-
-  // Format a 24h time string like "21:30" → "9:30 PM"
-  const format24to12 = useCallback((timeStr: string | null): string => {
-    if (!timeStr) return "";
-    const [hStr, mStr] = timeStr.split(":");
-    let h = parseInt(hStr, 10);
-    const m = parseInt(mStr ?? "0", 10);
-    if (isNaN(h) || isNaN(m)) return timeStr;
-    // Already 12h with AM/PM suffix — return as-is
-    if (timeStr.toLowerCase().includes("am") || timeStr.toLowerCase().includes("pm")) return timeStr;
-    const period = h >= 12 ? "PM" : "AM";
-    if (h > 12) h -= 12;
-    if (h === 0) h = 12;
-    return `${h}:${String(m).padStart(2, "0")} ${period}`;
-  }, []);
-
-  // Build a human-readable time range for a slot (e.g. "9:30 PM – 10:00 PM")
-  const getSlotTimeDisplay = useCallback((slot: Timeslot): string | null => {
-    if (slot.isInstant) return null;
-    if (slot.startTime && slot.endTime) {
-      return `${format24to12(slot.startTime)} – ${format24to12(slot.endTime)}`;
-    }
-    return null;
-  }, [format24to12]);
-
-  // Extract start time string from a slot — supports both dedicated startTime field
-  // and labels like "09:30 PM – 10:00 PM" or "21:30 - 22:00"
-  const extractSlotStartTime = useCallback((slot: Timeslot): string | null => {
-    if (slot.startTime) return slot.startTime;
-    if (slot.label) {
-      const match = slot.label.match(/^(\d{1,2}:\d{2}(?:\s*[AP]M)?)/i);
-      if (match) return match[1].trim();
-    }
-    return null;
-  }, []);
-
-  // Returns true if the slot is active on the given Date's day of week
-  const isSlotActiveOnDay = useCallback((slot: Timeslot, date: Date): boolean => {
-    if (!slot.activeDays || slot.activeDays.length === 0) return true; // no config = always on
-    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    const dayName = dayNames[date.getDay()];
-    const entry = slot.activeDays.find(d => d.day.toLowerCase() === dayName);
-    return !entry || entry.status === "on";
-  }, []);
-
-  const isSlotAvailable = useCallback((slot: Timeslot): boolean => {
-    if (slot.isInstant) return true;
-    const now = new Date();
-    // Hide slot if today's day is marked off
-    if (!isSlotActiveOnDay(slot, now)) return false;
-    // A slot is unavailable 30 minutes before its START time.
-    const startStr = extractSlotStartTime(slot);
-    if (startStr) {
-      const startTime = parseTimeStr(startStr);
-      if (startTime) {
-        const cutoff = new Date(startTime.getTime() - 30 * 60 * 1000);
-        if (now >= cutoff) return false;
-      }
-    }
-    // Check today's order limit (always enforced when orderLimit > 0)
-    if (slot.orderLimit > 0 && slot.todaysOrderCount >= slot.orderLimit) return false;
-    return true;
-  }, [parseTimeStr, extractSlotStartTime, isSlotActiveOnDay]);
-
   const isPreorderCart = items.some((item) => item.isPreorderCheckout);
 
   const preorderItems = useMemo(
@@ -742,35 +636,6 @@ export function CartDrawer() {
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
   ), []);
 
-  const getAvailableTimeslotsForDate = useCallback((date: Date, isToday: boolean): Timeslot[] => {
-    const dateKey = getDateKey(date);
-    const tomorrowKey = getDateKey(startOfTomorrow());
-    return timeslots.filter((slot) => {
-      if (slot.isInstant) return isToday && isSlotActiveOnDay(slot, date) && isSlotAvailable(slot);
-      if (!isSlotActiveOnDay(slot, date)) return false;
-      if (isPreorderCart && !isPreorderTimeslotAllowedForItems(slot, date, preorderItems)) return false;
-      if (slot.orderLimit > 0) {
-        const orderCount =
-          isToday ? slot.todaysOrderCount :
-          dateKey === tomorrowKey ? slot.nextDayOrderCount :
-          null;
-        if (orderCount !== null && orderCount >= slot.orderLimit) return false;
-      }
-      if (isToday) {
-        const startStr = extractSlotStartTime(slot);
-        if (startStr) {
-          const startTime = parseTimeStr(startStr);
-          if (startTime) {
-            const now = new Date();
-            const cutoff = new Date(startTime.getTime() - 30 * 60 * 1000);
-            if (now >= cutoff) return false;
-          }
-        }
-      }
-      return true;
-    });
-  }, [timeslots, isSlotAvailable, isSlotActiveOnDay, extractSlotStartTime, parseTimeStr, getDateKey, isPreorderCart, preorderItems]);
-
   const isPreorderProductDateAvailable = useCallback((date: Date): boolean => {
     const dateKey = getDateKey(date);
     return isPreorderDateAvailableForAll(
@@ -786,9 +651,8 @@ export function CartDrawer() {
     const candidate = new Date(date);
     candidate.setHours(0, 0, 0, 0);
     if (candidate < tomorrow) return false;
-    if (!isPreorderProductDateAvailable(date)) return false;
-    return getAvailableTimeslotsForDate(date, false).length > 0;
-  }, [getAvailableTimeslotsForDate, isPreorderProductDateAvailable]);
+    return isPreorderProductDateAvailable(date);
+  }, [isPreorderProductDateAvailable]);
 
   const firstValidPreorderDate = useMemo(() => {
     if (!isPreorderCart || preorderItems.length === 0) return startOfTomorrow();
@@ -801,38 +665,16 @@ export function CartDrawer() {
       candidate.setDate(candidate.getDate() + 1);
     }
     return null;
-  }, [getAvailableTimeslotsForDate, isPreorderCart, isPreorderDateSelectable, preorderItems.length]);
-
-  const availableTimeslots = getAvailableTimeslotsForDate(new Date(), true);
-  const nextDayAvailableTimeslots = getAvailableTimeslotsForDate(
-    new Date(new Date().setDate(new Date().getDate() + 1)),
-    false,
-  );
-  const preorderAvailableTimeslots = getAvailableTimeslotsForDate(
-    selectedDeliveryDate,
-    getDateKey(selectedDeliveryDate) === getDateKey(new Date()),
-  );
-  const displayTimeslots = isPreorderCart
-    ? preorderAvailableTimeslots
-    : (isNextDay ? nextDayAvailableTimeslots : availableTimeslots);
-  const selectedTimeslot = displayTimeslots.find(t => t.id === selectedTimeslotId) ?? null;
-
-  useEffect(() => {
-    if (selectedTimeslotId && !displayTimeslots.find(t => t.id === selectedTimeslotId)) {
-      setSelectedTimeslotId(null);
-    }
-  }, [displayTimeslots, selectedTimeslotId]);
+  }, [isPreorderCart, isPreorderDateSelectable, preorderItems.length]);
 
   useEffect(() => {
     if (!isPreorderCart) return;
     if (!firstValidPreorderDate) {
       setSelectedDeliveryDate(startOfTomorrow());
-      setSelectedTimeslotId(null);
       return;
     }
     if (!isPreorderDateSelectable(selectedDeliveryDate)) {
       setSelectedDeliveryDate(firstValidPreorderDate);
-      setSelectedTimeslotId(null);
     }
   }, [isPreorderCart, selectedDeliveryDate, firstValidPreorderDate, isPreorderDateSelectable]);
 
@@ -900,9 +742,7 @@ export function CartDrawer() {
 
   const activeAddressId = selectedAddressId ?? (savedAddresses[0]?.id || null);
 
-  // Pincode-based delivery charge and time delay from sub_hub config
-  // When the add-address form is open and has a complete valid pincode, preview that pincode's
-  // config in real-time so delivery fee and slot labels update as the user types.
+  // Pincode-based delivery charge from the selected sub-hub config.
   const pincodeConfig = useMemo(() => {
     if (!selectedSubHub?.pincodes?.length) return null;
     if (showAddForm && addForm.pincode.length === 6) {
@@ -914,7 +754,6 @@ export function CartDrawer() {
   }, [activeAddressId, savedAddresses, selectedSubHub, showAddForm, addForm.pincode]);
 
   const pincodeDeliveryCharge = pincodeConfig?.charge ?? 0;
-  const pincodeTimeDelay = pincodeConfig?.timeDelay ?? 0;
 
   // Helper: check if a pincode is unserviceable in the current hub
   const checkPincodeServiceability = useCallback((pincode: string): boolean => {
@@ -933,31 +772,6 @@ export function CartDrawer() {
       setShowUnserviceablePopup(true);
     }
   }, [activeAddressId, selectedSubHub]);
-
-  // Add N minutes to a formatted time string and return 12h format
-  const addMinutesToTime = useCallback((timeStr: string, minutes: number): string => {
-    if (!timeStr || minutes === 0) return timeStr;
-    const d = parseTimeStr(timeStr);
-    if (!d) return timeStr;
-    d.setMinutes(d.getMinutes() + minutes);
-    let h = d.getHours();
-    const m = d.getMinutes();
-    const period = h >= 12 ? "PM" : "AM";
-    if (h > 12) h -= 12;
-    if (h === 0) h = 12;
-    return `${h}:${String(m).padStart(2, "0")} ${period}`;
-  }, [parseTimeStr]);
-
-  // Returns the slot label adjusted for pincode time delay (only end time shifts)
-  const getAdjustedSlotLabel = useCallback((slot: Timeslot): string => {
-    if (slot.isInstant || pincodeTimeDelay === 0) return slot.label;
-    const start = slot.startTime ? format24to12(slot.startTime) : null;
-    const end = slot.endTime ? format24to12(slot.endTime) : null;
-    if (start && end) {
-      return `${start} – ${addMinutesToTime(end, pincodeTimeDelay)}`;
-    }
-    return slot.label;
-  }, [pincodeTimeDelay, format24to12, addMinutesToTime]);
 
   const getFallbackImage = (_category: string) => noImageImg;
 
@@ -1083,7 +897,7 @@ export function CartDrawer() {
   };
 
   const walletBalance = (customer as any)?.walletBalance ?? 0;
-  const rawTotal = totalPrice + pincodeDeliveryCharge + (selectedTimeslot?.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0);
+  const rawTotal = totalPrice + pincodeDeliveryCharge;
   const afterCouponTotal = rawTotal - discountAmount;
   const walletDeduction = useWallet ? Math.min(walletBalance, afterCouponTotal) : 0;
   const finalTotal = afterCouponTotal - walletDeduction;
@@ -1122,15 +936,9 @@ export function CartDrawer() {
       unit: (i as any).unit ?? null,
       imageUrl: i.imageUrl ?? null,
     }));
-    const slotLabel = selectedTimeslot!.isInstant ? "Instant Delivery (Porter)" : getAdjustedSlotLabel(selectedTimeslot!);
-    const instantCharge = selectedTimeslot!.isInstant ? (selectedTimeslot!.extraCharge ?? 0) : 0;
-    const slotCharge = pincodeDeliveryCharge + instantCharge;
+    const slotCharge = pincodeDeliveryCharge;
     const subtotal = totalPrice;
-    const orderDate = isPreorderCart
-      ? selectedDeliveryDate
-      : isNextDay
-        ? new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
-        : new Date();
+    const orderDate = isPreorderCart ? selectedDeliveryDate : new Date();
     const deliveryDate = getDateKey(orderDate);
 
     const cashMode = paymentMethod === "online" ? "upi" : "cash";
@@ -1185,11 +993,11 @@ export function CartDrawer() {
       source: "online",
       deliveryType: "delivery",
       orderType: isPreorderCart ? "preorder" : "normal",
-      scheduleType: selectedTimeslot!.isInstant ? "instant" : "slot",
-      timeslotId: selectedTimeslot!.id,
-      timeslotLabel: slotLabel,
-      timeslotStart: (selectedTimeslot as any).startTime ?? null,
-      timeslotEnd: (selectedTimeslot as any).endTime ?? null,
+      scheduleType: "standard",
+      timeslotId: null,
+      timeslotLabel: null,
+      timeslotStart: null,
+      timeslotEnd: null,
       deliveryDate,
       couponCode: appliedCoupon?.code ?? null,
       discountAmount: discountAmount > 0 ? discountAmount : null,
@@ -1245,30 +1053,13 @@ export function CartDrawer() {
       }
       if (!isPreorderDateSelectable(selectedDeliveryDate)) {
         setSelectedDeliveryDate(firstValidPreorderDate);
-        setSelectedTimeslotId(null);
         toast({
           title: "Please choose an available preorder date",
-          description: "The selected date is not available for every item or has no delivery slot.",
+          description: "The selected date is not available for every preorder item.",
           variant: "destructive",
         });
         return;
       }
-    }
-    if (!selectedTimeslot) {
-      toast({ title: "Please select a delivery time slot", variant: "destructive" });
-      return;
-    }
-    // A cart can stay open past the 30-minute cutoff after the slot was selected.
-    // Recheck immediately before starting checkout; the server repeats this
-    // validation as the authoritative guard.
-    if (!isPreorderCart && !isNextDay && !isSlotAvailable(selectedTimeslot)) {
-      setSelectedTimeslotId(null);
-      toast({
-        title: "This delivery slot has closed",
-        description: "Please choose another available time slot.",
-        variant: "destructive",
-      });
-      return;
     }
     // Hard guard against the delivery-charge race (see explain.md): never submit a
     // delivery order before the hub/pincode config has loaded. Without this, a fast tap
@@ -2345,12 +2136,6 @@ export function CartDrawer() {
                             <span className="font-semibold text-emerald-600">FREE</span>
                           )}
                         </div>
-                        {selectedTimeslot?.isInstant && (selectedTimeslot.extraCharge ?? 0) > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-amber-600 text-xs">Instant delivery (Porter)</span>
-                            <span className="font-semibold text-amber-600 text-xs">+₹{selectedTimeslot.extraCharge}</span>
-                          </div>
-                        )}
                         {walletDeduction > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-blue-600 flex items-center gap-1">
@@ -2604,140 +2389,46 @@ export function CartDrawer() {
                       )}
                     </div>
 
-                    {/* Delivery Time Slot */}
-                    <div className="px-4 mt-5 mb-2">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
-                          <span
-                            aria-hidden
-                            className="w-4 h-4 inline-block"
-                            style={{
-                              backgroundColor: "#364F9F",
-                              WebkitMaskImage: `url(${iconTimeImg})`,
-                              maskImage: `url(${iconTimeImg})`,
-                              WebkitMaskRepeat: "no-repeat",
-                              maskRepeat: "no-repeat",
-                              WebkitMaskSize: "contain",
-                              maskSize: "contain",
-                              WebkitMaskPosition: "center",
-                              maskPosition: "center",
-                            }}
-                          />
-                          Select Time Slot
-                        </h3>
-                        {selectedTimeslot?.isInstant && (selectedTimeslot.extraCharge ?? 0) > 0 && (
-                          <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">+₹{selectedTimeslot.extraCharge}</span>
+                    {isPreorderCart && (
+                      <div className="px-4 mt-5 mb-2">
+                        <h3 className="font-semibold text-foreground text-sm mb-3">Delivery Date</h3>
+                        {!firstValidPreorderDate && (
+                          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 mb-2 text-xs text-amber-800" role="alert">
+                            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                            <span>No common preorder date is available for these items.</span>
+                          </div>
                         )}
+                        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full justify-between rounded-xl border-2 border-border/40 bg-white font-semibold text-sm"
+                              data-testid="preorder-delivery-date"
+                            >
+                              <span>{format(selectedDeliveryDate, "dd-MM-yyyy")}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(selectedDeliveryDate, "EEE, dd MMM")}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent align="start" className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={selectedDeliveryDate}
+                              onSelect={(date) => {
+                                if (!date || !isPreorderDateSelectable(date)) return;
+                                date.setHours(0, 0, 0, 0);
+                                setSelectedDeliveryDate(date);
+                                setDatePickerOpen(false);
+                              }}
+                              disabled={(date) => !isPreorderDateSelectable(date)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
-
-                         {isPreorderCart ? (
-                         <div className="mb-3">
-                           <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
-                              Delivery date for all preorder items
-                           </label>
-                            <p className="text-[11px] text-muted-foreground mb-1.5">
-                              Choose a date available for every item in your cart.
-                            </p>
-                            {!firstValidPreorderDate && (
-                              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 mb-2 text-xs text-amber-800" role="alert">
-                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                                <span>No common preorder date is available for these items.</span>
-                              </div>
-                            )}
-                           <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                             <PopoverTrigger asChild>
-                               <Button
-                                 type="button"
-                                 variant="outline"
-                                 className="w-full justify-between rounded-xl border-2 border-border/40 bg-white font-semibold text-sm"
-                                 data-testid="preorder-delivery-date"
-                               >
-                                 <span>{format(selectedDeliveryDate, "dd-MM-yyyy")}</span>
-                                 <span className="text-xs text-muted-foreground">
-                                   {format(selectedDeliveryDate, "EEE, dd MMM")}
-                                 </span>
-                               </Button>
-                             </PopoverTrigger>
-                             <PopoverContent align="start" className="w-auto p-0">
-                               <Calendar
-                                 mode="single"
-                                 selected={selectedDeliveryDate}
-                                 onSelect={(date) => {
-                                   if (!date) return;
-                                    if (!isPreorderDateSelectable(date)) return;
-                                   date.setHours(0, 0, 0, 0);
-                                   setSelectedDeliveryDate(date);
-                                   setSelectedTimeslotId(null);
-                                   setDatePickerOpen(false);
-                                 }}
-                                  disabled={(date) => !isPreorderDateSelectable(date)}
-                                 initialFocus
-                               />
-                             </PopoverContent>
-                           </Popover>
-                         </div>
-                       ) : (
-                         <div className="flex items-center gap-2 mb-3">
-                           <button
-                             type="button"
-                             onClick={() => { setIsNextDay(false); setSelectedTimeslotId(null); }}
-                             className={`flex-1 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${!isNextDay ? "border-[#364F9F] bg-[#364F9F] text-white" : "border-border/40 text-muted-foreground bg-white"}`}
-                           >
-                             Today
-                           </button>
-                           <button
-                             type="button"
-                             onClick={() => { setIsNextDay(true); setSelectedTimeslotId(null); }}
-                             className={`flex-1 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${isNextDay ? "border-[#364F9F] bg-[#364F9F] text-white" : "border-border/40 text-muted-foreground bg-white"}`}
-                           >
-                             Next Day
-                           </button>
-                         </div>
-                       )}
-
-                      <div className="space-y-2">
-                          {timeslotsLoading ? (
-                            <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-                              <Loader2 className="w-4 h-4 animate-spin" /> Loading slots...
-                            </div>
-                           ) : displayTimeslots.length === 0 ? (
-                             <div className="py-4 text-center text-sm text-muted-foreground">
-                               {isPreorderCart
-                                 ? "No delivery slots available for this date"
-                                 : "No slots available"}
-                            </div>
-                          ) : (
-                            displayTimeslots.map((slot, slotIdx) => {
-                              const isSelected = selectedTimeslotId === slot.id;
-                              const adjustedLabel = getAdjustedSlotLabel(slot);
-                              const hasDelay = !slot.isInstant && pincodeTimeDelay > 0;
-                              return (
-                              <div key={slot.id || slot.label || slotIdx}>
-                                <button
-                                  type="button"
-                                  onClick={() => { setSelectedTimeslotId(slot.id); setTimeslotExpanded(false); }}
-                                  className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition-all ${isSelected ? (slot.isInstant ? "border-amber-500 bg-amber-50" : "border-[#364F9F] bg-[#364F9F]/5") : "border-border/40 bg-white hover:border-[#364F9F]/30"}`}
-                                  data-testid={`timeslot-${slot.id}`}
-                                >
-                                  <div className="flex items-center gap-2.5">
-                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? (slot.isInstant ? "border-amber-500" : "border-[#364F9F]") : "border-slate-300"}`}>
-                                      {isSelected && <div className={`w-2 h-2 rounded-full ${slot.isInstant ? "bg-amber-500" : "bg-[#364F9F]"}`} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <span className={`text-sm font-semibold block truncate ${slot.isInstant ? "text-amber-700" : "text-foreground"}`}>
-                                        {adjustedLabel}
-                                      </span>
-                                    </div>
-                                    {slot.isInstant && (slot.extraCharge ?? 0) > 0 && (
-                                      <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full shrink-0">+₹{slot.extraCharge}</span>
-                                    )}
-                                  </div>
-                                </button>
-                              </div>
-                            );})
-                          )}
-                        </div>
-                    </div>
+                    )}
 
                     {/* Payment Method — hidden when wallet covers the full total */}
                     {finalTotal > 0 && (
@@ -2803,9 +2494,6 @@ export function CartDrawer() {
                         {pincodeDeliveryCharge > 0 && (
                           <p className="text-[10px] text-amber-600">incl. ₹{pincodeDeliveryCharge} delivery fee</p>
                         )}
-                        {selectedTimeslot?.isInstant && (selectedTimeslot.extraCharge ?? 0) > 0 && (
-                          <p className="text-[10px] text-amber-600">incl. ₹{selectedTimeslot.extraCharge} instant delivery</p>
-                        )}
                       </div>
                       <Button
                         onClick={placeOrder}
@@ -2833,9 +2521,6 @@ export function CartDrawer() {
                     )}
                     {customer && savedAddresses.length === 0 && (
                       <p className="text-xs text-center text-muted-foreground mt-2">Please add a delivery address to proceed</p>
-                    )}
-                    {customer && savedAddresses.length > 0 && !selectedTimeslot && (
-                      <p className="text-xs text-center text-muted-foreground mt-2">Please select a delivery time slot</p>
                     )}
                   </div>
                 </div>

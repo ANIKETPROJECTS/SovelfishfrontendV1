@@ -1,10 +1,10 @@
 ---
-name: Preorder date-specific slots
-description: Preorder checkout uses a calendar date and filters timeslots by each slot's active weekday configuration.
+name: Preorder date eligibility
+description: Preorder checkout uses product schedules to choose an eligible future date, without requiring a delivery timeslot.
 ---
 
-Preorder carts default to the first future date allowed by every cart product and by available timeslots; unavailable dates are disabled. Product schedules support all dates, weekdays, and inclusive date ranges with optional weekday restrictions inside the range. Normal carts retain the Today/Next Day flow.
+Preorder carts default to the first future date allowed by every cart product; unavailable dates are disabled. Product schedules support all dates, weekdays, and inclusive date ranges with optional weekday restrictions inside the range. Checkout does not request or require delivery timeslots. Normal orders use today's date automatically, with no next-day selector.
 
-**Why:** Delivery availability can differ by product as well as weekday, and one order has one delivery date, so the customer must use the intersection of product schedules rather than a free-form date or union. Admin can further restrict a date range to selected weekdays.
+**Why:** The user requested removing timeslot selection and next-day delivery from checkout, while retaining date selection for preorder products.
 
-**How to apply:** Preserve preorder intent on cart items added from preorder sections, poll product schedules and timeslots while the cart is open so admin changes appear without a page refresh, normalize external-admin payloads where `type: "all"` may coexist with restrictive weekdays/date fields, show each product's friendly availability label, disable dates that fail any product or have no slot, send `orderType: "preorder"` with the selected `deliveryDate`, and validate current product schedules and slot active days server-side. Keep the cart exclusive: adding one mode removes items from the other mode before adding the new item.
+**How to apply:** Preserve preorder intent on cart items added from preorder sections, normalize external-admin payloads where `type: "all"` may coexist with restrictive weekdays/date fields, show each product's friendly availability label, disable dates that fail any product schedule, send `orderType: "preorder"` with the selected `deliveryDate`, and validate current product schedules server-side. Do not couple date eligibility to configured timeslots. Keep the cart exclusive: adding one mode removes items from the other mode before adding the new item.

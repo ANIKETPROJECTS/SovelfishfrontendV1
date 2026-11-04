@@ -455,7 +455,7 @@ export async function registerRoutes(
       : [];
     const productsById = new Map(sourceProductsById);
     for (const product of additionalProducts) {
-      productsById.set(String(product._id), safeCheckoutProduct(product));
+      productsById.set(String(product._id), product);
     }
     const lines = [...aggregated.values()];
     const unavailableItems = findCheckoutStockIssues(lines, productsById, missingNames);
