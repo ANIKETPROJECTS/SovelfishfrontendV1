@@ -34,7 +34,7 @@ import giftCardIconImg from "@/assets/gift-card.png";
 import tagIconImg from "@/assets/tag.png";
 import checkedIconImg from "@/assets/checked.png";
 
-import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
+import noImageImg from "@assets/Comming_soon_image_1793790342200.png";
 
 function getFallbackImage(_category: string) {
   return noImageImg;

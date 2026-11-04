@@ -49,7 +49,7 @@ import type { CustomerAddress, Coupon } from "@shared/schema";
 import { isPreorderDateAvailableForAll, normalizePreorderAvailability } from "@shared/preorderAvailability";
 import { format } from "date-fns";
 
-import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
+import noImageImg from "@assets/Comming_soon_image_1793790342200.png";
 import scooterImg from "@assets/animation-original_(51)_1779950354153.png";
 import whatsappIcon from "@assets/logo_(16)_1779950540352.png";
 import callIcon from "@assets/call_(2)_1779950579819.png";

@@ -10,7 +10,7 @@ import { ChevronLeft, Plus, Minus } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Section, Combo } from "@shared/schema";
 
-import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
+import noImageImg from "@assets/Comming_soon_image_1793790342200.png";
 import { SeoHead } from "@/components/SeoHead";
 
 function getFallbackImage(_category: string): string {
