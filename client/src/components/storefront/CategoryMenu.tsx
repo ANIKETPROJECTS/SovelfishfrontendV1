@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@shared/schema";
+import { formatStorePrice, getProductVariantKey } from "@/lib/productVariants";
 
 import fishImg from "@assets/Gemini_Generated_Image_w6wqkkw6wqkkw6wq_(1)_1772713077919.png";
 import prawnsImg from "@assets/Gemini_Generated_Image_5xy0sd5xy0sd5xy0_1772713090650.png";
@@ -36,6 +37,14 @@ interface Props {
   onClose: () => void;
 }
 
+type ProductMenuEntry = {
+  key: string;
+  product: Product;
+  saleOption: string | null;
+  variantLabel: string | null;
+  variantPrice: number | null;
+};
+
 export function CategoryMenuDropdown({ open, onClose }: Props) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [, navigate] = useLocation();
@@ -57,6 +66,29 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
     ? allProducts.filter((p) => !p.isArchived && !p.batchExpired && isNormalStorefrontProduct(p))
     : allProducts.filter((p) => !p.isArchived && !p.batchExpired && isNormalStorefrontProduct(p) && p.category === activeCategoryName);
 
+  const activeProductEntries: ProductMenuEntry[] = activeProducts.flatMap((product) => {
+    const variants = product.weightVariants ?? [];
+    if (variants.length === 0) {
+      return [{
+        key: `product-${product.id}`,
+        product,
+        saleOption: null,
+        variantLabel: null,
+        variantPrice: null,
+      }];
+    }
+
+    return variants.map((variant) => ({
+      key: `variant-${product.id}-${getProductVariantKey(variant)}`,
+      product,
+      saleOption: getProductVariantKey(variant),
+      variantLabel: variant.averageWeightLabel
+        ? `${variant.label} (avg. ${variant.averageWeightLabel})`
+        : variant.label,
+      variantPrice: variant.price,
+    }));
+  });
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -69,9 +101,10 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const handleProductClick = (product: Product) => {
+  const handleProductClick = (product: Product, saleOption?: string | null) => {
     onClose();
-    navigate(`/product/${product.id}`);
+    const query = saleOption ? `?saleOption=${encodeURIComponent(saleOption)}` : "";
+    navigate(`/product/${product.id}${query}`);
   };
 
   const handleCategoryClick = (catName: string) => {
@@ -155,18 +188,27 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
             View all in {activeCategoryName} →
           </button>
 
-          {activeProducts.length === 0 ? (
+          {activeProductEntries.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4">No products available.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
-              {activeProducts.map((product) => (
+              {activeProductEntries.map((entry, index) => (
                 <button
-                  key={product.id}
-                  onClick={() => handleProductClick(product)}
+                  key={entry.key}
+                  onClick={() => handleProductClick(entry.product, entry.saleOption)}
+                  aria-label={entry.variantLabel
+                    ? `${entry.product.name}, ${entry.variantLabel}, ₹${formatStorePrice(entry.variantPrice)}`
+                    : entry.product.name}
                   className="text-left text-[15px] sm:text-base text-slate-700 hover:text-accent font-medium py-3.5 px-2 border-b border-slate-100 hover:bg-accent/5 sm:hover:bg-white rounded transition-colors"
-                  data-testid={`menu-product-${product.id}`}
+                  data-testid={`menu-product-${entry.product.id}${entry.variantLabel ? `-${index}` : ""}`}
                 >
-                  {product.name}
+                  <span className="block">{entry.product.name}</span>
+                  {entry.variantLabel && (
+                    <span className="mt-1 flex items-center justify-between gap-2 text-xs font-normal text-slate-500">
+                      <span>{entry.variantLabel}</span>
+                      <span className="font-semibold text-slate-700">₹{formatStorePrice(entry.variantPrice)}</span>
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
