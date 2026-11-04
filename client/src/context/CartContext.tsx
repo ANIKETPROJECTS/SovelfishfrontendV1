@@ -22,6 +22,11 @@ export interface CartItem extends Omit<Product, 'id'> {
   isCombo?: boolean;
   originalId?: string;
   weightKgPerUnit?: number;
+  weightMinKgPerUnit?: number;
+  weightMaxKgPerUnit?: number;
+  fishBatchId?: string;
+  fishWeightKg?: number;
+  fishBatchAvailableQty?: number;
   comboImages?: string[];
   comboCategories?: string[];
   comboIncludes?: ComboInclude[];
@@ -142,7 +147,6 @@ function calcMaxQty(
       liveProductsLoaded,
     );
     if (stock === null) return 999;
-
     // Inventory is shared by all portion sizes of a weighted product.
     const consumedByOthers = allItems.reduce((total, ci) => {
       if (sameCartItem(ci, item)) return total; // skip self
@@ -158,7 +162,26 @@ function calcMaxQty(
 
     const stockPerUnit = Number(item.weightKgPerUnit ?? 1);
     if (!Number.isFinite(stockPerUnit) || stockPerUnit <= 0) return 0;
-    return Math.max(0, Math.floor((stock - consumedByOthers) / stockPerUnit));
+    const totalStockAllowance = Math.max(0, Math.floor((stock - consumedByOthers) / stockPerUnit));
+    if (!item.fishBatchId || !Number.isFinite(item.fishBatchAvailableQty)) {
+      return totalStockAllowance;
+    }
+    const sameBatchAlreadyInCart = allItems.reduce((total, ci) => {
+      if (sameCartItem(ci, item)) return total;
+      if (
+        !ci.isCombo &&
+        getCartProductId(ci) === productId &&
+        ci.fishBatchId === item.fishBatchId
+      ) {
+        return total + ci.quantity;
+      }
+      return total;
+    }, 0);
+    const batchAllowance = Math.max(
+      0,
+      Math.floor(Number(item.fishBatchAvailableQty) - sameBatchAlreadyInCart),
+    );
+    return Math.min(totalStockAllowance, batchAllowance);
   }
 }
 

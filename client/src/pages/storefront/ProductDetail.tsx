@@ -21,7 +21,12 @@ import { useQuery } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { isNormalStorefrontProduct } from "@shared/productVisibility";
 import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
-import { asVariantCartProduct, formatStorePrice } from "@/lib/productVariants";
+import {
+  asVariantCartProduct,
+  formatProductWeight,
+  formatStorePrice,
+  getProductVariantKey,
+} from "@/lib/productVariants";
 
 import weighScaleIcon from "@assets/weight-scale_1774801344716.png";
 import piecesIcon from "@assets/cutlery_1774801395283.png";
@@ -147,6 +152,7 @@ export default function ProductDetail() {
   const similarScrollRef = useRef<HTMLDivElement>(null);
 
   const productId = params?.id;
+  const requestedSaleOption = new URLSearchParams(search).get("saleOption");
   const product = products?.find((p) => p.id === productId && !p.batchExpired && isStorefrontProductVisible(p));
   const variants = product?.weightVariants ?? [];
   const selectedVariant = variants[selectedVariantIndex] ?? variants[0];
@@ -180,6 +186,12 @@ export default function ProductDetail() {
     setQty(1);
     setSelectedVariantIndex(0);
   }, [productId]);
+
+  useEffect(() => {
+    if (!requestedSaleOption || variants.length === 0) return;
+    const index = variants.findIndex((variant) => getProductVariantKey(variant) === requestedSaleOption);
+    if (index >= 0) setSelectedVariantIndex(index);
+  }, [productId, requestedSaleOption, variants]);
 
   useEffect(() => {
     if (!cartItem) {
@@ -409,8 +421,7 @@ export default function ProductDetail() {
                   <div className="flex flex-row flex-wrap items-baseline gap-x-1 leading-tight text-sm sm:text-lg font-semibold">
                     {product.grossWeight && (
                       <span className="whitespace-nowrap">
-                        {product.grossWeight}
-                        <span className="font-normal ml-0.5"> gm gross</span>
+                        {formatProductWeight(product.grossWeight, "gross")}
                       </span>
                     )}
                     {product.grossWeight && product.netWeight && (
@@ -418,8 +429,7 @@ export default function ProductDetail() {
                     )}
                     {product.netWeight && (
                       <span className="whitespace-nowrap">
-                        {product.netWeight}
-                        <span className="font-normal ml-0.5"> gm net</span>
+                        {formatProductWeight(product.netWeight, "net")}
                       </span>
                     )}
                   </div>
@@ -433,7 +443,7 @@ export default function ProductDetail() {
                 <div className="flex flex-wrap gap-2">
                   {variants.map((variant, index) => (
                     <button
-                      key={`${variant.weightKg}-${variant.label}`}
+                      key={variant.batchId ?? `${variant.weightKg}-${variant.minWeightKg ?? ""}-${variant.maxWeightKg ?? ""}-${index}`}
                       type="button"
                       onClick={() => {
                         setSelectedVariantIndex(index);
@@ -446,7 +456,9 @@ export default function ProductDetail() {
                           : "border-border bg-white text-foreground hover:border-primary"
                       }`}
                     >
-                      {variant.label} · ₹{formatStorePrice(variant.price)}
+                        {variant.label}
+                        {variant.averageWeightLabel ? ` (avg ${variant.averageWeightLabel})` : ""}
+                        {" · ₹"}{formatStorePrice(variant.price)}
                     </button>
                   ))}
                 </div>

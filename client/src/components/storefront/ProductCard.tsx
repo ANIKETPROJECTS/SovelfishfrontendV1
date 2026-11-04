@@ -3,10 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { useLocation } from "wouter";
-import { useState } from "react";
 import type { Product } from "@shared/schema";
-import { asVariantCartProduct, formatStorePrice } from "@/lib/productVariants";
+import {
+  asVariantCartProduct,
+  formatProductWeight,
+  formatStorePrice,
+  getProductVariantKey,
+} from "@/lib/productVariants";
 import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
+
+type ProductCardProps = {
+  product: Product;
+  preorderContext?: boolean;
+  disableNavigation?: boolean;
+  onProductClick?: () => void;
+  detailVariantKey?: string;
+};
 
 const DUMMY_DETAILS: Record<string, { pieces: string; serves: string }> = {
   Fish:    { pieces: "2-3 Pieces", serves: "Serves 3" },
@@ -16,23 +28,36 @@ const DUMMY_DETAILS: Record<string, { pieces: string; serves: string }> = {
   Masalas: { pieces: "1 Pack", serves: "Serves 6" },
 };
 
-export function ProductCard({
+export function ProductCard(props: ProductCardProps) {
+  const variants = props.product.weightVariants ?? [];
+  if (variants.length === 0) return <SingleProductCard {...props} />;
+
+  return (
+    <>
+      {variants.map((variant, index) => (
+        <SingleProductCard
+          key={variant.batchId ?? `${variant.weightKg}-${variant.minWeightKg ?? ""}-${variant.maxWeightKg ?? ""}-${index}`}
+          {...props}
+          product={asVariantCartProduct(props.product, variant)}
+          detailVariantKey={getProductVariantKey(variant)}
+        />
+      ))}
+    </>
+  );
+}
+
+function SingleProductCard({
   product,
   preorderContext = false,
   disableNavigation = false,
   onProductClick,
-}: {
-  product: Product;
-  preorderContext?: boolean;
-  disableNavigation?: boolean;
-  onProductClick?: () => void;
-}) {
+  detailVariantKey,
+}: ProductCardProps) {
   const { addToCart, removeFromCart, updateQuantity, items, computeMaxQty } = useCart();
   const [, setLocation] = useLocation();
-  const variants = product.weightVariants ?? [];
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  const selectedVariant = variants[selectedVariantIndex] ?? variants[0];
-  const cartProduct = selectedVariant ? asVariantCartProduct(product, selectedVariant) : product;
+  const cartProduct = product;
+  const originalProductId = (product as Product & { originalId?: string }).originalId ?? product.id;
+  const isSaleVariantCard = Boolean((product as Product & { originalId?: string }).originalId);
   const isUnavailable = product.status === "unavailable";
 
   const cartItem = items.find(i => String(i.id) === String(cartProduct.id));
@@ -43,14 +68,21 @@ export function ProductCard({
   const dummyFallback = DUMMY_DETAILS[product.category] ?? DUMMY_DETAILS["Fish"];
   const piecesText = product.pieces || null;
   const servesText = product.serves || null;
-  const displayPrice = selectedVariant?.price ?? product.price;
-  const hasDiscount = !selectedVariant && product.originalPrice != null && product.price != null && product.originalPrice > product.price;
+  const displayPrice = product.price;
+  const hasDiscount = product.originalPrice != null && product.price != null && product.originalPrice > product.price;
   const discountPct = hasDiscount ? Math.round((product.originalPrice! - product.price!) / product.originalPrice! * 100) : null;
   const strikePrice = hasDiscount ? product.originalPrice : null;
 
   const maxQty = computeMaxQty(
     (cartItem ?? { ...cartProduct, quantity: 0 }) as any,
   );
+  const getProductDetailPath = () => {
+    const query = new URLSearchParams();
+    if (preorderContext) query.set("preorder", "1");
+    if (detailVariantKey) query.set("saleOption", detailVariantKey);
+    const search = query.toString();
+    return `/product/${originalProductId}${search ? `?${search}` : ""}`;
+  };
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -76,7 +108,7 @@ export function ProductCard({
       className={`group relative bg-card flex flex-col h-full transition-all duration-300 ${
         onProductClick || !disableNavigation ? "cursor-pointer" : ""
       }`}
-      onClick={onProductClick ?? (disableNavigation ? undefined : () => setLocation(`/product/${product.id}${preorderContext ? "?preorder=1" : ""}`))}
+      onClick={onProductClick ?? (disableNavigation ? undefined : () => setLocation(getProductDetailPath()))}
     >
       <div className="relative aspect-square w-full bg-muted/30 overflow-hidden mb-3 border border-border/20 rounded-xl">
         <img
@@ -117,52 +149,30 @@ export function ProductCard({
           {product.name}
         </h3>
 
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground mb-2.5 font-normal">
-          {product.grossWeight && (
-            <>
-              <span className="font-medium text-foreground/80 whitespace-nowrap">{String(product.grossWeight).trim()} gm gross</span>
-              <span className="text-muted-foreground/50">|</span>
-            </>
-          )}
-          {product.netWeight && (
-            <>
-              <span className="font-medium text-foreground/80 whitespace-nowrap">{product.netWeight} gm net</span>
-              {piecesText && <span className="text-muted-foreground/50">|</span>}
-            </>
-          )}
-          {piecesText && (
-            <span className="font-medium text-foreground/80 whitespace-nowrap">{piecesText}</span>
-          )}
-        </div>
-
-        {variants.length > 0 && (
-          <div
-            className="mb-2 flex flex-wrap gap-1.5"
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Choose a weight for ${product.name}`}
-          >
-            {variants.map((variant, index) => (
-              <button
-                key={`${variant.weightKg}-${variant.label}`}
-                type="button"
-                onClick={() => setSelectedVariantIndex(index)}
-                aria-pressed={index === selectedVariantIndex}
-                className={`rounded-full border px-2 py-1 text-[10px] font-semibold transition-colors ${
-                  index === selectedVariantIndex
-                    ? "border-primary bg-primary text-white"
-                    : "border-border bg-white text-foreground hover:border-primary"
-                }`}
-              >
-                {variant.label} · ₹{formatStorePrice(variant.price)}
-              </button>
-            ))}
+        {!isSaleVariantCard && (
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground mb-2.5 font-normal">
+            {product.grossWeight && (
+              <>
+                <span className="font-medium text-foreground/80 whitespace-nowrap">{formatProductWeight(product.grossWeight, "gross")}</span>
+                <span className="text-muted-foreground/50">|</span>
+              </>
+            )}
+            {product.netWeight && (
+              <>
+                <span className="font-medium text-foreground/80 whitespace-nowrap">{formatProductWeight(product.netWeight, "net")}</span>
+                {piecesText && <span className="text-muted-foreground/50">|</span>}
+              </>
+            )}
+            {piecesText && (
+              <span className="font-medium text-foreground/80 whitespace-nowrap">{piecesText}</span>
+            )}
           </div>
         )}
 
         <div className="flex items-center justify-between mt-auto pt-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg sm:text-xl font-semibold text-foreground">₹{formatStorePrice(displayPrice)}</span>
-            <span className="text-xs text-muted-foreground">{selectedVariant?.label ?? product.unit}</span>
+            <span className="text-xs text-muted-foreground">{product.unit}</span>
             {strikePrice && <span className="text-sm text-muted-foreground line-through">₹{strikePrice}</span>}
             {discountPct && <span className="text-sm font-semibold text-green-600">{discountPct}% off</span>}
           </div>

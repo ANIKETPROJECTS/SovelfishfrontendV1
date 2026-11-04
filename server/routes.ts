@@ -399,7 +399,23 @@ export async function registerRoutes(
       const stockPerUnit = rawItem?.weightKgPerUnit == null
         ? 1
         : Number(rawItem.weightKgPerUnit);
+      const minWeightKgPerUnit = rawItem?.weightMinKgPerUnit == null
+        ? null
+        : Number(rawItem.weightMinKgPerUnit);
+      const maxWeightKgPerUnit = rawItem?.weightMaxKgPerUnit == null
+        ? null
+        : Number(rawItem.weightMaxKgPerUnit);
+      const fishWeightKg = rawItem?.fishWeightKg == null
+        ? null
+        : Number(rawItem.fishWeightKg);
       if (!Number.isFinite(stockPerUnit) || stockPerUnit <= 0) {
+        throw new Error("Invalid checkout item");
+      }
+      if (
+        (minWeightKgPerUnit != null && (!Number.isFinite(minWeightKgPerUnit) || minWeightKgPerUnit <= 0)) ||
+        (maxWeightKgPerUnit != null && (!Number.isFinite(maxWeightKgPerUnit) || maxWeightKgPerUnit <= 0)) ||
+        (fishWeightKg != null && (!Number.isFinite(fishWeightKg) || fishWeightKg <= 0))
+      ) {
         throw new Error("Invalid checkout item");
       }
       return {
@@ -407,6 +423,10 @@ export async function registerRoutes(
         quantity,
         stockPerUnit,
         hasWeightVariant: rawItem?.weightKgPerUnit != null,
+        minWeightKgPerUnit,
+        maxWeightKgPerUnit,
+        fishBatchId: rawItem?.fishBatchId == null ? null : String(rawItem.fishBatchId).trim(),
+        fishWeightKg,
         price: rawItem?.price == null ? null : Number(rawItem.price),
         name: rawItem?.name,
       };
@@ -425,19 +445,113 @@ export async function registerRoutes(
     );
     const sourceCombosById = new Map(sourceCombos.map((combo: any) => [String(combo._id), combo]));
 
+    const selectedBatchRequests = new Map<string, {
+      productId: string;
+      batchId: string;
+      name: string;
+      requested: number;
+      available: number;
+    }>();
     for (const item of normalizedItems) {
-      if (!item.hasWeightVariant) continue;
       const product = sourceProductsById.get(item.productId);
-      const allowedWeights: number[] = Array.isArray(product?.bulkPortionWeightsKg)
-        ? product.bulkPortionWeightsKg.map(Number).filter((weight: number) => Number.isFinite(weight) && weight > 0)
-        : [];
-      const allowed = allowedWeights.some((weight) => Math.abs(weight - item.stockPerUnit) < 0.000001);
+      const isWholeFish = product?.fishInventoryMode === "whole_fish" || product?.wholeFishInventory === true;
+      const isBulkPortions = product?.fishInventoryMode === "bulk_portions" ||
+        (Array.isArray(product?.bulkPortionOptions) && product.bulkPortionOptions.length > 0) ||
+        (Array.isArray(product?.bulkPortionWeightsKg) && product.bulkPortionWeightsKg.length > 0);
+
+      if (isWholeFish) {
+        if (!item.fishBatchId || item.hasWeightVariant || item.minWeightKgPerUnit != null || item.maxWeightKgPerUnit != null) {
+          throw new Error("Invalid checkout item");
+        }
+        const batch = (product.batches ?? []).find((entry: any) =>
+          String(entry?._id ?? entry?.batchId ?? "") === item.fishBatchId,
+        );
+        const key = `${item.productId}:${item.fishBatchId}`;
+        const existing = selectedBatchRequests.get(key);
+        const batchExpiry = batch?.expiryDate ? new Date(batch.expiryDate) : null;
+        const activeBatch = Boolean(
+          batch &&
+          (!batchExpiry || batchExpiry > new Date()) &&
+          Number(batch.quantity ?? 0) > 0
+        );
+        const batchQuantity = activeBatch ? Math.max(0, Number(batch.quantity ?? 0)) : 0;
+        const requested = (existing?.requested ?? 0) + item.quantity;
+        selectedBatchRequests.set(key, {
+          productId: item.productId,
+          batchId: item.fishBatchId,
+          name: String(product?.name ?? item.name ?? "Fish"),
+          requested,
+          available: batchQuantity,
+        });
+        if (!activeBatch) continue;
+
+        const batchWeightKg = Number(batch.fishWeightKg);
+        const pricePerKg = Number(batch.fishPricePerKg ?? product.fishPricePerKg ?? product.price);
+        const storedFishPrice = batch.fishPrice == null ? Number.NaN : Number(batch.fishPrice);
+        const expectedPrice = Number.isFinite(pricePerKg) && pricePerKg > 0
+          ? Math.round(batchWeightKg * pricePerKg)
+          : Math.round(storedFishPrice);
+        const suppliedPrice = item.price == null ? Number.NaN : Number(item.price);
+        if (
+          !Number.isFinite(batchWeightKg) ||
+          batchWeightKg <= 0 ||
+          (item.fishWeightKg != null && Math.abs(item.fishWeightKg - batchWeightKg) > 0.000001) ||
+          !Number.isFinite(expectedPrice) ||
+          expectedPrice < 0 ||
+          !Number.isFinite(suppliedPrice) ||
+          Math.abs(expectedPrice - suppliedPrice) > 0.01
+        ) {
+          throw new Error("Invalid checkout item");
+        }
+        continue;
+      }
+
+      if (item.fishBatchId || item.fishWeightKg != null) {
+        throw new Error("Invalid checkout item");
+      }
+
+      if (!item.hasWeightVariant) {
+        if (isBulkPortions) throw new Error("Invalid checkout item");
+        continue;
+      }
+
+      if (!isBulkPortions) throw new Error("Invalid checkout item");
+      const configuredOptions: any[] =
+        Array.isArray(product?.bulkPortionOptions) && product.bulkPortionOptions.length > 0
+          ? product.bulkPortionOptions
+          : (product?.bulkPortionWeightsKg ?? []).map((weightKg: unknown) => ({ weightKg }));
+      const matchingOption = configuredOptions.find((option: any) => {
+        const minWeightKg = option?.minWeightKg == null ? null : Number(option.minWeightKg);
+        const maxWeightKg = option?.maxWeightKg == null ? null : Number(option.maxWeightKg);
+        const hasRange = minWeightKg != null && maxWeightKg != null &&
+          Number.isFinite(minWeightKg) && Number.isFinite(maxWeightKg) &&
+          Math.abs(minWeightKg - maxWeightKg) > 0.000001;
+        const expectedMin = hasRange ? minWeightKg : null;
+        const expectedMax = hasRange ? maxWeightKg : null;
+        const configuredWeightKg = option?.weightKg == null
+          ? minWeightKg != null && maxWeightKg != null
+            ? (minWeightKg + maxWeightKg) / 2
+            : Number.NaN
+          : Number(option.weightKg);
+        const weightKg = Number.isFinite(configuredWeightKg)
+          ? Math.round(configuredWeightKg * 1000) / 1000
+          : Number.NaN;
+        const sameWeight = Number.isFinite(weightKg) && Math.abs(weightKg - item.stockPerUnit) < 0.000001;
+        const sameMin = expectedMin == null
+          ? item.minWeightKgPerUnit == null
+          : item.minWeightKgPerUnit != null && Math.abs(expectedMin - item.minWeightKgPerUnit) < 0.000001;
+        const sameMax = expectedMax == null
+          ? item.maxWeightKgPerUnit == null
+          : item.maxWeightKgPerUnit != null && Math.abs(expectedMax - item.maxWeightKgPerUnit) < 0.000001;
+        return sameWeight && sameMin && sameMax;
+      });
       const pricePerKg = Number(product?.fishPricePerKg ?? product?.price);
-      const expectedPrice = Math.round(pricePerKg * item.stockPerUnit * 100) / 100;
+      const expectedPrice = Math.round(pricePerKg * item.stockPerUnit);
       const suppliedPrice = item.price == null ? Number.NaN : Number(item.price);
       if (
-        !allowed ||
+        !matchingOption ||
         !Number.isFinite(pricePerKg) ||
+        pricePerKg <= 0 ||
         !Number.isFinite(suppliedPrice) ||
         Math.abs(expectedPrice - suppliedPrice) > 0.01
       ) {
@@ -504,6 +618,16 @@ export async function registerRoutes(
     }
     const lines = [...aggregated.values()];
     const unavailableItems = findCheckoutStockIssues(lines, productsById, missingNames);
+    for (const batch of selectedBatchRequests.values()) {
+      if (batch.available < batch.requested) {
+        unavailableItems.push({
+          productId: batch.productId,
+          name: batch.name,
+          requested: batch.requested,
+          available: batch.available,
+        });
+      }
+    }
 
     return { inStock: unavailableItems.length === 0, unavailableItems };
   };
@@ -535,40 +659,147 @@ export async function registerRoutes(
     // Match the same authoritative inventory source used by checkout. The
     // separate POS `batches` field is not decremented by storefront orders.
     const availableQty = getCheckoutAvailableQuantity(doc, now);
-    const effectiveStatus = batchExpired || availableQty <= 0 ? "unavailable" : doc.status;
     const pricePerKg = Number(doc.fishPricePerKg ?? doc.price);
-    const marketHistory = getYesterdayAndTodayHistory(doc.priceHistory, now);
-    const weightVariants = Number.isFinite(pricePerKg) && pricePerKg > 0 && Array.isArray(doc.bulkPortionWeightsKg)
-      ? doc.bulkPortionWeightsKg
-          .map((rawWeight: unknown) => Number(rawWeight))
-          .filter((weightKg: number) => Number.isFinite(weightKg) && weightKg > 0)
-          .map((weightKg: number) => {
-            const grams = Math.round(weightKg * 1000);
-            const label = grams >= 1000
-              ? `${Number((grams / 1000).toFixed(3))} kg`
-              : `${grams} g`;
+    const rawInventoryMode = String(doc.fishInventoryMode ?? "").toLowerCase();
+    const hasBulkOptions =
+      (Array.isArray(doc.bulkPortionOptions) && doc.bulkPortionOptions.length > 0) ||
+      (Array.isArray(doc.bulkPortionWeightsKg) && doc.bulkPortionWeightsKg.length > 0);
+    const fishInventoryMode = rawInventoryMode === "whole_fish" || doc.wholeFishInventory === true
+      ? "whole_fish"
+      : rawInventoryMode === "bulk_portions" || hasBulkOptions
+        ? "bulk_portions"
+        : "standard";
+    const isWholeFish = fishInventoryMode === "whole_fish";
+    const isBulkPortions = fishInventoryMode === "bulk_portions";
+    const catalogPrice = (isWholeFish || isBulkPortions) && Number.isFinite(pricePerKg) && pricePerKg > 0
+      ? pricePerKg
+      : doc.price ?? null;
+    const formatWeightKg = (weightKg: number) => {
+      const grams = Math.round(weightKg * 1000);
+      return grams >= 1000
+        ? `${Number((grams / 1000).toFixed(3))} kg`
+        : `${grams} g`;
+    };
+
+    const configuredBulkOptions: any[] =
+      Array.isArray(doc.bulkPortionOptions) && doc.bulkPortionOptions.length > 0
+        ? doc.bulkPortionOptions
+        : (doc.bulkPortionWeightsKg ?? []).map((weightKg: unknown) => ({ weightKg }));
+    const bulkSaleOptions = isBulkPortions && Number.isFinite(pricePerKg) && pricePerKg > 0
+      ? configuredBulkOptions
+          .map((option: any) => {
+            const minWeightKg = option?.minWeightKg == null ? null : Number(option.minWeightKg);
+            const maxWeightKg = option?.maxWeightKg == null ? null : Number(option.maxWeightKg);
+            const rawWeightKg = option?.weightKg == null
+              ? minWeightKg != null && maxWeightKg != null
+                ? (minWeightKg + maxWeightKg) / 2
+                : Number.NaN
+              : Number(option.weightKg);
+            const weightKg = Number.isFinite(rawWeightKg)
+              ? Math.round(rawWeightKg * 1000) / 1000
+              : Number.NaN;
+            const hasIncompleteRange = (minWeightKg == null) !== (maxWeightKg == null);
+            if (
+              !Number.isFinite(weightKg) ||
+              weightKg <= 0 ||
+              hasIncompleteRange ||
+              (minWeightKg != null && (!Number.isFinite(minWeightKg) || minWeightKg <= 0)) ||
+              (maxWeightKg != null && (!Number.isFinite(maxWeightKg) || maxWeightKg <= 0)) ||
+              (minWeightKg != null && maxWeightKg != null && minWeightKg > maxWeightKg)
+            ) return null;
+            const hasRange = minWeightKg != null && maxWeightKg != null && minWeightKg !== maxWeightKg;
+            const averageWeightLabel = hasRange ? formatWeightKg(weightKg) : null;
+            const label = hasRange
+              ? `${formatWeightKg(minWeightKg)}–${formatWeightKg(maxWeightKg)}`
+              : formatWeightKg(weightKg);
             return {
               weightKg,
               label,
-              price: Math.round(pricePerKg * weightKg * 100) / 100,
+              price: Math.round(pricePerKg * weightKg),
+              minWeightKg: hasRange ? minWeightKg : null,
+              maxWeightKg: hasRange ? maxWeightKg : null,
+              averageWeightLabel,
+              availableQuantity: Math.max(0, Math.floor((availableQty + 1e-9) / weightKg)),
             };
           })
-          .filter((variant: { price: number }) => Number.isFinite(variant.price) && variant.price >= 0)
+          .filter((option: any) => option && Number.isFinite(option.price) && option.price >= 0)
       : [];
+
+    const fishBatches = isWholeFish
+      ? activeExtBatches
+          .map((batch: any) => {
+            const quantity = Number(batch.quantity ?? 0);
+            const weightKg = Number(batch.fishWeightKg);
+            const batchRate = Number(batch.fishPricePerKg ?? pricePerKg);
+            const rawPrice = Number.isFinite(batchRate) && batchRate > 0
+              ? Math.round(weightKg * batchRate)
+              : batch.fishPrice == null
+                ? Number.NaN
+                : Number(batch.fishPrice);
+            if (
+              !(batch._id ?? batch.batchId) ||
+              !Number.isFinite(quantity) ||
+              quantity <= 0 ||
+              !Number.isFinite(weightKg) ||
+              weightKg <= 0 ||
+              !Number.isFinite(rawPrice) ||
+              rawPrice < 0
+            ) return null;
+            return {
+              batchId: String(batch._id ?? batch.batchId),
+              weightKg,
+              price: Math.round(rawPrice),
+              quantity,
+              expiryDate: batch.expiryDate ? new Date(batch.expiryDate).toISOString() : null,
+            };
+          })
+          .filter((batch: any) => batch != null)
+      : [];
+    const weightVariants = isWholeFish
+      ? fishBatches.map((batch: any) => ({
+          weightKg: batch.weightKg,
+          label: formatWeightKg(batch.weightKg),
+          price: batch.price,
+          batchId: batch.batchId,
+          availableQuantity: batch.quantity,
+          saleType: "whole_fish" as const,
+        }))
+      : bulkSaleOptions
+          .filter((option: any) => option.availableQuantity > 0)
+          .map((option: any) => ({
+            ...option,
+            saleType: "bulk_portion" as const,
+          }));
+    const noSellableOptions = (isWholeFish && fishBatches.length === 0) ||
+      (isBulkPortions && weightVariants.length === 0);
+    const effectiveStatus = batchExpired || availableQty <= 0 || noSellableOptions
+      ? "unavailable"
+      : doc.status;
+    const marketHistory = getYesterdayAndTodayHistory(doc.priceHistory, now);
+    const displayUnit = isWholeFish || isBulkPortions ? "per kg" : doc.unit ?? null;
     return {
       id: doc._id.toString(), name: doc.name, category: doc.category,
       subCategory: doc.subCategory ?? null, status: effectiveStatus,
-      limitedStockNote: doc.limitedStockNote ?? null, price: doc.price ?? null,
-      marketMovement: getMarketMovement(doc.price, doc.priceHistory, now),
-      marketRange: getDailyPriceRange(doc.price, doc.priceHistory, now),
+      limitedStockNote: doc.limitedStockNote ?? null, price: catalogPrice,
+      marketMovement: getMarketMovement(catalogPrice, doc.priceHistory, now),
+      marketRange: getDailyPriceRange(catalogPrice, doc.priceHistory, now),
       marketHistory,
-      originalPrice: doc.originalPrice ?? null, unit: doc.unit ?? null,
+      originalPrice: doc.originalPrice ?? null, unit: displayUnit,
+      variantGroupId: doc.variantGroupId == null ? null : String(doc.variantGroupId),
+      variantLabel: doc.variantLabel == null ? null : String(doc.variantLabel),
+      fishInventoryMode,
+      wholeFishInventory: isWholeFish,
+      fishPricePerKg: Number.isFinite(pricePerKg) && pricePerKg > 0 ? pricePerKg : null,
+      bulkSaleOptions,
+      fishBatches,
       imageUrl: doc.imageUrl ?? null,
       isArchived: doc.isArchived ?? false,
       updatedAt: doc.updatedAt, sectionId: doc.sectionId ?? null,
       description: doc.description ?? null,
       grossWeight: doc.grossWeight == null ? null : String(doc.grossWeight),
-      netWeight: doc.netWeight == null ? null : String(doc.netWeight),
+      netWeight: doc.netWeight == null
+        ? (doc.variantLabel == null ? null : String(doc.variantLabel))
+        : String(doc.netWeight),
       weightVariants,
       pieces: doc.pieces ?? null, serves: doc.serves ?? null,
       discountPct: doc.discountPct ?? null, quantity: doc.quantity ?? null,
@@ -1171,7 +1402,8 @@ export async function registerRoutes(
         const product = productsById.get(id);
         const combo = combosById.get(id);
         if (product) {
-          const price = Number(product.price);
+          const hasValidatedSaleOption = item.weightKgPerUnit != null || Boolean(item.fishBatchId);
+          const price = hasValidatedSaleOption ? Number(item.price) : Number(product.price);
           if (
             product.isArchived ||
             product.status === "unavailable" ||
@@ -1184,7 +1416,7 @@ export async function registerRoutes(
             ...item,
             name: String(product.name),
             price,
-            unit: product.unit ?? item.unit ?? null,
+            unit: hasValidatedSaleOption ? item.unit ?? product.unit ?? null : product.unit ?? item.unit ?? null,
             imageUrl: product.imageUrl ?? item.imageUrl ?? null,
           };
         }
@@ -2971,13 +3203,29 @@ export async function registerRoutes(
       const deliveryDate = input.deliveryDate ??
         `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, "0")}-${String(now2.getDate()).padStart(2, "0")}`;
 
-      const cleanedItems = (input.items as any[]).map(({ productId, name, price, quantity, unit, weightKgPerUnit, imageUrl }) => ({
+      const cleanedItems = (input.items as any[]).map(({
+        productId,
+        name,
+        price,
+        quantity,
+        unit,
+        weightKgPerUnit,
+        weightMinKgPerUnit,
+        weightMaxKgPerUnit,
+        fishBatchId,
+        fishWeightKg,
+        imageUrl,
+      }) => ({
         productId,
         name,
         price,
         quantity,
         unit: unit ?? null,
         weightKgPerUnit: weightKgPerUnit ?? null,
+        weightMinKgPerUnit: weightMinKgPerUnit ?? null,
+        weightMaxKgPerUnit: weightMaxKgPerUnit ?? null,
+        fishBatchId: fishBatchId ?? null,
+        fishWeightKg: fishWeightKg ?? null,
         imageUrl: imageUrl ?? null,
       }));
 

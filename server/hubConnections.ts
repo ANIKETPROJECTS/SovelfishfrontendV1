@@ -21,6 +21,27 @@ const productPriceHistorySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const externalFishBatchSchema = new mongoose.Schema(
+  {
+    batchNumber: { type: String, default: null },
+    quantity: { type: Number, default: 0 },
+    fishWeightKg: { type: Number, default: null },
+    fishPrice: { type: Number, default: null },
+    fishPricePerKg: { type: Number, default: null },
+    expiryDate: { type: Date, default: null },
+  },
+  { strict: false }
+);
+
+const bulkPortionOptionSchema = new mongoose.Schema(
+  {
+    weightKg: { type: Number, default: null },
+    minWeightKg: { type: Number, default: null },
+    maxWeightKg: { type: Number, default: null },
+  },
+  { _id: false, strict: false }
+);
+
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   category: { type: String, required: true },
@@ -29,7 +50,14 @@ const productSchema = new mongoose.Schema({
   limitedStockNote: { type: String, default: null },
   price: { type: Number, default: null },
   fishPricePerKg: { type: Number, default: null },
+  fishInventoryMode: { type: String, default: "standard" },
+  wholeFishInventory: { type: Boolean, default: false },
+  variantGroupId: { type: mongoose.Schema.Types.Mixed, default: null },
+  variantLabel: { type: String, default: null },
+  weight: { type: mongoose.Schema.Types.Mixed, default: null },
+  bulkPortionOptions: { type: [bulkPortionOptionSchema], default: [] },
   bulkPortionWeightsKg: { type: [Number], default: [] },
+  batches: { type: [externalFishBatchSchema], default: [] },
   priceHistory: { type: [productPriceHistorySchema], default: [] },
   originalPrice: { type: Number, default: null },
   unit: { type: String, default: null },

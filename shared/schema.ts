@@ -63,6 +63,27 @@ export type Product = {
   description: string | null;
   grossWeight: string | null;
   netWeight: string | null;
+  variantGroupId?: string | null;
+  variantLabel?: string | null;
+  fishInventoryMode?: "standard" | "whole_fish" | "bulk_portions" | string;
+  wholeFishInventory?: boolean;
+  fishPricePerKg?: number | null;
+  bulkSaleOptions?: Array<{
+    weightKg: number;
+    label: string;
+    price: number;
+    minWeightKg?: number | null;
+    maxWeightKg?: number | null;
+    averageWeightLabel?: string | null;
+    availableQuantity: number;
+  }>;
+  fishBatches?: Array<{
+    batchId: string;
+    weightKg: number;
+    price: number;
+    quantity: number;
+    expiryDate: string | null;
+  }>;
   pieces: string | null;
   serves: string | null;
   discountPct: number | null;
@@ -78,6 +99,12 @@ export type Product = {
     weightKg: number;
     label: string;
     price: number;
+    minWeightKg?: number | null;
+    maxWeightKg?: number | null;
+    averageWeightLabel?: string | null;
+    batchId?: string | null;
+    availableQuantity?: number;
+    saleType?: "bulk_portion" | "whole_fish";
   }>;
   marketMovement?: {
     direction: "up" | "down" | "steady";
@@ -142,6 +169,10 @@ export type OrderItem = {
   price: number | null;
   unit?: string | null;
   weightKgPerUnit?: number | null;
+  weightMinKgPerUnit?: number | null;
+  weightMaxKgPerUnit?: number | null;
+  fishBatchId?: string | null;
+  fishWeightKg?: number | null;
   imageUrl?: string | null;
 };
 
@@ -351,6 +382,10 @@ export const insertOrderRequestSchema = z.object({
     price: z.number().nullable(),
     unit: z.string().nullable().optional(),
     weightKgPerUnit: z.number().positive().nullable().optional(),
+    weightMinKgPerUnit: z.number().positive().nullable().optional(),
+    weightMaxKgPerUnit: z.number().positive().nullable().optional(),
+    fishBatchId: z.string().nullable().optional(),
+    fishWeightKg: z.number().positive().nullable().optional(),
     imageUrl: z.string().nullable().optional(),
   })).min(1, "At least one item is required"),
   subtotal: z.number().nullable().optional(),

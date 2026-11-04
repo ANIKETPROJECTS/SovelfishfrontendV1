@@ -167,6 +167,10 @@ type StockCheckItem = {
   quantity: number;
   name: string;
   weightKgPerUnit?: number;
+  weightMinKgPerUnit?: number;
+  weightMaxKgPerUnit?: number;
+  fishBatchId?: string;
+  fishWeightKg?: number;
   price?: number | null;
 };
 type StockCheckResult = {
@@ -210,6 +214,10 @@ function getStockCheckItems(items: CartItem[]): StockCheckItem[] {
     quantity: item.quantity,
     name: item.name,
     weightKgPerUnit: item.weightKgPerUnit,
+    weightMinKgPerUnit: item.weightMinKgPerUnit,
+    weightMaxKgPerUnit: item.weightMaxKgPerUnit,
+    fishBatchId: item.fishBatchId,
+    fishWeightKg: item.fishWeightKg,
     price: item.price,
   }));
 }
@@ -944,8 +952,12 @@ export function CartDrawer() {
       quantity: i.quantity,
       name: i.name,
       price: i.price,
-      unit: (i as any).unit ?? null,
+      unit: i.unit ?? null,
       weightKgPerUnit: i.weightKgPerUnit ?? null,
+      weightMinKgPerUnit: i.weightMinKgPerUnit ?? null,
+      weightMaxKgPerUnit: i.weightMaxKgPerUnit ?? null,
+      fishBatchId: i.fishBatchId ?? null,
+      fishWeightKg: i.fishWeightKg ?? null,
       imageUrl: i.imageUrl ?? null,
     }));
     const slotCharge = pincodeDeliveryCharge;
