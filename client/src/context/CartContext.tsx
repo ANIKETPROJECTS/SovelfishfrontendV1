@@ -12,7 +12,7 @@ export interface ComboInclude {
 }
 
 export interface CartItem extends Omit<Product, 'id'> {
-  id: number;
+  id: string | number;
   quantity: number;
   instruction?: string;
   /** Replit-only storefront fixture; never valid for order creation. */
@@ -21,6 +21,7 @@ export interface CartItem extends Omit<Product, 'id'> {
   isPreorderCheckout?: boolean;
   isCombo?: boolean;
   originalId?: string;
+  weightKgPerUnit?: number;
   comboImages?: string[];
   comboCategories?: string[];
   comboIncludes?: ComboInclude[];
@@ -29,9 +30,9 @@ export interface CartItem extends Omit<Product, 'id'> {
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product | CartItem, quantity?: number, openCart?: boolean) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
-  updateInstruction: (productId: number, instruction: string) => void;
+  removeFromCart: (productId: string | number) => void;
+  updateQuantity: (productId: string | number, quantity: number) => void;
+  updateInstruction: (productId: string | number, instruction: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -105,7 +106,9 @@ function calcMaxQty(
         const consumedByOthers = allItems.reduce((total, ci) => {
           if (sameCartItem(ci, item)) return total; // skip self
           // Individual product matching this ingredient
-          if (!ci.isCombo && getCartProductId(ci) === String(inc.productId)) return total + ci.quantity;
+          if (!ci.isCombo && getCartProductId(ci) === String(inc.productId)) {
+            return total + ci.quantity * (ci.weightKgPerUnit ?? 1);
+          }
           // Another combo that also uses this ingredient
           if (ci.isCombo && ci.comboIncludes) {
             const found = ci.comboIncludes.find((x) => String(x.productId) === String(inc.productId));
@@ -140,9 +143,12 @@ function calcMaxQty(
     );
     if (stock === null) return 999;
 
-    // Units consumed by combos in cart that include this product
-    const comboConsumed = allItems.reduce((total, ci) => {
+    // Inventory is shared by all portion sizes of a weighted product.
+    const consumedByOthers = allItems.reduce((total, ci) => {
       if (sameCartItem(ci, item)) return total; // skip self
+      if (!ci.isCombo && getCartProductId(ci) === productId) {
+        return total + ci.quantity * (ci.weightKgPerUnit ?? 1);
+      }
       if (ci.isCombo && ci.comboIncludes) {
         const found = ci.comboIncludes.find((x) => String(x.productId) === productId);
         if (found) return total + ci.quantity * found.quantity;
@@ -150,7 +156,9 @@ function calcMaxQty(
       return total;
     }, 0);
 
-    return Math.max(0, stock - comboConsumed);
+    const stockPerUnit = Number(item.weightKgPerUnit ?? 1);
+    if (!Number.isFinite(stockPerUnit) || stockPerUnit <= 0) return 0;
+    return Math.max(0, Math.floor((stock - consumedByOthers) / stockPerUnit));
   }
 }
 
@@ -270,11 +278,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (openCart) setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId: number) => {
-    setItems((current) => current.filter((i) => i.id !== productId));
+  const removeFromCart = (productId: string | number) => {
+    setItems((current) => current.filter((i) => String(i.id) !== String(productId)));
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = (productId: string | number, quantity: number) => {
     if (quantity < 1) {
       removeFromCart(productId);
       return;
@@ -302,9 +310,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateInstruction = (productId: number, instruction: string) => {
+  const updateInstruction = (productId: string | number, instruction: string) => {
     setItems((current) =>
-      current.map((i) => (i.id === productId ? { ...i, instruction } : i))
+      current.map((i) => (String(i.id) === String(productId) ? { ...i, instruction } : i))
     );
   };
 
@@ -356,7 +364,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Find cart items that are now expired and haven't been notified yet
     const toRemove = items.filter(
-      (item) => !item.isCombo && expiredIds.has(String(item.id))
+      (item) => !item.isCombo && expiredIds.has(getCartProductId(item))
     );
     const newlyExpired = toRemove.filter(
       (item) => !notifiedExpiredIds.current.has(String(item.id))
@@ -369,7 +377,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Remove from cart
     setItems((current) =>
-      current.filter((item) => !expiredIds.has(String(item.id)))
+      current.filter((item) => item.isCombo || !expiredIds.has(getCartProductId(item)))
     );
 
     // Toast listing removed product names
@@ -386,7 +394,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // expiry events are surfaced again
   useEffect(() => {
     items.forEach((item) => {
-      notifiedExpiredIds.current.delete(String(item.id));
+      notifiedExpiredIds.current.delete(getCartProductId(item));
     });
   }, [items]);
 

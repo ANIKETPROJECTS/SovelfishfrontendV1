@@ -28,6 +28,8 @@ const productSchema = new mongoose.Schema({
   status: { type: String, default: "available" },
   limitedStockNote: { type: String, default: null },
   price: { type: Number, default: null },
+  fishPricePerKg: { type: Number, default: null },
+  bulkPortionWeightsKg: { type: [Number], default: [] },
   priceHistory: { type: [productPriceHistorySchema], default: [] },
   originalPrice: { type: Number, default: null },
   unit: { type: String, default: null },

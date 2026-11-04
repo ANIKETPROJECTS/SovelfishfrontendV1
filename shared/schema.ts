@@ -74,6 +74,11 @@ export type Product = {
   recipes: Recipe[];
   preorderMode: PreorderMode;
   preorderAvailability?: PreorderAvailability | null;
+  weightVariants?: Array<{
+    weightKg: number;
+    label: string;
+    price: number;
+  }>;
   marketMovement?: {
     direction: "up" | "down" | "steady";
     changeAmount: number;
@@ -131,6 +136,8 @@ export type OrderItem = {
   quantity: number;
   name: string;
   price: number | null;
+  unit?: string | null;
+  weightKgPerUnit?: number | null;
   imageUrl?: string | null;
 };
 
@@ -339,6 +346,7 @@ export const insertOrderRequestSchema = z.object({
     name: z.string(),
     price: z.number().nullable(),
     unit: z.string().nullable().optional(),
+    weightKgPerUnit: z.number().positive().nullable().optional(),
     imageUrl: z.string().nullable().optional(),
   })).min(1, "At least one item is required"),
   subtotal: z.number().nullable().optional(),

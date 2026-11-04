@@ -162,13 +162,19 @@ function formatPreorderAvailability(item: any): string {
   return "Available on all future dates";
 }
 
-type StockCheckItem = { productId: string; quantity: number; name: string };
+type StockCheckItem = {
+  productId: string;
+  quantity: number;
+  name: string;
+  weightKgPerUnit?: number;
+  price?: number | null;
+};
 type StockCheckResult = {
   inStock: boolean;
   unavailableItems: Array<{ productId: string; name: string; requested: number; available: number }>;
 };
 type CartStockIssueRow = {
-  cartItemId: number;
+  cartItemId: string | number;
   name: string;
   quantity: number;
   warning: string;
@@ -203,6 +209,8 @@ function getStockCheckItems(items: CartItem[]): StockCheckItem[] {
     productId: item.originalId ?? String(item.id),
     quantity: item.quantity,
     name: item.name,
+    weightKgPerUnit: item.weightKgPerUnit,
+    price: item.price,
   }));
 }
 
@@ -234,7 +242,10 @@ function getCartStockIssueRows(
       quantity: item.quantity,
       warning,
       details: relatedIssues
-        .map((issue) => `${issue.name}: ${issue.available} available, ${issue.requested} requested`)
+        .map((issue) => {
+          const unit = item.weightKgPerUnit ? " kg" : "";
+          return `${issue.name}: ${issue.available}${unit} available, ${issue.requested}${unit} requested`;
+        })
         .join("; "),
     });
   }
@@ -245,7 +256,7 @@ function getCartStockIssueRows(
 function getCartStockWarnings(
   items: CartItem[],
   result: StockCheckResult,
-): Record<number, string> {
+): Record<string, string> {
   return Object.fromEntries(
     getCartStockIssueRows(items, result)
       .map((row) => [row.cartItemId, row.warning]),
@@ -253,13 +264,13 @@ function getCartStockWarnings(
 }
 
 function areStockWarningsEqual(
-  current: Record<number, string>,
-  next: Record<number, string>,
+  current: Record<string, string>,
+  next: Record<string, string>,
 ): boolean {
   const currentKeys = Object.keys(current);
   const nextKeys = Object.keys(next);
   return currentKeys.length === nextKeys.length &&
-    currentKeys.every((key) => current[Number(key)] === next[Number(key)]);
+    currentKeys.every((key) => current[key] === next[key]);
 }
 
 export function CartDrawer() {
@@ -280,7 +291,7 @@ export function CartDrawer() {
     razorpayOpenRef.current = open;
     setIsRazorpayOpen(open);
   };
-  const [cartStockWarnings, setCartStockWarnings] = useState<Record<number, string>>({});
+  const [cartStockWarnings, setCartStockWarnings] = useState<Record<string, string>>({});
   const [isStockIssueDialogOpen, setIsStockIssueDialogOpen] = useState(false);
   const [stockIssueRows, setStockIssueRows] = useState<CartStockIssueRow[]>([]);
   const paymentSucceededRef = useRef(false);
@@ -934,6 +945,7 @@ export function CartDrawer() {
       name: i.name,
       price: i.price,
       unit: (i as any).unit ?? null,
+      weightKgPerUnit: i.weightKgPerUnit ?? null,
       imageUrl: i.imageUrl ?? null,
     }));
     const slotCharge = pincodeDeliveryCharge;

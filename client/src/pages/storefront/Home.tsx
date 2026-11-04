@@ -96,6 +96,30 @@ export default function Home() {
   }) || [];
 
   const productMap = Object.fromEntries((products ?? []).map(p => [p.id, p]));
+  const productSectionIds = new Set(
+    sections
+      .filter((section) => section.type === "products")
+      .map((section) => section.id),
+  );
+  const assignedProductIds = new Set(
+    (products ?? [])
+      .filter((product) => {
+        const ids = Array.isArray(product.sectionId)
+          ? product.sectionId
+          : product.sectionId
+            ? [product.sectionId]
+            : [];
+        return ids.some((id) => productSectionIds.has(id));
+      })
+      .map((product) => product.id),
+  );
+  const unsectionedCatalogProducts = (products ?? []).filter((product) =>
+    !product.isArchived &&
+    !product.batchExpired &&
+    isNormalStorefrontProduct(product) &&
+    isStorefrontProductVisible(product) &&
+    !assignedProductIds.has(product.id),
+  );
 
   const filteredCombos = searchQuery
     ? combos.filter(combo =>
@@ -109,13 +133,13 @@ export default function Home() {
       )
     : [];
 
-  const getSectionProducts = (sectionId: string, unlimited = false) => {
+  const getSectionProducts = (sectionId: string) => {
     const filtered = products?.filter(p => {
       if (p.isArchived || p.batchExpired || !isNormalStorefrontProduct(p) || !isStorefrontProductVisible(p)) return false;
       if (Array.isArray(p.sectionId)) return p.sectionId.includes(sectionId);
       return p.sectionId === sectionId;
     }) || [];
-    return unlimited ? filtered : filtered.slice(0, 10);
+    return filtered;
   };
 
   const preorderProducts = (products ?? []).filter(
@@ -489,9 +513,7 @@ export default function Home() {
           }
 
           // "products" type section
-          const normalizedTitle = section.title.trim().toLowerCase().replace(/[^a-z]/g, "");
-          const isAllProducts = normalizedTitle === "allproducts";
-          const sectionProducts = getSectionProducts(section.id, isAllProducts);
+          const sectionProducts = getSectionProducts(section.id);
           return (
             <section key={section.id} className="mb-7">
               <div className="flex items-center justify-between mb-3">
@@ -514,6 +536,20 @@ export default function Home() {
             </section>
           );
         })}
+        {unsectionedCatalogProducts.length > 0 && (
+          <section className="mb-7" data-testid="section-full-catalog">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-xl font-medium uppercase tracking-wide text-foreground sm:text-2xl">
+                Explore all products
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+              {unsectionedCatalogProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
+        )}
           </>
         )}
       </main>

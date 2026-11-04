@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { isNormalStorefrontProduct } from "@shared/productVisibility";
 import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
+import { asVariantCartProduct, formatStorePrice } from "@/lib/productVariants";
 
 import weighScaleIcon from "@assets/weight-scale_1774801344716.png";
 import piecesIcon from "@assets/cutlery_1774801395283.png";
@@ -141,11 +142,17 @@ export default function ProductDetail() {
   const { addToCart, updateQuantity, appliedCoupon, setAppliedCoupon, items: cartItems, computeMaxQty } = useCart();
   const { customer, openLoginModal } = useCustomer();
   const [qty, setQty] = useState(1);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const recipeScrollRef = useRef<HTMLDivElement>(null);
   const similarScrollRef = useRef<HTMLDivElement>(null);
 
   const productId = params?.id;
   const product = products?.find((p) => p.id === productId && !p.batchExpired && isStorefrontProductVisible(p));
+  const variants = product?.weightVariants ?? [];
+  const selectedVariant = variants[selectedVariantIndex] ?? variants[0];
+  const cartProduct = product && selectedVariant
+    ? asVariantCartProduct(product, selectedVariant)
+    : product;
   const isUnavailable = product?.status === "unavailable";
 
   // Auto-redirect to home when the product disappears from the list (went out of stock
@@ -162,15 +169,16 @@ export default function ProductDetail() {
   }, [isLoading, products, product, productId, setLocation, toast]);
 
   // Inventory cap — same logic as home screen and ComboDetail
-  const cartItem = cartItems.find(i => (i.originalId ?? String(i.id)) === product?.id);
+  const cartItem = cartItems.find(i => String(i.id) === String(cartProduct?.id));
   const currentCartQty = cartItem?.quantity ?? 0;
-  const stockCandidate = cartItem ?? (product ? { ...product, quantity: 0 } as any : null);
+  const stockCandidate = cartItem ?? (cartProduct ? { ...cartProduct, quantity: 0 } as any : null);
   const totalMax = stockCandidate ? computeMaxQty(stockCandidate) : 0;
   const [offersExpanded, setOffersExpanded] = useState(false);
 
   // Reset local qty when navigating to a different product
   useEffect(() => {
     setQty(1);
+    setSelectedVariantIndex(0);
   }, [productId]);
 
   useEffect(() => {
@@ -188,7 +196,8 @@ export default function ProductDetail() {
   const liveCoupons = rawProductCoupons.filter(c => c.visibleOnWebsite !== false && !(!!customer && userCouponUsage[c.code]?.isExhausted));
 
   const dummy = product ? getDummyDetail(product.category) : null;
-  const hasDiscount = product?.originalPrice != null && product?.price != null && product.originalPrice > product.price;
+  const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
+  const hasDiscount = !selectedVariant && product?.originalPrice != null && product?.price != null && product.originalPrice > product.price;
   const effectiveDiscountPct = hasDiscount
     ? Math.round((product!.originalPrice! - product!.price!) / product!.originalPrice! * 100)
     : 0;
@@ -418,14 +427,43 @@ export default function ProductDetail() {
               )}
             </div>
 
+            {variants.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-semibold text-foreground">Choose weight</p>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map((variant, index) => (
+                    <button
+                      key={`${variant.weightKg}-${variant.label}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedVariantIndex(index);
+                        setQty(1);
+                      }}
+                      aria-pressed={index === selectedVariantIndex}
+                      className={`rounded-full border px-3 py-2 text-sm font-semibold transition-colors ${
+                        index === selectedVariantIndex
+                          ? "border-primary bg-primary text-white"
+                          : "border-border bg-white text-foreground hover:border-primary"
+                      }`}
+                    >
+                      {variant.label} · ₹{formatStorePrice(variant.price)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Price */}
             <div className="bg-muted/30 border border-border/30 rounded-2xl px-5 py-4">
               <div className="flex items-end gap-3 mb-1">
-                <span className="text-3xl font-bold text-foreground">₹{product.price}</span>
+                <span className="text-3xl font-bold text-foreground">₹{formatStorePrice(displayPrice)}</span>
                 {strikePrice && <span className="text-base text-muted-foreground line-through mb-0.5">₹{strikePrice}</span>}
                 {effectiveDiscountPct > 0 && <span className="text-sm font-semibold text-green-600 mb-0.5">{effectiveDiscountPct}% off</span>}
               </div>
-              <p className="text-xs text-muted-foreground">Inclusive of all taxes.</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedVariant?.label ?? product.unit ?? "Inclusive of all taxes."}
+                {(selectedVariant || product.unit) ? " · Inclusive of all taxes." : ""}
+              </p>
             </div>
 
             {/* Qty + Add to Cart */}
@@ -470,8 +508,8 @@ export default function ProductDetail() {
                       if (!customer) { openLoginModal(); return; }
                       if (!isInCart) {
                          addToCart(
-                           {
-                             ...product,
+                            {
+                              ...cartProduct!,
                              isPreorderCheckout:
                                new URLSearchParams(search).get("preorder") === "1" ||
                                product.preorderMode === "preorder_only",
@@ -487,8 +525,8 @@ export default function ProductDetail() {
                     {isUnavailable
                       ? "Out of Stock"
                       : isInCart
-                      ? `In Cart — ₹${(product.price ?? 0) * currentCartQty}`
-                      : `Add ${qty} to Cart — ₹${(product.price ?? 0) * qty}`}
+                       ? `In Cart — ₹${formatStorePrice(displayPrice * currentCartQty)}`
+                       : `Add ${qty} to Cart — ₹${formatStorePrice(displayPrice * qty)}`}
                   </Button>
                 </div>
               );

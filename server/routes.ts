@@ -392,7 +392,20 @@ export async function registerRoutes(
       if (!productId || !Number.isInteger(quantity) || quantity <= 0) {
         throw new Error("Invalid checkout item");
       }
-      return { productId, quantity, name: rawItem?.name };
+      const stockPerUnit = rawItem?.weightKgPerUnit == null
+        ? 1
+        : Number(rawItem.weightKgPerUnit);
+      if (!Number.isFinite(stockPerUnit) || stockPerUnit <= 0) {
+        throw new Error("Invalid checkout item");
+      }
+      return {
+        productId,
+        quantity,
+        stockPerUnit,
+        hasWeightVariant: rawItem?.weightKgPerUnit != null,
+        price: rawItem?.price == null ? null : Number(rawItem.price),
+        name: rawItem?.name,
+      };
     });
     const sourceIds = [...new Set(normalizedItems
       .map((item) => item.productId)
@@ -408,27 +421,55 @@ export async function registerRoutes(
     );
     const sourceCombosById = new Map(sourceCombos.map((combo: any) => [String(combo._id), combo]));
 
+    for (const item of normalizedItems) {
+      if (!item.hasWeightVariant) continue;
+      const product = sourceProductsById.get(item.productId);
+      const allowedWeights: number[] = Array.isArray(product?.bulkPortionWeightsKg)
+        ? product.bulkPortionWeightsKg.map(Number).filter((weight: number) => Number.isFinite(weight) && weight > 0)
+        : [];
+      const allowed = allowedWeights.some((weight) => Math.abs(weight - item.stockPerUnit) < 0.000001);
+      const pricePerKg = Number(product?.fishPricePerKg ?? product?.price);
+      const expectedPrice = Math.round(pricePerKg * item.stockPerUnit * 100) / 100;
+      const suppliedPrice = item.price == null ? Number.NaN : Number(item.price);
+      if (
+        !allowed ||
+        !Number.isFinite(pricePerKg) ||
+        !Number.isFinite(suppliedPrice) ||
+        Math.abs(expectedPrice - suppliedPrice) > 0.01
+      ) {
+        throw new Error("Invalid checkout item");
+      }
+    }
+
     const aggregated = new Map<string, CheckoutStockLine>();
     const missingNames = new Map<string, string>();
-    const addLine = (productId: unknown, quantity: number, name?: string) => {
+    const addLine = (productId: unknown, quantity: number, name?: string, stockPerUnit = 1) => {
       const id = String(productId ?? "").trim();
-      if (!id || !Number.isFinite(quantity) || quantity <= 0) {
+      if (
+        !id ||
+        !Number.isFinite(quantity) ||
+        quantity <= 0 ||
+        !Number.isFinite(stockPerUnit) ||
+        stockPerUnit <= 0
+      ) {
         throw new Error("Invalid checkout item");
       }
       const existing = aggregated.get(id);
       aggregated.set(id, {
         productId: id,
         quantity: (existing?.quantity ?? 0) + quantity,
+        stockPerUnit: 1,
+        requestedStock: (existing?.requestedStock ?? 0) + quantity * stockPerUnit,
         name: existing?.name ?? name,
       });
       if (name && !missingNames.has(id)) missingNames.set(id, name);
     };
 
     for (const rawItem of normalizedItems) {
-      const { productId, quantity } = rawItem;
+      const { productId, quantity, stockPerUnit } = rawItem;
       const product = sourceProductsById.get(productId);
       if (product) {
-        addLine(productId, quantity, product.name ?? rawItem.name);
+        addLine(productId, quantity, product.name ?? rawItem.name, stockPerUnit);
         continue;
       }
 
@@ -487,11 +528,28 @@ export async function registerRoutes(
 
     // If product has batches and ALL are expired, mark as unavailable
     const batchExpired = hasAnyBatches && !hasActiveBatches;
-    const effectiveStatus = batchExpired ? "unavailable" : doc.status;
-
     // Match the same authoritative inventory source used by checkout. The
     // separate POS `batches` field is not decremented by storefront orders.
     const availableQty = getCheckoutAvailableQuantity(doc, now);
+    const effectiveStatus = batchExpired || availableQty <= 0 ? "unavailable" : doc.status;
+    const pricePerKg = Number(doc.fishPricePerKg ?? doc.price);
+    const weightVariants = Number.isFinite(pricePerKg) && pricePerKg > 0 && Array.isArray(doc.bulkPortionWeightsKg)
+      ? doc.bulkPortionWeightsKg
+          .map((rawWeight: unknown) => Number(rawWeight))
+          .filter((weightKg: number) => Number.isFinite(weightKg) && weightKg > 0)
+          .map((weightKg: number) => {
+            const grams = Math.round(weightKg * 1000);
+            const label = grams >= 1000
+              ? `${Number((grams / 1000).toFixed(3))} kg`
+              : `${grams} g`;
+            return {
+              weightKg,
+              label,
+              price: Math.round(pricePerKg * weightKg * 100) / 100,
+            };
+          })
+          .filter((variant: { price: number }) => Number.isFinite(variant.price) && variant.price >= 0)
+      : [];
     return {
       id: doc._id.toString(), name: doc.name, category: doc.category,
       subCategory: doc.subCategory ?? null, status: effectiveStatus,
@@ -503,7 +561,9 @@ export async function registerRoutes(
       isArchived: doc.isArchived ?? false,
       updatedAt: doc.updatedAt, sectionId: doc.sectionId ?? null,
       description: doc.description ?? null,
-      grossWeight: doc.grossWeight ?? null, netWeight: doc.netWeight ?? null,
+      grossWeight: doc.grossWeight == null ? null : String(doc.grossWeight),
+      netWeight: doc.netWeight == null ? null : String(doc.netWeight),
+      weightVariants,
       pieces: doc.pieces ?? null, serves: doc.serves ?? null,
       discountPct: doc.discountPct ?? null, quantity: doc.quantity ?? null,
       availableQty, batchExpired,
@@ -561,8 +621,7 @@ export async function registerRoutes(
   app.get(api.products.list.path, async (req, res) => {
     const hub = await getReqHubModels(req);
     if (!hub) return res.json([]);
-    const productFilter: Record<string, unknown> = { quantity: { $ne: 0 } };
-    productFilter.isArchived = { $ne: true };
+    const productFilter: Record<string, unknown> = { isArchived: { $ne: true } };
     const docs = await hub.Product.find(productFilter).lean();
     res.json(docs.map(toProduct));
   });
@@ -2906,12 +2965,13 @@ export async function registerRoutes(
       const deliveryDate = input.deliveryDate ??
         `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, "0")}-${String(now2.getDate()).padStart(2, "0")}`;
 
-      const cleanedItems = (input.items as any[]).map(({ productId, name, price, quantity, unit, imageUrl }) => ({
+      const cleanedItems = (input.items as any[]).map(({ productId, name, price, quantity, unit, weightKgPerUnit, imageUrl }) => ({
         productId,
         name,
         price,
         quantity,
         unit: unit ?? null,
+        weightKgPerUnit: weightKgPerUnit ?? null,
         imageUrl: imageUrl ?? null,
       }));
 

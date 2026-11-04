@@ -42,6 +42,31 @@ test("uses the checkout quantity for a shortage and reports missing products", (
   ]);
 });
 
+test("checks weighted portions against fractional kilogram inventory", () => {
+  const products = new Map([
+    ["prawns", { name: "Prawns", quantity: 1.05 }],
+  ]);
+
+  assert.deepEqual(
+    findCheckoutStockIssues(
+      [{ productId: "prawns", quantity: 4, stockPerUnit: 0.275 }],
+      products,
+      new Map(),
+      now,
+    ),
+    [{ productId: "prawns", name: "Prawns", requested: 1.1, available: 1.05 }],
+  );
+  assert.deepEqual(
+    findCheckoutStockIssues(
+      [{ productId: "prawns", quantity: 3, stockPerUnit: 0.275 }],
+      products,
+      new Map(),
+      now,
+    ),
+    [],
+  );
+});
+
 test("archived and unavailable products are treated as unavailable", () => {
   assert.equal(getCheckoutAvailableQuantity({ quantity: 10, isArchived: true }, now), 0);
   assert.equal(getCheckoutAvailableQuantity({ quantity: 10, status: "unavailable" }, now), 0);

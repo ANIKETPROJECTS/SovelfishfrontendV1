@@ -1,6 +1,11 @@
 export interface CheckoutStockLine {
   productId: string;
+  /** Number of sellable cart units. */
   quantity: number;
+  /** Amount of inventory consumed per cart unit (e.g. kg for weighed portions). */
+  stockPerUnit?: number;
+  /** Pre-aggregated inventory demand when a product has mixed portion sizes. */
+  requestedStock?: number;
   name?: string;
 }
 
@@ -54,11 +59,12 @@ export function findCheckoutStockIssues(
   return lines.flatMap((line) => {
     const product = productsById.get(String(line.productId));
     const available = getCheckoutAvailableQuantity(product, now);
-    if (available >= line.quantity) return [];
+    const requested = line.requestedStock ?? line.quantity * (line.stockPerUnit ?? 1);
+    if (available >= requested) return [];
     return [{
       productId: String(line.productId),
       name: product?.name ?? missingNames.get(String(line.productId)) ?? "Item",
-      requested: line.quantity,
+      requested,
       available,
     }];
   });

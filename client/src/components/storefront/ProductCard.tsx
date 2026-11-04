@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { useLocation } from "wouter";
+import { useState } from "react";
 import type { Product } from "@shared/schema";
+import { asVariantCartProduct, formatStorePrice } from "@/lib/productVariants";
 import noImageImg from "@assets/Gemini_Generated_Image_z60vyrz60vyrz60v_1782896627484.png";
 
 const DUMMY_DETAILS: Record<string, { pieces: string; serves: string }> = {
@@ -27,9 +29,13 @@ export function ProductCard({
 }) {
   const { addToCart, removeFromCart, updateQuantity, items, computeMaxQty } = useCart();
   const [, setLocation] = useLocation();
+  const variants = product.weightVariants ?? [];
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const selectedVariant = variants[selectedVariantIndex] ?? variants[0];
+  const cartProduct = selectedVariant ? asVariantCartProduct(product, selectedVariant) : product;
   const isUnavailable = product.status === "unavailable";
 
-  const cartItem = items.find(i => i.id === product.id);
+  const cartItem = items.find(i => String(i.id) === String(cartProduct.id));
   const qty = cartItem?.quantity ?? 0;
 
   const getFallbackImage = (_category: string) => noImageImg;
@@ -37,30 +43,31 @@ export function ProductCard({
   const dummyFallback = DUMMY_DETAILS[product.category] ?? DUMMY_DETAILS["Fish"];
   const piecesText = product.pieces || null;
   const servesText = product.serves || null;
-  const hasDiscount = product.originalPrice != null && product.price != null && product.originalPrice > product.price;
+  const displayPrice = selectedVariant?.price ?? product.price;
+  const hasDiscount = !selectedVariant && product.originalPrice != null && product.price != null && product.originalPrice > product.price;
   const discountPct = hasDiscount ? Math.round((product.originalPrice! - product.price!) / product.originalPrice! * 100) : null;
   const strikePrice = hasDiscount ? product.originalPrice : null;
 
   const maxQty = computeMaxQty(
-    (cartItem ?? { ...product, quantity: 0 }) as any,
+    (cartItem ?? { ...cartProduct, quantity: 0 }) as any,
   );
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart({ ...product, isPreorderCheckout: preorderContext } as any);
+    addToCart({ ...cartProduct, isPreorderCheckout: preorderContext } as any);
   };
 
   const handleIncrease = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart({ ...product, isPreorderCheckout: preorderContext } as any);
+    addToCart({ ...cartProduct, isPreorderCheckout: preorderContext } as any);
   };
 
   const handleDecrease = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (qty <= 1) {
-      removeFromCart(product.id);
+      removeFromCart(cartProduct.id);
     } else {
-      updateQuantity(product.id, qty - 1);
+      updateQuantity(cartProduct.id, qty - 1);
     }
   };
 
@@ -128,9 +135,34 @@ export function ProductCard({
           )}
         </div>
 
+        {variants.length > 0 && (
+          <div
+            className="mb-2 flex flex-wrap gap-1.5"
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Choose a weight for ${product.name}`}
+          >
+            {variants.map((variant, index) => (
+              <button
+                key={`${variant.weightKg}-${variant.label}`}
+                type="button"
+                onClick={() => setSelectedVariantIndex(index)}
+                aria-pressed={index === selectedVariantIndex}
+                className={`rounded-full border px-2 py-1 text-[10px] font-semibold transition-colors ${
+                  index === selectedVariantIndex
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-white text-foreground hover:border-primary"
+                }`}
+              >
+                {variant.label} · ₹{formatStorePrice(variant.price)}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-auto pt-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg sm:text-xl font-semibold text-foreground">₹{product.price}</span>
+            <span className="text-lg sm:text-xl font-semibold text-foreground">₹{formatStorePrice(displayPrice)}</span>
+            <span className="text-xs text-muted-foreground">{selectedVariant?.label ?? product.unit}</span>
             {strikePrice && <span className="text-sm text-muted-foreground line-through">₹{strikePrice}</span>}
             {discountPct && <span className="text-sm font-semibold text-green-600">{discountPct}% off</span>}
           </div>
@@ -147,7 +179,7 @@ export function ProductCard({
             <Button
               onClick={handleAdd}
               disabled={maxQty <= 0}
-              data-testid={`button-add-product-${product.id}`}
+              data-testid={`button-add-product-${cartProduct.id}`}
               className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               size="icon"
             >
@@ -157,11 +189,11 @@ export function ProductCard({
             <div
               onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-0 rounded-full bg-primary shadow-md overflow-hidden shrink-0"
-              data-testid={`stepper-product-${product.id}`}
+              data-testid={`stepper-product-${cartProduct.id}`}
             >
               <button
                 onClick={handleDecrease}
-                data-testid={`button-decrease-product-${product.id}`}
+                data-testid={`button-decrease-product-${cartProduct.id}`}
                 className="w-7 h-7 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
               >
                 <Minus className="w-3 h-3" />
@@ -172,7 +204,7 @@ export function ProductCard({
               <button
                 onClick={handleIncrease}
                 disabled={qty >= maxQty}
-                data-testid={`button-increase-product-${product.id}`}
+                data-testid={`button-increase-product-${cartProduct.id}`}
                 className="w-7 h-7 flex items-center justify-center text-white hover:bg-white/20 transition-colors disabled:opacity-40"
               >
                 <Plus className="w-3 h-3" />
