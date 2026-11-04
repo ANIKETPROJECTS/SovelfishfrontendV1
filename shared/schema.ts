@@ -90,6 +90,10 @@ export type Product = {
     low: number;
     high: number;
   } | null;
+  marketHistory?: Array<{
+    price: number;
+    changedAt: string;
+  }>;
 };
 
 export type InsertProduct = {

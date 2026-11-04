@@ -38,6 +38,17 @@ type MarketBoardProps = {
   products: Product[];
 };
 
+const MARKET_PRODUCT_ORDER = [
+  "surmai",
+  "paplet",
+  "bangda",
+  "rawas",
+  "bombil",
+  "kolambi",
+  "halwa",
+  "mandeli",
+];
+
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
@@ -54,40 +65,42 @@ function formatWeight(value: unknown): string | null {
   return null;
 }
 
-const PREVIEW_MARKET_VALUES = [
-  { name: "Surmai", price: 445, low: 410, high: 470, weight: "500 g", direction: "up", changePercent: 4.7 },
-  { name: "Paplet", price: 620, low: 610, high: 675, weight: "1 kg", direction: "down", changePercent: -2.1 },
-  { name: "Bangda", price: 385, low: 360, high: 405, weight: "500 g", direction: "up", changePercent: 3.8 },
-  { name: "Rawas", price: 175, low: 165, high: 190, weight: "500 ml", direction: "down", changePercent: -1.6 },
-  { name: "Bombil", price: 540, low: 520, high: 585, weight: "1 kg", direction: "up", changePercent: 5.2 },
-  { name: "Kolambi", price: 295, low: 280, high: 320, weight: "500 g", direction: "down", changePercent: -1.3 },
-  { name: "Halwa", price: 510, low: 490, high: 560, weight: "1 kg", direction: "up", changePercent: 2.9 },
-  { name: "Mandeli", price: 335, low: 325, high: 360, weight: "500 g", direction: "down", changePercent: -0.8 },
-] satisfies Array<{
-  price: number;
-  low: number;
-  high: number;
-  weight: string;
-  direction: MarketMovement["direction"];
-  changePercent: number;
-}>;
-
 type MarketFilter = "all" | "dropped" | "rising";
 
-function buildHistory(price: number, changePercent: number | null, index: number): number[] {
-  const previousPrice =
-    changePercent != null && changePercent > -100
-      ? price / (1 + changePercent / 100)
-      : price;
-  const points = Array.from({ length: 7 }, (_, day) => {
-    if (day === 6) return Math.round(price);
-    const progress = day / 6;
-    const base = previousPrice + (price - previousPrice) * progress;
-    const wave = Math.sin((day + 1) * (index + 2) * 0.73) * price * 0.035;
-    const correction = Math.cos((day + 2) * (index + 1) * 0.41) * price * 0.018;
-    return Math.max(1, Math.round(base + (wave + correction) * (1 - progress)));
-  });
-  return points;
+function recordedHistory(product: MarketProduct, currentPrice: number): number[] {
+  const points = (product.marketHistory ?? [])
+    .map((entry) => Number(entry.price))
+    .filter((price) => Number.isFinite(price) && price >= 0);
+  if (points.length === 0) return [];
+  if (points.length === 1) return [points[0], currentPrice];
+  return points[points.length - 1] === currentPrice
+    ? points
+    : [...points, currentPrice].slice(-7);
+}
+
+function getMovementEmptyMessage(
+  filter: MarketFilter,
+  rows: MarketRow[],
+): string {
+  const knownComparisons = rows.filter((row) => row.changePercent != null);
+  if (knownComparisons.length === 0) {
+    return filter === "dropped"
+      ? "No price drops to show yet. Trend details appear when a price change is recorded."
+      : "No price rises to show yet. Trend details appear when a price change is recorded.";
+  }
+
+  const rising = knownComparisons.some((row) => row.direction === "up");
+  const dropped = knownComparisons.some((row) => row.direction === "down");
+  if (!rising && !dropped) return "Prices are unchanged from yesterday's close.";
+
+  if (filter === "dropped") {
+    return rising
+      ? "No prices have dropped today. Some prices are rising."
+      : "No price drops recorded today. Other prices are unchanged.";
+  }
+  return dropped
+    ? "No prices are rising today. Some prices have dropped."
+    : "No price rises recorded today. Other prices are unchanged.";
 }
 
 function sparklinePath(values: number[]) {
@@ -111,6 +124,8 @@ function sparklinePath(values: number[]) {
 }
 
 function Sparkline({ row, featured = false }: { row: MarketRow; featured?: boolean }) {
+  if (row.history.length < 2) return null;
+
   const paths = sparklinePath(row.history);
   const gradientId = `market-gradient-${String(row.product.id).replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const isDropped = row.direction === "down";
@@ -121,7 +136,7 @@ function Sparkline({ row, featured = false }: { row: MarketRow; featured?: boole
       viewBox="0 0 100 38"
       preserveAspectRatio="none"
       role="img"
-      aria-label={`Seven-day ${row.name} price trend`}
+      aria-label={`Recorded price history for ${row.name}`}
     >
       <defs>
         <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
@@ -188,27 +203,30 @@ function MarketRangeBar({ row }: { row: MarketRow }) {
 
 export function MarketBoard({ products }: MarketBoardProps) {
   const [filter, setFilter] = useState<MarketFilter>("all");
-  const marketProducts = (products as MarketProduct[]).filter((product) =>
+  const eligibleProducts = (products as MarketProduct[]).filter((product) =>
     product.price != null &&
     !product.isArchived &&
     !product.batchExpired &&
     product.status !== "expired" &&
     product.status !== "unavailable" &&
     product.status !== "archived"
-  ).slice(0, 8);
-  const marketRows: MarketRow[] = marketProducts.map((product, index) => {
-    const preview = import.meta.env.DEV ? PREVIEW_MARKET_VALUES[index] : undefined;
-    const changePercent = preview?.changePercent ?? product.marketMovement?.changePercent ?? null;
+  );
+  const marketProducts = MARKET_PRODUCT_ORDER
+    .map((name) => eligibleProducts.find((product) => product.name.trim().toLowerCase() === name))
+    .filter((product): product is MarketProduct => product != null);
+  const marketRows: MarketRow[] = marketProducts.map((product) => {
+    const changePercent = product.marketMovement?.changePercent ?? null;
+    const price = product.price!;
     return {
       product,
-      name: preview?.name ?? product.name,
-      price: preview?.price ?? product.price!,
-      low: preview?.low ?? product.marketRange?.low ?? null,
-      high: preview?.high ?? product.marketRange?.high ?? null,
-      weight: preview?.weight ?? formatWeight(product.netWeight) ?? formatWeight(product.grossWeight),
-      direction: preview?.direction ?? product.marketMovement?.direction ?? null,
+      name: product.name,
+      price,
+      low: product.marketRange?.low ?? null,
+      high: product.marketRange?.high ?? null,
+      weight: product.unit?.trim() || formatWeight(product.netWeight) || formatWeight(product.grossWeight),
+      direction: product.marketMovement?.direction ?? null,
       changePercent,
-      history: buildHistory(preview?.price ?? product.price!, changePercent, index),
+      history: recordedHistory(product, price),
     };
   });
   const filteredRows = marketRows.filter((row) =>
@@ -238,7 +256,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
           <div>
             <p className="market-eyebrow"><span className="market-live-dot" /> LIVE MARKET</p>
             <h1 id="market-board-title">Today&apos;s Fresh Catch Rates</h1>
-            <p className="market-updated">Updated just now</p>
+            <p className="market-updated">Yesterday&apos;s close · today&apos;s saved updates</p>
           </div>
           <div className="market-filter" role="group" aria-label="Filter fish by price movement">
             {filters.map((option) => (
@@ -281,7 +299,11 @@ export function MarketBoard({ products }: MarketBoardProps) {
               style={{ "--market-delay": "0ms" } as CSSProperties}
             >
               <div className="market-featured-top">
-                <span className="market-feature-label">TOP DEAL TODAY</span>
+                <span className="market-feature-label">
+                  {featuredRow.direction === "up" || featuredRow.direction === "down"
+                    ? "TOP PRICE MOVEMENT"
+                    : "CURRENT MARKET RATE"}
+                </span>
               </div>
               <div className="market-featured-name">
                 <h2>{featuredRow.name}</h2>
@@ -304,7 +326,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
             </article>
 
             <div className="market-grid" aria-label="Other fresh fish rates">
-              {remainingRows.length > 0 ? remainingRows.map((row, index) => (
+              {remainingRows.map((row, index) => (
                 <article
                   className={`market-mini-card ${row.direction === "down" ? "is-dropped" : row.direction === "up" ? "is-rising" : "is-steady"}`}
                   key={row.product.id}
@@ -328,13 +350,15 @@ export function MarketBoard({ products }: MarketBoardProps) {
                   <Sparkline row={row} />
                   <MarketRangeBar row={row} />
                 </article>
-              )) : (
-                <div className="market-empty">No fish match this price movement.</div>
-              )}
+              ))}
             </div>
           </div>
         ) : (
-          <div className="market-empty">No current prices</div>
+          <div className="market-empty">
+            {marketRows.length === 0
+              ? "No current catalog prices are available right now."
+              : getMovementEmptyMessage(filter, marketRows)}
+          </div>
         )}
       </div>
     </section>

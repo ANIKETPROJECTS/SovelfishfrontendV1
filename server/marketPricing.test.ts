@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getDailyPriceRange, getMarketMovement } from "./marketPricing";
+import {
+  getDailyPriceRange,
+  getMarketMovement,
+  getYesterdayAndTodayHistory,
+} from "./marketPricing";
 
 const today = new Date("2026-10-21T10:30:00+05:30");
 
@@ -47,6 +51,14 @@ test("does not invent a movement before any price history is recorded", () => {
   assert.equal(getMarketMovement(300, [], today), null);
 });
 
+test("does not compare against stale prices older than yesterday", () => {
+  const oldHistory = [
+    { price: 500, changedAt: "2026-10-19T12:00:00+05:30", source: "created" },
+  ];
+  assert.equal(getMarketMovement(540, oldHistory, today), null);
+  assert.equal(getDailyPriceRange(540, oldHistory, today), null);
+});
+
 test("shows a steady price against yesterday's close when there was no update today", () => {
   const movement = getMarketMovement(
     500,
@@ -79,4 +91,19 @@ test("calculates the day's low and high from the prior close and today's recorde
 
 test("does not invent a low or high before price history is recorded", () => {
   assert.equal(getDailyPriceRange(300, [], today), null);
+});
+
+test("returns only yesterday's close and today's saved price history", () => {
+  const history = [
+    { price: 450, changedAt: "2026-10-19T12:00:00+05:30", source: "created" },
+    { price: 500, changedAt: "2026-10-20T12:00:00+05:30", source: "admin" },
+    { price: 540, changedAt: "2026-10-21T08:00:00+05:30", source: "admin" },
+    { price: 510, changedAt: "2026-10-21T10:00:00+05:30", source: "admin" },
+    { price: 600, changedAt: "2026-10-21T16:00:00+05:30", source: "admin" },
+  ];
+
+  assert.deepEqual(
+    getYesterdayAndTodayHistory(history, today).map((entry) => entry.price),
+    [500, 540, 510],
+  );
 });

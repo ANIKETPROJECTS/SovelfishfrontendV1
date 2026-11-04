@@ -25,7 +25,11 @@ import {
   findCheckoutStockIssues,
   type CheckoutStockLine,
 } from "./checkoutStock";
-import { getDailyPriceRange, getMarketMovement } from "./marketPricing";
+import {
+  getDailyPriceRange,
+  getMarketMovement,
+  getYesterdayAndTodayHistory,
+} from "./marketPricing";
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
@@ -533,6 +537,7 @@ export async function registerRoutes(
     const availableQty = getCheckoutAvailableQuantity(doc, now);
     const effectiveStatus = batchExpired || availableQty <= 0 ? "unavailable" : doc.status;
     const pricePerKg = Number(doc.fishPricePerKg ?? doc.price);
+    const marketHistory = getYesterdayAndTodayHistory(doc.priceHistory, now);
     const weightVariants = Number.isFinite(pricePerKg) && pricePerKg > 0 && Array.isArray(doc.bulkPortionWeightsKg)
       ? doc.bulkPortionWeightsKg
           .map((rawWeight: unknown) => Number(rawWeight))
@@ -556,6 +561,7 @@ export async function registerRoutes(
       limitedStockNote: doc.limitedStockNote ?? null, price: doc.price ?? null,
       marketMovement: getMarketMovement(doc.price, doc.priceHistory, now),
       marketRange: getDailyPriceRange(doc.price, doc.priceHistory, now),
+      marketHistory,
       originalPrice: doc.originalPrice ?? null, unit: doc.unit ?? null,
       imageUrl: doc.imageUrl ?? null,
       isArchived: doc.isArchived ?? false,

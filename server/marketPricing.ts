@@ -31,6 +31,16 @@ function getIndiaDayStart(date: Date): Date {
   return new Date(utcMidnight - (5 * 60 + 30) * 60_000);
 }
 
+function getYesterdayClose(
+  history: Array<PriceHistoryEntry & { timestamp: number }>,
+  todayStart: number,
+) {
+  const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
+  return [...history]
+    .reverse()
+    .find((entry) => entry.timestamp >= yesterdayStart && entry.timestamp < todayStart);
+}
+
 function getIndiaHour(date: Date): number {
   return Number(
     new Intl.DateTimeFormat("en-GB", {
@@ -71,6 +81,7 @@ export function getMarketMovement(
   if (!history.length) return null;
 
   const dayStart = getIndiaDayStart(now).getTime();
+  const yesterdayClose = getYesterdayClose(history, dayStart);
   const todayAdminUpdates = history.filter(
     (entry) => entry.source === "admin" && entry.timestamp >= dayStart && entry.timestamp <= now.getTime(),
   );
@@ -83,20 +94,8 @@ export function getMarketMovement(
     comparisonLabel = getIndiaHour(new Date(referenceEntry.timestamp)) < 12
       ? "vs morning price"
       : "vs first update today";
-  } else if (todayAdminUpdates.length === 1) {
-    const firstUpdate = todayAdminUpdates[0];
-    referenceEntry = [...history].reverse().find((entry) => entry.timestamp < firstUpdate.timestamp);
-    if (referenceEntry) {
-      if (referenceEntry.timestamp < dayStart) {
-        comparisonLabel = "vs yesterday close";
-      } else if (referenceEntry.source === "created") {
-        comparisonLabel = "vs opening price";
-      } else {
-        comparisonLabel = "vs last saved price";
-      }
-    }
   } else {
-    referenceEntry = [...history].reverse().find((entry) => entry.timestamp < dayStart);
+    referenceEntry = yesterdayClose;
     if (referenceEntry) comparisonLabel = "vs yesterday close";
   }
 
@@ -133,11 +132,9 @@ export function getDailyPriceRange(
 
   const dayStart = getIndiaDayStart(now).getTime();
   const availableHistory = history.filter((entry) => entry.timestamp <= now.getTime());
-  const openingPrice = [...availableHistory]
-    .reverse()
-    .find((entry) => entry.timestamp < dayStart)?.price;
+  const yesterdayClose = getYesterdayClose(availableHistory, dayStart);
   const prices = [
-    ...(openingPrice == null ? [] : [openingPrice]),
+    ...(yesterdayClose == null ? [] : [yesterdayClose.price]),
     ...availableHistory
       .filter((entry) => entry.timestamp >= dayStart)
       .map((entry) => entry.price),
@@ -149,4 +146,25 @@ export function getDailyPriceRange(
     low: Math.min(...trackedPrices),
     high: Math.max(...trackedPrices),
   };
+}
+
+export function getYesterdayAndTodayHistory(
+  rawHistory: unknown,
+  now: Date = new Date(),
+): Array<{ price: number; changedAt: string }> {
+  const history = normalizeHistory(rawHistory);
+  const dayStart = getIndiaDayStart(now).getTime();
+  const yesterdayClose = getYesterdayClose(history, dayStart);
+  const todayEntries = history.filter(
+    (entry) => entry.timestamp >= dayStart && entry.timestamp <= now.getTime(),
+  );
+  const points = [
+    ...(yesterdayClose ? [yesterdayClose] : []),
+    ...todayEntries.slice(-5),
+  ];
+
+  return points.map((entry) => ({
+    price: entry.price,
+    changedAt: new Date(entry.timestamp).toISOString(),
+  }));
 }
