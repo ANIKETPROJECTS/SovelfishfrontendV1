@@ -31,8 +31,10 @@ import {
   getYesterdayAndTodayHistory,
 } from "./marketPricing";
 import Razorpay from "razorpay";
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
+import { sendMetaWhatsAppOtp } from "./metaWhatsApp";
+import { OTP_DIGIT_COUNT } from "@shared/otp";
 import {
   buildFailedRazorpayPaymentState,
   buildSuccessfulRazorpayPaymentState,
@@ -4089,15 +4091,13 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Valid 10-digit phone number required" });
     }
     const normalised = String(phone).trim();
+    const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN?.trim();
+    const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
+    if (!accessToken || !phoneNumberId) {
+      return res.status(503).json({ message: "OTP service is not configured. Please try again later." });
+    }
 
-    const testOtpPhone = String(process.env.OTP_TEST_PHONE ?? "")
-      .replace(/\D/g, "")
-      .slice(-10);
-    const isAllowlistedTestPhone =
-      testOtpPhone.length === 10 && normalised === testOtpPhone;
-    const otp = isAllowlistedTestPhone
-      ? "1234"
-      : String(Math.floor(1000 + Math.random() * 9000));
+    const otp = String(randomInt(0, 10 ** OTP_DIGIT_COUNT)).padStart(OTP_DIGIT_COUNT, "0");
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
     await OtpModel.findOneAndUpdate(
       { phone: normalised },
@@ -4105,44 +4105,28 @@ export async function registerRoutes(
       { upsert: true, new: true }
     );
 
-    if (isAllowlistedTestPhone) {
-      return res.json({ message: "OTP sent" });
-    }
-
-    // Send OTP via Admark WhatsApp
-    const admarkApiKey = process.env.ADMARK_API_KEY;
-    const admarkPhoneNumberId = process.env.ADMARK_PHONE_NUMBER_ID;
-    if (!admarkApiKey || !admarkPhoneNumberId) {
-      console.error("[OTP] ADMARK_API_KEY or ADMARK_PHONE_NUMBER_ID not set — cannot send OTP");
-      return res.status(503).json({ message: "OTP service is not configured. Please try again later." });
-    }
-
     try {
-      const destination = `91${normalised}`;
-      const params = new URLSearchParams({
-        "api-key": admarkApiKey,
-        templateName: "fishtokri_website_otp",
-        phoneNumber: destination,
-        phoneNumberId: admarkPhoneNumberId,
-        csvVariables: otp,
+      const result = await sendMetaWhatsAppOtp({
+        accessToken,
+        phoneNumberId,
+        recipientPhone: `91${normalised}`,
+        otp,
+        templateName: process.env.META_WHATSAPP_OTP_TEMPLATE?.trim() || "fsx_otp_website",
+        languageCode: process.env.META_WHATSAPP_OTP_LANGUAGE?.trim() || "en_US",
+        apiVersion: process.env.META_GRAPH_API_VERSION?.trim() || "v26.0",
       });
-
-      const response = await fetch(`${ADMARK_API_URL}?${params.toString()}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const responseText = await response.text();
-      console.log(`[OTP] Admark response ${response.status}:`, responseText);
-
-      if (!response.ok) {
-        console.error(`[OTP] Admark error ${response.status}: ${responseText}`);
+      if (!result.ok) {
+        await OtpModel.deleteOne({ phone: normalised, otp });
+        console.error(
+          `[OTP] Meta WhatsApp send failed with HTTP ${result.status}` +
+          `${result.errorCode ? `, Meta code ${result.errorCode}` : ""}` +
+          `${result.errorSubcode ? `, subcode ${result.errorSubcode}` : ""}.`,
+        );
         return res.status(502).json({ message: "Failed to send OTP. Please try again." });
       }
-
-      console.log(`[OTP] Sent to ${destination} via Admark`);
     } catch (err) {
-      console.error("[OTP] Admark request failed:", err);
+      await OtpModel.deleteOne({ phone: normalised, otp }).catch(() => undefined);
+      console.error("[OTP] Meta WhatsApp request failed.");
       return res.status(502).json({ message: "Failed to send OTP. Please try again." });
     }
 
@@ -4154,10 +4138,14 @@ export async function registerRoutes(
       const { phone, otp } = req.body;
       if (!phone || !otp) return res.status(400).json({ message: "phone and otp required" });
       const normalised = String(phone).trim();
+      const submittedOtp = String(otp).trim();
+      if (!/^\d{10}$/.test(normalised) || !new RegExp(`^\\d{${OTP_DIGIT_COUNT}}$`).test(submittedOtp)) {
+        return res.status(400).json({ message: `Enter a valid phone number and ${OTP_DIGIT_COUNT}-digit OTP` });
+      }
 
       // Look up OTP from MongoDB (shared across all PM2 instances and restarts)
       const entry = await OtpModel.findOne({ phone: normalised }).lean() as any;
-      if (!entry || new Date() > new Date(entry.expiresAt) || entry.otp !== String(otp).trim()) {
+      if (!entry || new Date() > new Date(entry.expiresAt) || entry.otp !== submittedOtp) {
         return res.status(400).json({ message: "Invalid or expired OTP" });
       }
 

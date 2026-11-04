@@ -8,6 +8,7 @@
     "build": "npx tsx script/build.ts",
     "start": "node script/start-with-ecosystem.mjs",
     "check": "tsc",
+    "test:whatsapp": "node --import tsx --test server/metaWhatsApp.test.ts",
     "test:payments": "node --import tsx --test server/razorpayPayment.test.ts server/phonepe.test.ts"
   },
   "dependencies": {

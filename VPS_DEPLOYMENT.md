@@ -12,9 +12,14 @@ nano .env
 ```
 
 Set real values for `MONGODB_URI` and `SESSION_SECRET`. Add the payment and
-notification credentials if those features are enabled. Set the public
-`VITE_RAZORPAY_KEY_ID` and `VITE_GOOGLE_MAPS_API_KEY` values before building
-the client. Keep `.env` on the server only; it is excluded from Git.
+notification credentials if those features are enabled. For real WhatsApp OTP
+login, also set `META_WHATSAPP_ACCESS_TOKEN` and
+`META_WHATSAPP_PHONE_NUMBER_ID`; the template defaults are
+`META_WHATSAPP_OTP_TEMPLATE=fsx_otp_website`,
+`META_WHATSAPP_OTP_LANGUAGE=en_US`, and `META_GRAPH_API_VERSION=v26.0`.
+Set the public `VITE_RAZORPAY_KEY_ID` and `VITE_GOOGLE_MAPS_API_KEY` values
+before building the client. Keep the server-local `.env` file private and out of
+Git.
 
 Then run:
 

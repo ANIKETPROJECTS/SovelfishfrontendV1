@@ -13,10 +13,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import userImg from "@assets/user_(1)_1774707188827.png";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { motion, AnimatePresence } from "framer-motion";
+import { OTP_DIGIT_COUNT } from "@shared/otp";
 
 const BRAND_BLUE = "#1B324D";
 const BRAND_RED = "#59C39E";
 const BRAND_ORANGE = "#F97316";
+const createEmptyOtp = () => Array.from({ length: OTP_DIGIT_COUNT }, () => "");
 
 interface OtpModalProps {
   open: boolean;
@@ -75,7 +77,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
   const [phone, setPhone] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>(createEmptyOtp);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
   const [focusedOtpIndex, setFocusedOtpIndex] = useState<number | null>(null);
@@ -89,14 +91,16 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
   const o1 = useRef<HTMLInputElement>(null);
   const o2 = useRef<HTMLInputElement>(null);
   const o3 = useRef<HTMLInputElement>(null);
-  const otpRefs = [o0, o1, o2, o3];
+  const o4 = useRef<HTMLInputElement>(null);
+  const o5 = useRef<HTMLInputElement>(null);
+  const otpRefs = [o0, o1, o2, o3, o4, o5];
 
   useEffect(() => {
     if (open) {
       setPhone("");
       setOtpSent(false);
       setShowSuccess(false);
-      setOtp(["", "", "", ""]);
+      setOtp(createEmptyOtp());
       setTimeout(() => phoneRef.current?.focus(), 300);
     }
   }, [open]);
@@ -140,11 +144,23 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
   };
 
   const handleOtpChange = (index: number, value: string) => {
-    const digit = value.replace(/\D/g, "").slice(-1);
+    const digits = value.replace(/\D/g, "");
+    if (digits.length > 1) {
+      const next = [...otp];
+      const inserted = digits.slice(0, OTP_DIGIT_COUNT - index);
+      inserted.split("").forEach((digit, offset) => {
+        next[index + offset] = digit;
+      });
+      setOtp(next);
+      otpRefs[Math.min(index + inserted.length, OTP_DIGIT_COUNT) - 1]?.current?.focus();
+      return;
+    }
+
+    const digit = digits.slice(-1);
     const next = [...otp];
     next[index] = digit;
     setOtp(next);
-    if (digit && index < 3) {
+    if (digit && index < OTP_DIGIT_COUNT - 1) {
       otpRefs[index + 1].current?.focus();
     }
   };
@@ -156,18 +172,18 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
-    if (text.length === 4) {
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_DIGIT_COUNT);
+    if (text.length === OTP_DIGIT_COUNT) {
       e.preventDefault();
       setOtp(text.split(""));
-      otpRefs[3].current?.focus();
+      otpRefs[OTP_DIGIT_COUNT - 1].current?.focus();
     }
   };
 
   const handleOtpSubmit = async () => {
     const otpValue = otp.join("");
-    if (otpValue.length !== 4) {
-      toast({ title: "Enter the 4-digit OTP", variant: "destructive" });
+    if (otpValue.length !== OTP_DIGIT_COUNT) {
+      toast({ title: `Enter the ${OTP_DIGIT_COUNT}-digit OTP`, variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -364,7 +380,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                   <button
                     className="text-xs font-bold underline"
                     style={{ color: BRAND_RED }}
-                    onClick={() => { setOtpSent(false); setOtp(["", "", "", ""]); }}
+                    onClick={() => { setOtpSent(false); setOtp(createEmptyOtp()); }}
                     data-testid="button-back-to-phone"
                   >
                     Change
@@ -373,7 +389,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
               </div>
 
               {/* OTP Boxes — white inside, blue border, orange on focus */}
-              <div className="flex gap-3 justify-center mb-5">
+              <div className="flex gap-2 justify-center mb-5">
                 {otpRefs.map((ref, i) => {
                   const isFocused = focusedOtpIndex === i;
                   return (
@@ -382,14 +398,15 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                       ref={ref}
                       type="tel"
                       inputMode="numeric"
-                      maxLength={1}
+                      autoComplete={i === 0 ? "one-time-code" : "off"}
+                      maxLength={i === 0 ? OTP_DIGIT_COUNT : 1}
                       value={otp[i]}
                       onChange={e => handleOtpChange(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
                       onPaste={handleOtpPaste}
                       onFocus={() => setFocusedOtpIndex(i)}
                       onBlur={() => setFocusedOtpIndex(null)}
-                      className="w-[62px] h-[62px] text-center text-2xl font-bold rounded-2xl outline-none border-2 focus:scale-[1.05] transition-all duration-200"
+                      className="w-[46px] h-[56px] sm:w-[50px] sm:h-[58px] text-center text-xl sm:text-2xl font-bold rounded-2xl outline-none border-2 focus:scale-[1.05] transition-all duration-200"
                       style={{
                         borderColor: isFocused ? BRAND_ORANGE : BRAND_BLUE,
                         background: "white",
@@ -407,7 +424,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
               <SolidButton
                 color={BRAND_BLUE}
                 onClick={handleOtpSubmit}
-                disabled={loading || otp.join("").length !== 4}
+                disabled={loading || otp.join("").length !== OTP_DIGIT_COUNT}
                 loading={loading}
                 loadingText="Verifying..."
                 testId="button-verify-otp"
