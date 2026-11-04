@@ -12,7 +12,7 @@ import { useLocation } from "wouter";
 import { ChevronLeft, Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Section, Combo } from "@shared/schema";
-import noImageImg from "@assets/Comming_soon_image_1793790342200.png";
+import noImageImg from "@/assets/coming-soon.png";
 import { SeoHead } from "@/components/SeoHead";
 import { isNormalStorefrontProduct, isPreorderStorefrontProduct } from "@shared/productVisibility";
 import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";

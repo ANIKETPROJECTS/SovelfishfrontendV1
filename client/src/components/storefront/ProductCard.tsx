@@ -10,7 +10,7 @@ import {
   formatStorePrice,
   getProductVariantKey,
 } from "@/lib/productVariants";
-import noImageImg from "@assets/Comming_soon_image_1793790342200.png";
+import noImageImg from "@/assets/coming-soon.png";
 
 type ProductCardProps = {
   product: Product;

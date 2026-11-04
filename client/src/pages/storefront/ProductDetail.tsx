@@ -38,7 +38,7 @@ import Lottie from "lottie-react";
 import recipesIconAnim from "@/assets/lottie/recipes-icon.json";
 import mayAlsoLikeAnim from "@/assets/lottie/may-also-like.json";
 
-import noImageImg from "@assets/Comming_soon_image_1793790342200.png";
+import noImageImg from "@/assets/coming-soon.png";
 import { SeoHead } from "@/components/SeoHead";
 
 function getFallbackImage(_category: string) {
