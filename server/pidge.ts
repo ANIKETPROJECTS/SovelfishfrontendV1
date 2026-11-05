@@ -50,7 +50,7 @@ const optionalNumber = (key: string): number | undefined => {
 
 export function readPidgeConfig(): PidgeConfig {
   const missing: string[] = [];
-  const apiBaseUrl = env("PIDGE_API_BASE_URL").replace(/\/+$/, "");
+  const apiBaseUrl = (env("PIDGE_API_BASE_URL") || "https://api.pidge.in").replace(/\/+$/, "");
   const username = env("PIDGE_USERNAME");
   const password = env("PIDGE_PASSWORD");
   const senderName = env("PIDGE_SENDER_NAME");
@@ -62,7 +62,6 @@ export function readPidgeConfig(): PidgeConfig {
   const pocName = env("PIDGE_POC_NAME") || senderName;
   const pocMobile = env("PIDGE_POC_MOBILE") || senderMobile;
 
-  if (!apiBaseUrl) missing.push("PIDGE_API_BASE_URL");
   if (!username) missing.push("PIDGE_USERNAME");
   if (!password) missing.push("PIDGE_PASSWORD");
   if (!senderName) missing.push("PIDGE_SENDER_NAME");

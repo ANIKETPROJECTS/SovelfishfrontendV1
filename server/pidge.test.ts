@@ -3,6 +3,7 @@ import { after, test } from "node:test";
 import {
   buildPidgeCreateOrderPayload,
   createPidgeDelivery,
+  readPidgeConfig,
   resetPidgeTokenForTests,
   type PidgeConfig,
 } from "./pidge";
@@ -86,6 +87,35 @@ test("rejects a customer address without Pidge-required city or state", () => {
     }, config),
     /missing city/i,
   );
+});
+
+test("uses Pidge's production host by default when no override is set", () => {
+  const keys = [
+    "PIDGE_API_BASE_URL", "PIDGE_USERNAME", "PIDGE_PASSWORD", "PIDGE_SENDER_NAME",
+    "PIDGE_SENDER_MOBILE", "PIDGE_SENDER_ADDRESS_LINE_1", "PIDGE_SENDER_CITY",
+    "PIDGE_SENDER_STATE", "PIDGE_SENDER_PINCODE",
+  ];
+  const originalValues = new Map(keys.map((key) => [key, process.env[key]]));
+  try {
+    for (const key of keys) delete process.env[key];
+    Object.assign(process.env, {
+      PIDGE_USERNAME: "test-user",
+      PIDGE_PASSWORD: "test-password",
+      PIDGE_SENDER_NAME: "Fresh Stock Xchange",
+      PIDGE_SENDER_MOBILE: "9619590694",
+      PIDGE_SENDER_ADDRESS_LINE_1: "Store, Sector 6",
+      PIDGE_SENDER_CITY: "Navi Mumbai",
+      PIDGE_SENDER_STATE: "Maharashtra",
+      PIDGE_SENDER_PINCODE: "400708",
+    });
+    assert.equal(readPidgeConfig().apiBaseUrl, "https://api.pidge.in");
+  } finally {
+    for (const key of keys) {
+      const original = originalValues.get(key);
+      if (original === undefined) delete process.env[key];
+      else process.env[key] = original;
+    }
+  }
 });
 
 test("logs in and submits exactly one delivery trip", async () => {
