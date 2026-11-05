@@ -164,14 +164,20 @@
     isolation: isolate;
     overflow-x: clip;
     background:
-      linear-gradient(180deg, #eff9eb 0%, #fbfdf9 22rem, #ffffff 58rem, #f3faef 100%);
+      linear-gradient(112deg, rgb(105 216 79 / 8%) 0%, transparent 38%, rgb(0 0 53 / 6%) 100%),
+      linear-gradient(180deg, #eaf8e6 0%, #ffffff 28rem, #f2f3fa 72rem, #ffffff 112rem, #eaf8e6 100%);
   }
 
   .home-content-section {
     position: relative;
-    padding: 18px 0 4px;
-    border-top: 1px solid rgb(0 0 53 / 15%);
-    background: transparent;
+    margin-inline: -2rem;
+    padding: 18px 2rem 10px;
+    border-top: 1px solid rgb(0 0 53 / 12%);
+    background: linear-gradient(105deg, rgb(105 216 79 / 10%) 0%, rgb(255 255 255 / 52%) 48%, rgb(0 0 53 / 5%) 100%);
+  }
+
+  .home-content-section:nth-of-type(even) {
+    background: linear-gradient(255deg, rgb(105 216 79 / 8%) 0%, rgb(255 255 255 / 50%) 50%, rgb(0 0 53 / 6%) 100%);
   }
 
   .home-section-heading {
@@ -191,9 +197,17 @@
     content: "";
   }
 
+  @media (min-width: 641px) and (max-width: 1023px) {
+    .home-content-section {
+      margin-inline: -1.5rem;
+      padding-inline: 1.5rem;
+    }
+  }
+
   @media (max-width: 640px) {
     .home-content-section {
-      padding-top: 14px;
+      margin-inline: -1rem;
+      padding: 14px 1rem 8px;
     }
 
     .home-section-heading {
