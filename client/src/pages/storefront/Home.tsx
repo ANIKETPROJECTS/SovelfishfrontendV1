@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useLocation } from "wouter";
-import { ChevronLeft, Plus, Minus, ShoppingBasket } from "lucide-react";
+import { ChevronLeft, Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Section, Combo } from "@shared/schema";
 import noImageImg from "@/assets/coming-soon.png";
@@ -266,8 +266,8 @@ export default function Home() {
                             {showPct > 0 && <span className="text-sm font-semibold text-green-600">{showPct}% off</span>}
                           </div>
                           {comboQty === 0 ? (
-                            <Button onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }} disabled={comboMaxQty <= 0} aria-label="Add combo to cart" className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40" size="icon">
-                              <ShoppingBasket aria-hidden className="w-5 h-5 text-white" />
+                           <Button onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }} disabled={comboMaxQty <= 0} className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40" size="icon">
+                              <Plus className="w-5 h-5 text-white" />
                             </Button>
                           ) : (
                             <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-0 rounded-full bg-primary shadow-md overflow-hidden shrink-0">
@@ -434,12 +434,11 @@ export default function Home() {
                                         <Button
                                           onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }}
                                           disabled={comboMaxQty <= 0}
-                                          aria-label="Add combo to cart"
                                           className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40"
                                           size="icon"
                                           data-testid={`button-add-combo-${combo.id}`}
                                         >
-                                          <ShoppingBasket aria-hidden className="w-5 h-5 text-white" />
+                                          <Plus className="w-5 h-5 text-white" />
                                         </Button>
                                       );
                                     }

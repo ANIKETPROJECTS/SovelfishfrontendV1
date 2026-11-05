@@ -1,4 +1,4 @@
-import { Plus, Minus, Info, ShoppingBasket } from "lucide-react";
+import { Plus, Minus, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
@@ -195,12 +195,11 @@ function SingleProductCard({
             <Button
               onClick={handleAdd}
               disabled={maxQty <= 0}
-              aria-label="Add to cart"
               data-testid={`button-add-product-${cartProduct.id}`}
               className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               size="icon"
             >
-              <ShoppingBasket aria-hidden className="w-5 h-5 text-white" />
+              <Plus className="w-5 h-5 text-white" />
             </Button>
           ) : (
             <div
