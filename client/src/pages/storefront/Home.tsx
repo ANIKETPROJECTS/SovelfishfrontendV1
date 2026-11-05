@@ -266,7 +266,7 @@ export default function Home() {
                             {showPct > 0 && <span className="text-sm font-semibold text-green-600">{showPct}% off</span>}
                           </div>
                           {comboQty === 0 ? (
-                            <Button onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }} disabled={comboMaxQty <= 0} aria-label={`Buy ${combo.name}`} className="h-9 min-w-[56px] rounded-full px-3 text-xs font-semibold text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40">
+                            <Button onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }} disabled={comboMaxQty <= 0} aria-label={`Buy ${combo.name}`} className="h-9 min-w-[56px] rounded-full px-3 text-sm leading-none font-semibold text-white shadow-sm flex items-center justify-center shrink-0 cursor-pointer bg-primary transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm">
                               Buy
                             </Button>
                           ) : (
@@ -435,7 +435,7 @@ export default function Home() {
                                           onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }}
                                           disabled={comboMaxQty <= 0}
                                           aria-label={`Buy ${combo.name}`}
-                                          className="h-9 min-w-[56px] rounded-full px-3 text-xs font-semibold text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40"
+                                          className="h-9 min-w-[56px] rounded-full px-3 text-sm leading-none font-semibold text-white shadow-sm flex items-center justify-center shrink-0 cursor-pointer bg-primary transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
                                           data-testid={`button-add-combo-${combo.id}`}
                                         >
                                           Buy

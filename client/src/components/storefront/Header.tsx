@@ -150,7 +150,7 @@ export function Header({
 
   return (
     <>
-    <header className="sticky top-0 z-50 glass">
+    <header className="sticky top-0 z-50 border-b border-border/50 bg-white">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
         {/* Left: Logo */}
         <div className="flex items-center shrink-0">
@@ -274,7 +274,7 @@ export function Header({
 
       {/* Mobile pill search — below header. In collapsible mode, only visible when toggled. */}
       {showSearchUI && (!collapsibleMobileSearch || mobileSearchOpen) && (
-        <div className="sm:hidden px-3 pb-2.5 pt-1 bg-white/95 backdrop-blur-sm">
+        <div className="sm:hidden px-3 pb-2.5 pt-1 bg-white">
           <form onSubmit={handleSubmit} className="relative">
             <img src={searchImg} alt="Search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
             {!searchValue && !searchFocused && (
