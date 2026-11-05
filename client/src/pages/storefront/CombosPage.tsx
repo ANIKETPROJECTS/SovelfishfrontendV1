@@ -6,7 +6,7 @@ import { Footer } from "@/components/storefront/Footer";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Plus, Minus } from "lucide-react";
+import { ChevronLeft, Plus, Minus, ShoppingBasket } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Section, Combo } from "@shared/schema";
 
@@ -122,10 +122,11 @@ function ComboCard({ combo, productMap }: { combo: Combo; productMap: Record<str
             <Button
               onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }}
               disabled={comboMaxQty <= 0}
+              aria-label="Add combo to cart"
               className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               size="icon"
             >
-              <Plus className="w-5 h-5 text-white" />
+              <ShoppingBasket aria-hidden className="w-5 h-5 text-white" />
             </Button>
           ) : (
             <div
