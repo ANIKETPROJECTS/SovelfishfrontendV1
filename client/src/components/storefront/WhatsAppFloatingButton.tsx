@@ -1,5 +1,3 @@
-import whatsappIcon from "@assets/apple_(1)_1793856788518.png";
-
 const WHATSAPP_URL = `https://wa.me/919619590694?text=${encodeURIComponent(
   "Hi Fresh Stock Xchange, I need help with an order.",
 )}`;
@@ -16,7 +14,7 @@ export function WhatsAppFloatingButton() {
       className="fixed bottom-3 right-3 z-[45] flex h-12 w-12 items-center justify-center rounded-full bg-transparent p-0 transition duration-200 hover:-translate-y-1 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#69D84F]/60 sm:bottom-4 sm:right-4"
     >
       <img
-        src={whatsappIcon}
+        src="/icons/whatsapp.png"
         alt=""
         className="h-full w-full object-contain"
         decoding="async"

@@ -10,12 +10,13 @@ import { OtpModal } from "@/components/storefront/OtpModal";
 import { LocationPicker } from "@/components/storefront/LocationPicker";
 
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
-import cartImg from "@assets/grocery-store_1793859519564.png";
-import userImg from "@assets/user_(2)_1793859501747.png";
 import searchImg from "@assets/search-interface-symbol_1774706690468.png";
-import locationImg from "@assets/maps-and-flags_1793859547966.png";
-import menuIconImg from "@assets/category_1793859663530.png";
 import micImg from "@assets/mic_1778182669857.png";
+
+const cartImg = "/icons/cart.png";
+const userImg = "/icons/user.png";
+const locationImg = "/icons/location.png";
+const menuIconImg = "/icons/category.png";
 
 export function Header({
   onSearch,
