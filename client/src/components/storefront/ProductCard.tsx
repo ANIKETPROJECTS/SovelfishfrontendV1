@@ -195,11 +195,11 @@ function SingleProductCard({
             <Button
               onClick={handleAdd}
               disabled={maxQty <= 0}
+              aria-label={`Buy ${cartProduct.name}`}
               data-testid={`button-add-product-${cartProduct.id}`}
-              className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              size="icon"
+              className="h-9 min-w-[56px] rounded-full px-3 text-xs font-semibold text-white shadow-md flex items-center justify-center shrink-0 bg-primary hover:bg-[#F05B4E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Plus className="w-5 h-5 text-white" />
+              Buy
             </Button>
           ) : (
             <div

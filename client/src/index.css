@@ -164,8 +164,8 @@
     isolation: isolate;
     overflow-x: clip;
     background:
-      linear-gradient(112deg, rgb(105 216 79 / 16%) 0%, transparent 38%, rgb(0 0 53 / 10%) 100%),
-      linear-gradient(180deg, #e5f7df 0%, #ffffff 28rem, #eff0f9 72rem, #ffffff 112rem, #e5f7df 100%);
+      linear-gradient(112deg, rgb(105 216 79 / 12%) 0%, transparent 38%, rgb(0 0 53 / 10%) 100%),
+      linear-gradient(180deg, #eef8ea 0%, #ffffff 28rem, #eff0f9 72rem, #ffffff 112rem, #eef8ea 100%);
   }
 
   .home-content-section {
@@ -173,11 +173,11 @@
     margin-inline: -2rem;
     padding: 18px 2rem 10px;
     border-top: 1px solid rgb(0 0 53 / 12%);
-    background: linear-gradient(105deg, rgb(105 216 79 / 18%) 0%, rgb(255 255 255 / 40%) 48%, rgb(0 0 53 / 8%) 100%);
+    background: linear-gradient(105deg, rgb(105 216 79 / 14%) 0%, rgb(255 255 255 / 40%) 48%, rgb(0 0 53 / 8%) 100%);
   }
 
   .home-content-section:nth-of-type(even) {
-    background: linear-gradient(255deg, rgb(105 216 79 / 15%) 0%, rgb(255 255 255 / 42%) 50%, rgb(0 0 53 / 9%) 100%);
+    background: linear-gradient(255deg, rgb(105 216 79 / 12%) 0%, rgb(255 255 255 / 42%) 50%, rgb(0 0 53 / 9%) 100%);
   }
 
   .home-section-heading {
