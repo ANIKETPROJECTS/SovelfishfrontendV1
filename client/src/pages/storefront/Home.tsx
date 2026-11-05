@@ -149,10 +149,10 @@ export default function Home() {
   const renderPreorderSection = (key: string, title: string) => {
     if (preorderProducts.length === 0) return null;
     return (
-      <section key={key} className="mb-7" data-testid="section-preorder">
+      <section key={key} className="home-content-section mb-7" data-testid="section-preorder">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
+            <h2 className="home-section-heading text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
               {title}
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -300,7 +300,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="home-storefront-page min-h-screen flex flex-col font-sans">
       <SeoHead
         title="Fresh Fish, Seafood, Chicken & Mutton Online in Mumbai"
         description="Order 100% fresh fish, seafood, chicken & mutton online in Mumbai. Hygienically cut, cleaned & delivered to your doorstep. 60+ varieties. Free delivery above ₹500. Order now on Fresh Stock Xchange."
@@ -316,7 +316,9 @@ export default function Home() {
           <DemoCatalogPreview />
         ) : (
           <>
-        <MarketBoard products={products ?? []} />
+        <div className="home-market-stage">
+          <MarketBoard products={products ?? []} />
+        </div>
 
         {/* Preserve the existing preorder placement for hubs that have not
             configured a ranked preorder section yet. */}
@@ -338,9 +340,9 @@ export default function Home() {
               })
             );
             return (
-              <section key={section.id} className="mb-7">
+              <section key={section.id} className="home-content-section mb-7">
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
+                  <h2 className="home-section-heading text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
                     {section.title}
                   </h2>
                 </div>
@@ -482,9 +484,9 @@ export default function Home() {
           // "products" type section
           const sectionProducts = getSectionProducts(section.id);
           return (
-            <section key={section.id} className="mb-7">
+            <section key={section.id} className="home-content-section mb-7">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
+                <h2 className="home-section-heading text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
                   {section.title}
                 </h2>
               </div>
@@ -504,9 +506,9 @@ export default function Home() {
           );
         })}
         {unsectionedCatalogProducts.length > 0 && (
-          <section className="mb-7" data-testid="section-full-catalog">
+          <section className="home-content-section mb-7" data-testid="section-full-catalog">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-xl font-medium uppercase tracking-wide text-foreground sm:text-2xl">
+              <h2 className="home-section-heading text-xl font-medium uppercase tracking-wide text-foreground sm:text-2xl">
                 Explore all products
               </h2>
             </div>
