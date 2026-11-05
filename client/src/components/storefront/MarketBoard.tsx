@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { CSSProperties } from "react";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import type { Product } from "@shared/schema";
@@ -59,13 +58,25 @@ function formatPrice(value: number) {
   return currency.format(value);
 }
 
+function formatPriceUnit(value: string | null) {
+  const unit = value?.trim();
+  if (!unit) return "";
+
+  const normalized = unit.toLowerCase();
+  if (normalized === "per kg" || normalized === "kg" || normalized === "1 kg") return "/kg";
+  if (normalized.startsWith("per ")) return `/${normalized.slice(4).trim()}`;
+  return `/${unit}`;
+}
+
+function formatPriceWithUnit(value: number, unit: string | null) {
+  return `${formatPrice(value)}${formatPriceUnit(unit)}`;
+}
+
 function formatWeight(value: unknown): string | null {
   if (typeof value === "string") return value.trim() || null;
   if (typeof value === "number" && Number.isFinite(value)) return `${value} g`;
   return null;
 }
-
-type MarketFilter = "all" | "dropped" | "rising";
 
 function recordedHistory(product: MarketProduct, currentPrice: number): number[] {
   const points = (product.marketHistory ?? [])
@@ -78,29 +89,22 @@ function recordedHistory(product: MarketProduct, currentPrice: number): number[]
     : [...points, currentPrice].slice(-7);
 }
 
-function getMovementEmptyMessage(
-  filter: MarketFilter,
-  rows: MarketRow[],
-): string {
-  const knownComparisons = rows.filter((row) => row.changePercent != null);
-  if (knownComparisons.length === 0) {
-    return filter === "dropped"
-      ? "No price drops to show yet. Trend details appear when a price change is recorded."
-      : "No price rises to show yet. Trend details appear when a price change is recorded.";
+function recordedRange(product: MarketProduct, currentPrice: number): MarketRange | null {
+  if (
+    product.marketRange &&
+    Number.isFinite(product.marketRange.low) &&
+    Number.isFinite(product.marketRange.high)
+  ) {
+    return product.marketRange;
   }
 
-  const rising = knownComparisons.some((row) => row.direction === "up");
-  const dropped = knownComparisons.some((row) => row.direction === "down");
-  if (!rising && !dropped) return "Prices are unchanged from yesterday's close.";
+  const history = (product.marketHistory ?? [])
+    .map((entry) => Number(entry.price))
+    .filter((price) => Number.isFinite(price) && price >= 0);
+  if (!history.length) return null;
 
-  if (filter === "dropped") {
-    return rising
-      ? "No prices have dropped today. Some prices are rising."
-      : "No price drops recorded today. Other prices are unchanged.";
-  }
-  return dropped
-    ? "No prices are rising today. Some prices have dropped."
-    : "No price rises recorded today. Other prices are unchanged.";
+  const prices = [...history, currentPrice];
+  return { low: Math.min(...prices), high: Math.max(...prices) };
 }
 
 function sparklinePath(values: number[]) {
@@ -140,15 +144,15 @@ function Sparkline({ row, featured = false }: { row: MarketRow; featured?: boole
     >
       <defs>
         <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={isDropped ? "#59C39E" : "#e58a8a"} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={isDropped ? "#59C39E" : "#e58a8a"} stopOpacity="0" />
+          <stop offset="0%" stopColor={isDropped ? "#69D84F" : "#e58a8a"} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={isDropped ? "#69D84F" : "#e58a8a"} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={paths.area} fill={`url(#${gradientId})`} className="market-spark-area" />
       <path
         d={paths.line}
         fill="none"
-        stroke={isDropped ? "#36a980" : "#d97b7b"}
+        stroke={isDropped ? "#328a22" : "#d97b7b"}
         strokeWidth={featured ? "1.15" : "1.5"}
         vectorEffect="non-scaling-stroke"
         className="market-spark-line"
@@ -182,27 +186,36 @@ function TrendBadge({ row }: { row: MarketRow }) {
 }
 
 function MarketRangeBar({ row }: { row: MarketRow }) {
-  const range = row.low != null && row.high != null && row.high > row.low;
-  const position = range
+  const hasRange = row.low != null && row.high != null;
+  const hasSpread = hasRange && row.high! > row.low!;
+  const position = hasSpread
     ? Math.max(0, Math.min(100, ((row.price - row.low!) / (row.high! - row.low!)) * 100))
     : 50;
 
   return (
-    <div className="market-range" aria-label={`Today's price range for ${row.name}`}>
+    <div
+      className="market-range"
+      aria-label={
+        hasRange
+          ? `Today's price range for ${row.name}: low ${formatPriceWithUnit(row.low!, row.weight)}, high ${formatPriceWithUnit(row.high!, row.weight)}`
+          : `Today's low and high prices for ${row.name} have not been recorded yet`
+      }
+    >
       <div className="market-range-labels">
-        <span>LOW <strong>{row.low != null ? formatPrice(row.low) : "—"}</strong></span>
-        <span>HIGH <strong>{row.high != null ? formatPrice(row.high) : "—"}</strong></span>
+        <span>LOW <strong>{row.low != null ? formatPriceWithUnit(row.low, row.weight) : "Not tracked"}</strong></span>
+        <span>HIGH <strong>{row.high != null ? formatPriceWithUnit(row.high, row.weight) : "Not tracked"}</strong></span>
       </div>
-      <div className="market-range-track" aria-hidden="true">
-        <span className="market-range-fill" />
-        <span className="market-range-dot" style={{ left: `${position}%` }} />
-      </div>
+      {hasRange && (
+        <div className="market-range-track" aria-hidden="true">
+          <span className="market-range-fill" />
+          <span className="market-range-dot" style={{ left: `${position}%` }} />
+        </div>
+      )}
     </div>
   );
 }
 
 export function MarketBoard({ products }: MarketBoardProps) {
-  const [filter, setFilter] = useState<MarketFilter>("all");
   const eligibleProducts = (products as MarketProduct[]).filter((product) =>
     product.price != null &&
     !product.isArchived &&
@@ -217,34 +230,25 @@ export function MarketBoard({ products }: MarketBoardProps) {
   const marketRows: MarketRow[] = marketProducts.map((product) => {
     const changePercent = product.marketMovement?.changePercent ?? null;
     const price = product.price!;
+    const range = recordedRange(product, price);
     return {
       product,
       name: product.name,
       price,
-      low: product.marketRange?.low ?? null,
-      high: product.marketRange?.high ?? null,
+      low: range?.low ?? null,
+      high: range?.high ?? null,
       weight: product.unit?.trim() || formatWeight(product.netWeight) || formatWeight(product.grossWeight),
       direction: product.marketMovement?.direction ?? null,
       changePercent,
       history: recordedHistory(product, price),
     };
   });
-  const filteredRows = marketRows.filter((row) =>
-    filter === "all" ||
-    (filter === "dropped" && row.direction === "down") ||
-    (filter === "rising" && row.direction === "up")
-  );
-  const featuredRow = filteredRows.reduce<MarketRow | null>((top, row) =>
+  const featuredRow = marketRows.reduce<MarketRow | null>((top, row) =>
     !top || Math.abs(row.changePercent ?? 0) > Math.abs(top.changePercent ?? 0) ? row : top,
   null);
   const remainingRows = featuredRow
-    ? filteredRows.filter((row) => row.product.id !== featuredRow.product.id)
+    ? marketRows.filter((row) => row.product.id !== featuredRow.product.id)
     : [];
-  const filters: Array<{ value: MarketFilter; label: string }> = [
-    { value: "all", label: "All" },
-    { value: "dropped", label: "Dropped" },
-    { value: "rising", label: "Rising" },
-  ];
 
   return (
     <section
@@ -258,42 +262,10 @@ export function MarketBoard({ products }: MarketBoardProps) {
             <h1 id="market-board-title">Today&apos;s Fresh Catch Rates</h1>
             <p className="market-updated">Yesterday&apos;s close · today&apos;s saved updates</p>
           </div>
-          <div className="market-filter" role="group" aria-label="Filter fish by price movement">
-            {filters.map((option) => (
-              <button
-                type="button"
-                key={option.value}
-                onClick={() => setFilter(option.value)}
-                aria-pressed={filter === option.value}
-                className={filter === option.value ? "is-active" : ""}
-                data-testid={`market-filter-${option.value}`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
         </header>
 
-        {marketRows.length > 0 && (
-          <div className="market-ticker" aria-label="Live fish prices">
-            <div className="market-ticker-track">
-              {[0, 1].map((copy) => (
-                <div className="market-ticker-group" key={copy} aria-hidden={copy === 1}>
-                  {marketRows.map((row) => (
-                    <span className={`market-ticker-item ${row.direction === "down" ? "is-dropped" : row.direction === "up" ? "is-rising" : ""}`} key={`${copy}-${row.product.id}`}>
-                      <span>{row.name}</span>
-                      <strong>{formatPrice(row.price)}</strong>
-                      {row.direction === "down" ? <ArrowDown aria-hidden="true" /> : row.direction === "up" ? <ArrowUp aria-hidden="true" /> : <Minus aria-hidden="true" />}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {featuredRow ? (
-          <div className="market-bento" key={filter}>
+          <div className="market-bento">
             <article
               className={`market-featured ${featuredRow.direction === "down" ? "is-dropped" : featuredRow.direction === "up" ? "is-rising" : "is-steady"}`}
               style={{ "--market-delay": "0ms" } as CSSProperties}
@@ -309,14 +281,14 @@ export function MarketBoard({ products }: MarketBoardProps) {
                 <h2>{featuredRow.name}</h2>
               </div>
               <div className="market-featured-metrics">
-                <span className="market-weight-chip">{featuredRow.weight ?? "Fresh catch"}</span>
-                <div className="market-featured-price">
+                <div className="market-featured-price" aria-label={formatPriceWithUnit(featuredRow.price, featuredRow.weight)}>
                   <span aria-hidden="true">₹</span>
                   <span
                     className="market-price-count"
                     style={{ "--market-target": Math.round(featuredRow.price) } as CSSProperties & { "--market-target": number }}
                     aria-label={formatPrice(featuredRow.price)}
                   />
+                  {formatPriceUnit(featuredRow.weight) && <span className="market-price-unit">{formatPriceUnit(featuredRow.weight)}</span>}
                 </div>
                 <TrendBadge row={featuredRow} />
               </div>
@@ -336,14 +308,14 @@ export function MarketBoard({ products }: MarketBoardProps) {
                     <h3>{row.name}</h3>
                   </div>
                   <div className="market-mini-price-row">
-                    <span className="market-weight-chip">{row.weight ?? "Fresh catch"}</span>
-                    <div className="market-mini-price">
+                    <div className="market-mini-price" aria-label={formatPriceWithUnit(row.price, row.weight)}>
                       <span aria-hidden="true">₹</span>
                       <span
                         className="market-price-count"
                         style={{ "--market-target": Math.round(row.price) } as CSSProperties & { "--market-target": number }}
                         aria-label={formatPrice(row.price)}
                       />
+                      {formatPriceUnit(row.weight) && <span className="market-price-unit">{formatPriceUnit(row.weight)}</span>}
                     </div>
                     <TrendBadge row={row} />
                   </div>
@@ -355,9 +327,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
           </div>
         ) : (
           <div className="market-empty">
-            {marketRows.length === 0
-              ? "No current catalog prices are available right now."
-              : getMovementEmptyMessage(filter, marketRows)}
+            No current catalog prices are available right now.
           </div>
         )}
       </div>
