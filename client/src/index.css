@@ -7,23 +7,26 @@
 @layer base {
   :root {
     /* Fresh Stock Xchange brand palette */
-    --brand-seafoam: #59C39E;
-    --brand-navy: #1B324D;
-    --primary: 212.4 48.08% 20.39%; /* #1B324D – Deep Navy Blue */
-    --accent: 159.06 46.92% 55.69%; /* #59C39E – Seafoam Green */
+    --brand-seafoam: #69D84F;
+    --brand-navy: #000035;
+    --primary: 108.6 63.7% 57.8%; /* #69D84F – Fresh green */
+    --primary-foreground: 240 100% 10.4%;
+    --secondary: 240 100% 10.4%; /* #000035 – Deep navy */
+    --secondary-foreground: 0 0% 100%;
+    --accent: 108.6 63.7% 57.8%; /* #69D84F – Fresh green */
     --background: 0 0% 100%;
-    --foreground: 212.4 48.08% 20.39%;
+    --foreground: 240 100% 10.4%;
 
     --font-sans: 'Poppins', sans-serif;
     --font-display: 'Poppins', sans-serif;
-    --accent-foreground: 212.4 48.08% 20.39%;
+    --accent-foreground: 240 100% 10.4%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 212.4 18% 88%;
-    --input: 212.4 18% 88%;
-    --ring: 212.4 48.08% 20.39%;
+    --border: 240 20% 90%;
+    --input: 240 20% 90%;
+    --ring: 108.6 63.7% 57.8%;
 
     --radius: 1rem;
   }
@@ -46,6 +49,11 @@
 @layer utilities {
   .glass {
     @apply bg-background/80 backdrop-blur-lg border-b border-border/50;
+  }
+
+  [class*="bg-primary"][class~="text-white"],
+  [class*="bg-accent"][class~="text-white"] {
+    color: var(--brand-navy) !important;
   }
 
   .scrollbar-hide {
