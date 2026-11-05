@@ -18,6 +18,7 @@ import { isNormalStorefrontProduct, isPreorderStorefrontProduct } from "@shared/
 import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
 import { DemoCatalogPreview } from "@/components/storefront/DemoCatalogPreview";
 import { MarketBoard } from "@/components/storefront/MarketBoard";
+import { WhatsAppFloatingButton } from "@/components/storefront/WhatsAppFloatingButton";
 
 function getFallbackImage(_category: string): string {
   return noImageImg;
@@ -523,6 +524,7 @@ export default function Home() {
 
       <CartDrawer />
       <Footer />
+      <WhatsAppFloatingButton />
     </div>
   );
 }
