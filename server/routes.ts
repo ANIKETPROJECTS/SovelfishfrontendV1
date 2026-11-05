@@ -34,6 +34,7 @@ import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
 import { createPidgeDelivery, PidgeError } from "./pidge";
+import { getPidgeTestOrderRejection, isPidgeTestCustomer } from "./pidgeTestCheckout";
 import { sendMetaWhatsAppOtp } from "./metaWhatsApp";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 import {
@@ -900,6 +901,7 @@ export async function registerRoutes(
       fishBatches,
       imageUrl: doc.imageUrl ?? null,
       isArchived: doc.isArchived ?? false,
+      isPidgeTestProduct: doc.isPidgeTestProduct === true,
       updatedAt: doc.updatedAt, sectionId: doc.sectionId ?? null,
       description: doc.description ?? null,
       grossWeight: doc.grossWeight == null ? null : String(doc.grossWeight),
@@ -962,10 +964,45 @@ export async function registerRoutes(
 
   // Products routes
   app.get(api.products.list.path, async (req, res) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("Vary", "Cookie, X-Hub-DB");
     const hub = await getReqHubModels(req);
     if (!hub) return res.json([]);
     const productFilter: Record<string, unknown> = { isArchived: { $ne: true } };
+    const isTestCustomer = isPidgeTestCustomer(process.env.OTP_TEST_PHONE, req.session?.customerPhone);
+    const isAdmin = Boolean(typeof req.isAuthenticated === "function" && req.isAuthenticated());
+    if (!isTestCustomer && !isAdmin) {
+      productFilter.isPidgeTestProduct = { $ne: true };
+    }
     const docs = await hub.Product.find(productFilter).lean();
+    if (isTestCustomer) {
+      const testProduct = await hub.Product.findOneAndUpdate(
+        { isPidgeTestProduct: true },
+        {
+          $setOnInsert: {
+            name: "Pidge Test Product (Test Only)",
+            category: "Testing",
+            status: "available",
+            price: 1,
+            quantity: 1,
+            unit: "100 g",
+            weight: "100 g",
+            grossWeight: "100 g",
+            netWeight: "100 g",
+            description: "Test checkout only. No online payment is taken. Admin approval sends the unpaid amount to Pidge as COD; keep rider allocation manual.",
+            imageUrl: null,
+            isArchived: false,
+            isPidgeTestProduct: true,
+            preorderMode: "normal",
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true },
+      ).lean() as any;
+      if (testProduct && testProduct.isArchived !== true && !docs.some((doc: any) => String(doc._id) === String(testProduct._id))) {
+        docs.push(testProduct);
+      }
+    }
     res.json(docs.map(toProduct));
   });
 
@@ -1470,6 +1507,13 @@ export async function registerRoutes(
       const hub = await getCheckoutHubModels(orderPayload.hubDbName);
       if (!hub) {
         return res.status(400).json({ message: "Please select a valid delivery hub." });
+      }
+      const containsPidgeTestProduct = await hub.Product.exists({
+        _id: { $in: orderPayload.items.map((item: any) => item.productId) },
+        isPidgeTestProduct: true,
+      });
+      if (containsPidgeTestProduct) {
+        return res.status(400).json({ message: "The Pidge test product cannot use online payment checkout." });
       }
       const stockResult = await validateCheckoutStock(hub, orderPayload.items);
       if (!stockResult.inStock) {
@@ -2817,6 +2861,55 @@ export async function registerRoutes(
   app.post(api.orders.create.path, async (req, res) => {
     try {
       const input = api.orders.create.input.parse(req.body);
+      const isPidgeTestOrder = input.isPidgeTestOrder === true;
+      if (isPidgeTestOrder) {
+        if (!isPidgeTestCustomer(process.env.OTP_TEST_PHONE, req.session?.customerPhone)) {
+          return res.status(403).json({ message: "Pidge test checkout is only available to the configured test account." });
+        }
+        if (input.items.length !== 1 || Number(input.items[0]?.quantity) !== 1) {
+          return res.status(400).json({ message: "A Pidge test order must contain exactly one test item." });
+        }
+        if (
+          input.deliveryType !== "delivery" ||
+          !/^\d{6}$/.test(String(input.deliveryAddressDetail?.pincode ?? "")) ||
+          !String(input.deliveryAddressDetail?.city ?? "").trim() ||
+          !String(input.deliveryAddressDetail?.state ?? "").trim()
+        ) {
+          return res.status(400).json({ message: "Add a complete delivery address before sending the Pidge test order." });
+        }
+        const testHub = await getCheckoutHubModels(input.hubDbName);
+        if (!testHub) return res.status(400).json({ message: "Select a valid delivery hub for the test order." });
+        let testProduct: any = null;
+        try {
+          testProduct = await testHub.Product.findById(input.items[0].productId).lean();
+        } catch {
+          return res.status(400).json({ message: "The Pidge test product is unavailable." });
+        }
+        const testOrderRejection = getPidgeTestOrderRejection({
+          configuredPhone: process.env.OTP_TEST_PHONE,
+          sessionPhone: req.session?.customerPhone,
+          orderPhone: input.phone,
+          itemCount: input.items.length,
+          itemQuantity: Number(input.items[0]?.quantity),
+          paymentCount: (input.payments ?? []).length,
+          hasPaymentReference: Boolean(
+            input.razorpayOrderId ||
+            input.phonepeOrderId ||
+            (input.payments ?? []).some((payment: any) => payment.reference)
+          ),
+          hasCoupon: Boolean(input.couponCode),
+          discount: Number(input.discount ?? input.discountAmount ?? 0),
+          walletAmountUsed: Number(input.walletAmountUsed ?? 0),
+          productIsPidgeTestProduct: testProduct?.isPidgeTestProduct === true,
+          productIsArchived: testProduct?.isArchived === true,
+          productStatus: testProduct?.status,
+          productPrice: Number(testProduct?.price),
+          itemPrice: Number(input.items[0]?.price),
+        });
+        if (testOrderRejection) {
+          return res.status(testOrderRejection.status).json({ message: testOrderRejection.message });
+        }
+      }
       const localAddress = req.socket.remoteAddress ?? "";
       const isLocalRequest =
         localAddress === "127.0.0.1" ||
@@ -3131,6 +3224,13 @@ export async function registerRoutes(
       // but never decrement quantity or batches while punching a storefront order.
       if (input.hubDbName && !isPaidWebhookRecovery) {
         const inventoryHub = await getHubModels(input.hubDbName);
+        const containsPidgeTestProduct = await inventoryHub.Product.exists({
+          _id: { $in: input.items.map((item: any) => item.productId) },
+          isPidgeTestProduct: true,
+        });
+        if (containsPidgeTestProduct && !isPidgeTestOrder) {
+          return res.status(403).json({ message: "The Pidge test product can only be submitted through test checkout." });
+        }
         const stockResult = await validateCheckoutStock(inventoryHub, input.items);
         if (!stockResult.inStock) {
           if (verifiedRazorpayPayment || verifiedPhonePePayment) {
@@ -3213,8 +3313,8 @@ export async function registerRoutes(
       const itemsTotal = (input.items as any[]).reduce(
         (sum: number, item: any) => sum + ((item.price ?? 0) * (item.quantity ?? 1)), 0
       );
-      const subtotal = input.subtotal ?? itemsTotal;
-      const discount = input.discount ?? input.discountAmount ?? (resolvedCoupon?.discountAmount ?? 0);
+      const subtotal = isPidgeTestOrder ? itemsTotal : input.subtotal ?? itemsTotal;
+      const discount = isPidgeTestOrder ? 0 : input.discount ?? input.discountAmount ?? (resolvedCoupon?.discountAmount ?? 0);
       const clientSlotCharge = input.slotCharge ?? input.instantDeliveryCharge ?? 0;
 
       // Authoritative delivery-charge recomputation: the client derives slotCharge from
@@ -3296,7 +3396,9 @@ export async function registerRoutes(
       const coupons = resolvedCoupon ? [resolvedCoupon] : [];
 
       // Derive paymentMode
-      const paymentMode = input.paymentMode ?? (input.paymentMethod === "upi" ? "upi" : "cash");
+      const paymentMode = isPidgeTestOrder
+        ? "pidge_test"
+        : input.paymentMode ?? (input.paymentMethod === "upi" ? "upi" : "cash");
 
       // Extract UPI transaction ID (Razorpay payment ID) from the payments array.
       // Set on all UPI-paid orders so the admin panel can find it at the top level
@@ -3370,7 +3472,17 @@ export async function registerRoutes(
       // Build orderInput in the exact field order used by the admin POS schema.
       // orderId is intentionally omitted here — it is appended LAST via
       // findByIdAndUpdate after the document is saved (matching admin behaviour).
-      const paymentState = verifiedRazorpayPayment
+      const paymentState = isPidgeTestOrder
+        ? {
+            paymentStatus: "unpaid",
+            payments: [],
+            paidAmount: 0,
+            dueAmount: total,
+            paymentMode: "pidge_test",
+            upiVariant: null,
+            upiTransactionId: null,
+          }
+        : verifiedRazorpayPayment
         ? buildSuccessfulRazorpayPaymentState({
             total,
             paymentAmount: verifiedRazorpayPayment.amount,
@@ -3429,7 +3541,9 @@ export async function registerRoutes(
         deliveryArea: input.deliveryArea,
         deliveryAddressDetail: addrDetail,
         pickupLocation: "",
-        notes: input.notes ?? "",
+        notes: isPidgeTestOrder
+          ? [input.notes, "Pidge test order — unpaid; keep rider allocation manual."].filter(Boolean).join(" | ")
+          : input.notes ?? "",
         status: "pending",
         source: "online",
         subHubId: resolvedSubHubId ?? null,
@@ -3440,6 +3554,8 @@ export async function registerRoutes(
         couponCodes,
         coupons,
         ...paymentState,
+        paymentMethod: isPidgeTestOrder ? "pidge_test" : input.paymentMethod ?? null,
+        isPidgeTestOrder,
         inventoryDeducted: false,
         inventoryReviewRequired,
          orderType: input.orderType ?? null,

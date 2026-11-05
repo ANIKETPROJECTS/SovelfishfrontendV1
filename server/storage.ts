@@ -119,6 +119,7 @@ function toOrder(doc: any): OrderRequest {
     upiVariant: doc.upiVariant ?? null,
     phonepeOrderId: doc.phonepeOrderId ?? null,
     pidgeDispatchStatus: doc.pidgeDispatchStatus ?? "not_sent",
+    isPidgeTestOrder: doc.isPidgeTestOrder ?? false,
     pidgeOrderId: doc.pidgeOrderId ?? null,
     pidgeDispatchError: doc.pidgeDispatchError ?? null,
     pidgeDispatchAttemptedAt: doc.pidgeDispatchAttemptedAt ?? null,

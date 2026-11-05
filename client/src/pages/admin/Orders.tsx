@@ -65,6 +65,11 @@ export default function Orders() {
                     <div className="font-medium">{order.customerName}</div>
                     <div className="text-xs text-muted-foreground">{order.phone}</div>
                     {order.orderId && <div className="text-xs font-mono text-primary mt-0.5">{order.orderId}</div>}
+                    {order.isPidgeTestOrder && (
+                      <div className="text-xs font-semibold text-amber-800 mt-1">
+                        Pidge test · unpaid · keep Manual Allocation
+                      </div>
+                    )}
                     {paymentPending && (
                       <div className="text-xs font-medium text-amber-700 mt-1">Awaiting UPI payment</div>
                     )}

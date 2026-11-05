@@ -58,6 +58,7 @@ export type Product = {
   unit: string | null;
   imageUrl: string | null;
   isArchived: boolean;
+  isPidgeTestProduct?: boolean;
   updatedAt: Date;
   sectionId: string | string[] | null;
   description: string | null;
@@ -241,6 +242,7 @@ export type OrderRequest = {
   subHubName?: string | null;
   phonepeOrderId?: string | null;
   pidgeDispatchStatus?: "not_sent" | "submitting" | "submitted" | "failed" | "needs_review" | null;
+  isPidgeTestOrder?: boolean;
   pidgeOrderId?: string | null;
   pidgeDispatchError?: string | null;
   pidgeDispatchAttemptedAt?: Date | null;
@@ -433,6 +435,7 @@ export const insertOrderRequestSchema = z.object({
   paidAmount: z.number().nullable().optional(),
   dueAmount: z.number().nullable().optional(),
   paymentStatus: z.string().nullable().optional(),
+  isPidgeTestOrder: z.boolean().optional(),
   razorpayOrderId: z.string().nullable().optional(),
   phonepeOrderId: z.string().nullable().optional(),
 });
