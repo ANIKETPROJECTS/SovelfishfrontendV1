@@ -67,8 +67,8 @@ const TYPE_OPTIONS = [
 ];
 
 const emptyForm = {
-  name: "", phone: "", building: "", street: "", area: "",
-  pincode: "", type: "house" as "house" | "office" | "other",
+  name: "", phone: "", building: "", street: "", area: "", landmark: "",
+  city: "", state: "", country: "India", pincode: "", type: "house" as "house" | "office" | "other",
   label: "", instructions: "",
 };
 
@@ -747,6 +747,9 @@ export function CartDrawer() {
       building: placeName || f.building,
       street: street || f.street,
       area: area || f.area,
+      city: p.city || p.district || f.city,
+      state: p.state || f.state,
+      country: p.country || f.country,
       pincode: pincode || f.pincode,
     }));
     setLocSearch("");
@@ -853,6 +856,9 @@ export function CartDrawer() {
             pincode: pincode || f.pincode,
             area: area || f.area,
             street: street || f.street,
+            city: addr.city || addr.town || addr.state_district || f.city,
+            state: addr.state || f.state,
+            country: addr.country || f.country,
           }));
 
           const filled = [area, pincode].filter(Boolean).join(", ");
@@ -880,8 +886,12 @@ export function CartDrawer() {
   }, []);
 
   const saveAddress = async () => {
-    if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area) {
+    if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area || !addForm.city || !addForm.state) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
+      return;
+    }
+    if (!/^\d{6}$/.test(addForm.pincode)) {
+      toast({ title: "Enter a valid 6-digit PIN code", variant: "destructive" });
       return;
     }
     if (addForm.pincode.length === 6 && !checkPincodeServiceability(addForm.pincode)) {
@@ -946,7 +956,7 @@ export function CartDrawer() {
     } else {
       console.debug(`[checkout] Computed delivery charge ₹${pincodeDeliveryCharge} for pincode=${selected.pincode}`);
     }
-    const fullAddress = `${selected.building} · ${selected.street}, ${selected.area} · ${selected.pincode}`;
+    const fullAddress = `${selected.building} · ${selected.street}, ${selected.area}, ${selected.city}, ${selected.state} · ${selected.pincode}`;
     const orderItems = items.map(i => ({
       productId: i.originalId ?? String(i.id),
       quantity: i.quantity,
@@ -999,6 +1009,10 @@ export function CartDrawer() {
         building: selected.building,
         street: selected.street,
         area: selected.area,
+        landmark: selected.landmark,
+        city: selected.city,
+        state: selected.state,
+        country: selected.country || "India",
         pincode: selected.pincode,
         type: selected.type,
         label: selected.label,
@@ -1041,6 +1055,14 @@ export function CartDrawer() {
     }
     const selected = savedAddresses.find(a => a.id === activeAddressId);
     if (!selected) return;
+    if (!selected.city?.trim() || !selected.state?.trim() || !/^\d{6}$/.test(selected.pincode || "")) {
+      toast({
+        title: "Complete your delivery address",
+        description: "Please add a saved address with city, state, and a valid PIN code before placing this order.",
+        variant: "destructive",
+      });
+      return;
+    }
     const stockCheckItems = getStockCheckItems(items);
     const isUpiCheckout = paymentMethod === "online" && finalTotal > 0;
     if (isUpiCheckout && isHubReady) {
@@ -2204,6 +2226,9 @@ export function CartDrawer() {
                           />
                           Shipping Address
                         </h3>
+                        <p className="text-[11px] text-muted-foreground -mt-2 mb-3">
+                          We share these delivery details with Pidge after an admin confirms your order.
+                        </p>
                         {customer && !showAddForm ? (
                           <Button
                             size="sm"
@@ -2233,7 +2258,7 @@ export function CartDrawer() {
                             </Button>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Pincode</Label>
+                              <Label className="text-xs text-muted-foreground">PIN code *</Label>
                             <input
                               type="tel"
                               inputMode="numeric"
@@ -2305,6 +2330,38 @@ export function CartDrawer() {
                               placeholder="e.g. Thane West"
                               className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                               data-testid="input-address-area"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">City *</Label>
+                              <input
+                                value={addForm.city}
+                                onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
+                                placeholder="City"
+                                className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                                data-testid="input-address-city"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">State *</Label>
+                              <input
+                                value={addForm.state}
+                                onChange={e => setAddForm(f => ({ ...f, state: e.target.value }))}
+                                placeholder="State"
+                                className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                                data-testid="input-address-state"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Landmark</Label>
+                            <input
+                              value={addForm.landmark}
+                              onChange={e => setAddForm(f => ({ ...f, landmark: e.target.value }))}
+                              placeholder="Nearby landmark (optional)"
+                              className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                              data-testid="input-address-landmark"
                             />
                           </div>
                           <div className="space-y-2">
@@ -2403,7 +2460,7 @@ export function CartDrawer() {
                                   </div>
                                   <p className="text-xs text-muted-foreground">{addr.phone || customer?.phone}</p>
                                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                    {[addr.building, addr.street, addr.area, addr.pincode].filter(Boolean).join(", ")}
+                                    {[addr.building, addr.street, addr.area, addr.city, addr.state, addr.pincode].filter(Boolean).join(", ")}
                                   </p>
                                 </div>
                               </div>
@@ -2846,7 +2903,7 @@ export function CartDrawer() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">PIN code *</Label>
                 <Input
                   value={addForm.pincode}
                   onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value }))}
@@ -2856,6 +2913,38 @@ export function CartDrawer() {
                   className="rounded-xl h-11 border-border/60"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">City *</Label>
+                <Input
+                  value={addForm.city}
+                  onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
+                  placeholder="City"
+                  className="rounded-xl h-11 border-border/60"
+                  data-testid="input-address-city"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">State *</Label>
+                <Input
+                  value={addForm.state}
+                  onChange={e => setAddForm(f => ({ ...f, state: e.target.value }))}
+                  placeholder="State"
+                  className="rounded-xl h-11 border-border/60"
+                  data-testid="input-address-state"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Landmark</Label>
+              <Input
+                value={addForm.landmark}
+                onChange={e => setAddForm(f => ({ ...f, landmark: e.target.value }))}
+                placeholder="Nearby landmark (optional)"
+                className="rounded-xl h-11 border-border/60"
+                data-testid="input-address-landmark"
+              />
             </div>
 
           </div>

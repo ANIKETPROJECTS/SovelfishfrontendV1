@@ -1,7 +1,8 @@
-import { useOrders, useUpdateOrderStatus } from "@/hooks/use-orders";
+import { useDispatchPidgeOrder, useOrders, useUpdateOrderStatus } from "@/hooks/use-orders";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 const STATUSES = [
@@ -14,6 +15,7 @@ const STATUSES = [
 export default function Orders() {
   const { data: orders } = useOrders();
   const { mutate: updateStatus } = useUpdateOrderStatus();
+  const pidgeDispatch = useDispatchPidgeOrder();
 
   // Sort: pending first, then confirmed, etc. newest first within status.
   const sortedOrders = [...(orders || [])].sort((a, b) => {
@@ -37,6 +39,7 @@ export default function Orders() {
               <TableHead>Delivery Area</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
+              <TableHead>Pidge delivery</TableHead>
               <TableHead className="text-right">Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -50,6 +53,8 @@ export default function Orders() {
               const paymentPending = paymentStatus === "pending";
               const paymentFailed = paymentStatus === "failed";
               const paymentCompleted = paymentStatus === "completed" || paymentStatus === "paid";
+              const pidgeStatus = order.pidgeDispatchStatus || "not_sent";
+              const isDispatchingThisOrder = pidgeDispatch.isPending && pidgeDispatch.variables === order.id;
 
               return (
                 <TableRow key={order.id} className="group">
@@ -77,6 +82,14 @@ export default function Orders() {
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{order.deliveryArea}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 max-w-[240px]">
+                      {order.address}
+                    </div>
+                    {order.deliveryAddressDetail?.city && order.deliveryAddressDetail?.state && (
+                      <div className="text-xs text-muted-foreground">
+                        {[order.deliveryAddressDetail.city, order.deliveryAddressDetail.state, order.deliveryAddressDetail.pincode].filter(Boolean).join(", ")}
+                      </div>
+                    )}
                     {order.notes && <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[150px]">Note: {order.notes}</div>}
                   </TableCell>
                   <TableCell>
@@ -85,6 +98,51 @@ export default function Orders() {
                     </div>
                   </TableCell>
                   <TableCell className="font-bold">₹{total}</TableCell>
+                  <TableCell className="min-w-[190px]">
+                    {pidgeStatus === "submitted" ? (
+                      <div>
+                        <div className="text-xs font-semibold text-emerald-700">Sent to Pidge</div>
+                        {order.pidgeOrderId && <div className="text-[11px] text-muted-foreground font-mono break-all">{order.pidgeOrderId}</div>}
+                      </div>
+                    ) : pidgeStatus === "needs_review" ? (
+                      <div className="max-w-[220px] text-xs text-amber-800">
+                        Pidge response is uncertain. Check its dashboard before retrying to avoid duplicate delivery requests.
+                      </div>
+                    ) : pidgeStatus === "submitting" ? (
+                      <div className="max-w-[220px] text-xs text-muted-foreground">
+                        Dispatch started. If it stays here, check Pidge before retrying.
+                      </div>
+                    ) : pidgeStatus === "failed" ? (
+                      <div className="space-y-1.5">
+                        <div className="text-xs text-red-700 max-w-[220px]">{order.pidgeDispatchError || "Pidge dispatch failed."}</div>
+                        {order.status === "confirmed" && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs"
+                            disabled={isDispatchingThisOrder}
+                            onClick={() => pidgeDispatch.mutate(order.id)}
+                          >
+                            {isDispatchingThisOrder ? "Retrying…" : "Retry Pidge"}
+                          </Button>
+                        )}
+                      </div>
+                    ) : order.status === "confirmed" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs"
+                        disabled={isDispatchingThisOrder}
+                        onClick={() => pidgeDispatch.mutate(order.id)}
+                      >
+                        {isDispatchingThisOrder ? "Sending…" : "Send to Pidge"}
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sent after confirmation</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Select 
                       defaultValue={order.status} 
@@ -106,7 +164,7 @@ export default function Orders() {
             })}
             {sortedOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No orders yet.
                 </TableCell>
               </TableRow>

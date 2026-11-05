@@ -219,6 +219,7 @@ export type OrderRequest = {
   notes: string | null;
   createdAt: Date;
   deliveryType?: string | null;
+  deliveryAddressDetail?: DeliveryAddressDetail | null;
   timeslotLabel?: string | null;
   instantDeliveryCharge?: number | null;
   slotCharge?: number | null;
@@ -239,6 +240,11 @@ export type OrderRequest = {
   subHubId?: string | null;
   subHubName?: string | null;
   phonepeOrderId?: string | null;
+  pidgeDispatchStatus?: "not_sent" | "submitting" | "submitted" | "failed" | "needs_review" | null;
+  pidgeOrderId?: string | null;
+  pidgeDispatchError?: string | null;
+  pidgeDispatchAttemptedAt?: Date | null;
+  pidgeDispatchedAt?: Date | null;
 };
 
 export type DeliveryAddressDetail = {
@@ -248,6 +254,10 @@ export type DeliveryAddressDetail = {
   building?: string | null;
   street?: string | null;
   area?: string | null;
+  landmark?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
   pincode?: string | null;
   type?: string | null;
   label?: string | null;
@@ -361,6 +371,10 @@ const deliveryAddressDetailSchema = z.object({
   building: z.string().nullable().optional(),
   street: z.string().nullable().optional(),
   area: z.string().nullable().optional(),
+  landmark: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
   pincode: z.string().nullable().optional(),
   type: z.string().nullable().optional(),
   label: z.string().nullable().optional(),
@@ -468,6 +482,10 @@ export type CustomerAddress = {
   building: string;
   street: string;
   area: string;
+  landmark: string;
+  city: string;
+  state: string;
+  country: string;
   pincode: string;
   type: "house" | "office" | "other";
   label: string;
@@ -520,6 +538,10 @@ export const insertCustomerAddressSchema = z.object({
   building: z.string().min(1, "Building is required"),
   street: z.string().optional().default(""),
   area: z.string().min(1, "Area is required"),
+  landmark: z.string().optional().default(""),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  country: z.string().optional().default("India"),
   pincode: z.string().regex(/^\d{6}$/, "A valid 6-digit pincode is required"),
   type: z.enum(["house", "office", "other"]).optional().default("house"),
   label: z.string().optional().default("Home"),

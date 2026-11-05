@@ -83,7 +83,7 @@ export function useCreateOrder() {
 export function useUpdateOrderStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const url = buildUrl(api.orders.updateStatus.path, { id });
       const res = await fetch(url, {
         method: api.orders.updateStatus.method,
@@ -95,5 +95,21 @@ export function useUpdateOrderStatus() {
       return res.json() as Promise<OrderRequest>;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.orders.list.path] }),
+  });
+}
+
+export function useDispatchPidgeOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/orders/${encodeURIComponent(id)}/pidge/dispatch`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Could not send order to Pidge");
+      return data as OrderRequest;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: [api.orders.list.path] }),
   });
 }

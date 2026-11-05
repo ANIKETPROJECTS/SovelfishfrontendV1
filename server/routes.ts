@@ -33,6 +33,7 @@ import {
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
+import { createPidgeDelivery, PidgeError } from "./pidge";
 import { sendMetaWhatsAppOtp } from "./metaWhatsApp";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 import {
@@ -294,6 +295,109 @@ export async function registerRoutes(
       return next();
     }
     res.status(401).json({ message: "Unauthorized" });
+  };
+
+  const dispatchOrderToPidge = async (orderId: string, allowRetry = false) => {
+    const OrderModel = getOrderModel();
+    const current = await OrderModel.findById(orderId).lean() as any;
+    if (!current) throw Object.assign(new Error("Order not found"), { statusCode: 404 });
+    if (current.status !== "confirmed") {
+      throw Object.assign(new Error("Only confirmed orders can be sent to Pidge."), { statusCode: 409 });
+    }
+    if (["pending", "failed"].includes(String(current.paymentStatus ?? ""))) {
+      throw Object.assign(new Error("This order's payment is not complete."), { statusCode: 409 });
+    }
+    if (current.pidgeOrderId || current.pidgeDispatchStatus === "submitted") return current;
+    if (["submitting", "needs_review"].includes(String(current.pidgeDispatchStatus ?? ""))) {
+      if (!allowRetry && current.pidgeDispatchStatus === "submitting") return current;
+      throw Object.assign(
+        new Error("Pidge may already have received this order. Check the Pidge dashboard before attempting another dispatch."),
+        { statusCode: 409 },
+      );
+    }
+    if (!allowRetry && current.pidgeDispatchStatus === "failed") return current;
+
+    const claimableStatuses = allowRetry ? ["not_sent", "failed", null] : ["not_sent", null];
+    const claimed = await OrderModel.findOneAndUpdate(
+      {
+        _id: orderId,
+        status: "confirmed",
+        pidgeDispatchStatus: { $in: claimableStatuses },
+        pidgeOrderId: { $in: [null, ""] },
+      },
+      {
+        $set: {
+          pidgeDispatchStatus: "submitting",
+          pidgeDispatchError: null,
+          pidgeDispatchAttemptedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      },
+      { new: true },
+    ).lean() as any;
+    if (!claimed) {
+      const latest = await OrderModel.findById(orderId).lean() as any;
+      if (latest?.pidgeOrderId || latest?.pidgeDispatchStatus === "submitted") return latest;
+      if (!allowRetry && latest?.pidgeDispatchStatus === "submitting") return latest;
+      throw Object.assign(new Error("Another Pidge dispatch is already in progress."), { statusCode: 409 });
+    }
+
+    let result: { pidgeOrderId: string };
+    try {
+      result = await createPidgeDelivery(claimed);
+    } catch (error: any) {
+      const uncertain = error instanceof PidgeError && error.uncertain;
+      const safeMessage = String(error?.message || "Pidge delivery request failed").slice(0, 500);
+      const updated = await OrderModel.findByIdAndUpdate(
+        orderId,
+        {
+          $set: {
+            pidgeDispatchStatus: uncertain ? "needs_review" : "failed",
+            pidgeDispatchError: safeMessage,
+            updatedAt: new Date(),
+          },
+        },
+        { new: true },
+      ).lean() as any;
+      return updated;
+    }
+
+    try {
+      const updated = await OrderModel.findByIdAndUpdate(
+        orderId,
+        {
+          $set: {
+            pidgeDispatchStatus: "submitted",
+            pidgeOrderId: result.pidgeOrderId,
+            pidgeDispatchError: null,
+            pidgeDispatchedAt: new Date(),
+            updatedAt: new Date(),
+          },
+        },
+        { new: true },
+      ).lean() as any;
+      if (updated) return updated;
+    } catch {
+      console.error("[Pidge] Pidge accepted an order, but saving its reference failed.");
+    }
+
+    // The request succeeded but the Pidge ID could not be safely persisted.
+    // Never mark this as retryable: that could create a second real delivery.
+    try {
+      return await OrderModel.findByIdAndUpdate(
+        orderId,
+        {
+          $set: {
+            pidgeDispatchStatus: "needs_review",
+            pidgeDispatchError: "Pidge accepted the order, but its reference could not be saved. Check Pidge before retrying.",
+            updatedAt: new Date(),
+          },
+        },
+        { new: true },
+      ).lean() as any;
+    } catch {
+      return { ...claimed, pidgeDispatchStatus: "needs_review" };
+    }
   };
   // Auth routes
   app.post(api.auth.login.path, passport.authenticate("local"), (req, res) => {
@@ -3251,6 +3355,10 @@ export async function registerRoutes(
             building: rawAddr.building ?? null,
             street: rawAddr.street ?? null,
             area: rawAddr.area ?? null,
+            landmark: rawAddr.landmark ?? null,
+            city: rawAddr.city ?? null,
+            state: rawAddr.state ?? null,
+            country: rawAddr.country ?? "India",
             pincode: rawAddr.pincode ?? null,
             type: rawAddr.type ?? "house",
             label: rawAddr.label ?? "Home",
@@ -3519,11 +3627,19 @@ export async function registerRoutes(
       const oldOrder = await storage.getOrderRequest(req.params.id);
       const oldStatus = oldOrder?.status ?? "pending";
 
-      const order = await storage.updateOrderRequestStatus(req.params.id, input.status);
+      let order = await storage.updateOrderRequestStatus(req.params.id, input.status);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
       await storage.updateCustomerOrderStatus(order.phone, order.id, input.status);
+      if (
+        input.status === "confirmed" &&
+        oldStatus !== "confirmed" &&
+        !["pending", "failed"].includes(String(order.paymentStatus ?? ""))
+      ) {
+        await dispatchOrderToPidge(order.id);
+        order = (await storage.getOrderRequest(order.id)) ?? order;
+      }
 
       // ── Coupon lifecycle ────────────────────────────────────────────────
       const couponCode = order.coupon?.code;
@@ -3568,6 +3684,23 @@ export async function registerRoutes(
         return res.status(400).json({ message: err.errors[0].message });
       }
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/orders/:id/pidge/dispatch", requireAuth, async (req, res) => {
+    try {
+      const order = await dispatchOrderToPidge(req.params.id, true);
+      if (order.pidgeDispatchStatus !== "submitted") {
+        return res.status(order.pidgeDispatchStatus === "needs_review" ? 409 : 502).json({
+          message: order.pidgeDispatchError || "Pidge did not confirm the delivery request.",
+          pidgeDispatchStatus: order.pidgeDispatchStatus,
+        });
+      }
+      const storedOrder = await storage.getOrderRequest(req.params.id);
+      return res.json(storedOrder ?? order);
+    } catch (error: any) {
+      const status = Number(error?.statusCode) || 500;
+      return res.status(status).json({ message: error?.message || "Could not send this order to Pidge." });
     }
   });
 
