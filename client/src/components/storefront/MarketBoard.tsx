@@ -249,7 +249,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
   return (
     <section
       aria-labelledby="market-board-title"
-      className="market-board-v2 relative mb-5 overflow-hidden rounded-2xl border border-[#e4ece8] bg-white text-[var(--brand-navy)] shadow-[0_14px_38px_-30px_rgba(0,0,53,0.38)]"
+      className="market-board-v2 relative mb-7 text-[var(--brand-navy)]"
     >
       <div className="market-board-inner">
         <header className="market-board-header">

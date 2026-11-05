@@ -316,9 +316,7 @@ export default function Home() {
           <DemoCatalogPreview />
         ) : (
           <>
-        <div className="home-market-stage">
-          <MarketBoard products={products ?? []} />
-        </div>
+        <MarketBoard products={products ?? []} />
 
         {/* Preserve the existing preorder placement for hubs that have not
             configured a ranked preorder section yet. */}

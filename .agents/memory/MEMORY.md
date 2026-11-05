@@ -16,3 +16,4 @@
 - [Combo page search visibility](combo-search-visibility.md) — /combos stays available on-site but is intentionally noindexed and excluded from the sitemap.
 - [Keep checkout helpers isolated](checkout-helper-imports.md) — stock calculations used by tests should not import DB-connected sync modules.
 - [Market price comparisons](market-price-comparisons.md) — Always show Mongo catalog rates; movements, ranges, and sparklines must use saved price history only.
+- [Homepage visual direction](homepage-visual-direction.md) — Use open brand-color sections, not nested panels or decorative background bubbles.

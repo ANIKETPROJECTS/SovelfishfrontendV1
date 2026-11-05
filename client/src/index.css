@@ -160,64 +160,50 @@
 
 @layer components {
   .home-storefront-page {
+    position: relative;
+    isolation: isolate;
+    overflow-x: clip;
     background:
-      radial-gradient(ellipse at 8% 3%, rgb(105 216 79 / 12%), transparent 34rem),
-      radial-gradient(ellipse at 92% 22%, rgb(0 0 53 / 5%), transparent 38rem),
-      linear-gradient(180deg, #fbfff8 0%, #f5faef 48%, #ffffff 100%);
-  }
-
-  .home-market-stage {
-    margin-bottom: 1.5rem;
-    padding: 2px;
-    border-radius: 25px;
-    background: linear-gradient(115deg, var(--brand-navy) 0%, #17175d 42%, var(--brand-seafoam) 100%);
-    box-shadow: 0 16px 38px -30px rgb(0 0 53 / 65%);
-  }
-
-  .home-market-stage .market-board-v2 {
-    margin-bottom: 0;
-    border-color: transparent;
-    border-radius: 23px;
-    box-shadow: 0 3px 12px rgb(0 0 53 / 5%);
+      linear-gradient(180deg, #eff9eb 0%, #fbfdf9 22rem, #ffffff 58rem, #f3faef 100%);
   }
 
   .home-content-section {
-    padding: 14px;
-    border: 1px solid rgb(0 0 53 / 8%);
-    border-radius: 22px;
-    background: linear-gradient(140deg, rgb(255 255 255 / 96%), rgb(244 251 239 / 94%));
-    box-shadow: 0 14px 36px -32px rgb(0 0 53 / 38%);
+    position: relative;
+    padding: 18px 0 4px;
+    border-top: 1px solid rgb(0 0 53 / 15%);
+    background: transparent;
   }
 
   .home-section-heading {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    width: fit-content;
+    margin-bottom: 14px;
   }
 
   .home-section-heading::before {
-    width: 4px;
-    height: 1.1em;
-    flex: 0 0 4px;
+    width: 24px;
+    height: 5px;
+    flex: 0 0 24px;
     border-radius: 999px;
-    background: linear-gradient(180deg, var(--brand-seafoam), var(--brand-navy));
+    background: linear-gradient(90deg, var(--brand-seafoam) 0 55%, var(--brand-navy) 55% 100%);
     content: "";
   }
 
   @media (max-width: 640px) {
-    .home-market-stage {
-      margin-bottom: 1.1rem;
-      padding: 1.5px;
-      border-radius: 20px;
-    }
-
-    .home-market-stage .market-board-v2 {
-      border-radius: 18px;
-    }
-
     .home-content-section {
-      padding: 10px;
-      border-radius: 18px;
+      padding-top: 14px;
+    }
+
+    .home-section-heading {
+      gap: 9px;
+      margin-bottom: 11px;
+    }
+
+    .home-section-heading::before {
+      width: 19px;
+      flex-basis: 19px;
     }
   }
 }
