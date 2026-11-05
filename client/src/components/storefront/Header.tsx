@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
@@ -10,69 +10,12 @@ import { OtpModal } from "@/components/storefront/OtpModal";
 import { LocationPicker } from "@/components/storefront/LocationPicker";
 
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
-import cartImg from "@assets/shopping-bag_1774706595493.png";
-import userImg from "@assets/user_(1)_1774707188827.png";
+import cartImg from "@assets/grocery-store_1793859519564.png";
+import userImg from "@assets/user_(2)_1793859501747.png";
 import searchImg from "@assets/search-interface-symbol_1774706690468.png";
-import locationImg from "@assets/placeholder_(1)_1774706943633.png";
-import menuIconImg from "@assets/category_1774778224285.png";
+import locationImg from "@assets/maps-and-flags_1793859547966.png";
+import menuIconImg from "@assets/category_1793859663530.png";
 import micImg from "@assets/mic_1778182669857.png";
-
-const SEARCH_PHRASES = [
-  "Search for fresh seafood...",
-  "Try Surmai or Pomfret...",
-  "Chicken, Mutton, Prawns...",
-  "Fresh Crab & Lobster...",
-  "Search for Masalas...",
-  "Bombil, Bangda, Rawas...",
-];
-
-function TypewriterPlaceholder() {
-  const [displayed, setDisplayed] = useState("");
-  const [phraseIdx, setPhraseIdx] = useState(0);
-  const [charIdx, setCharIdx] = useState(0);
-  const [deleting, setDeleting] = useState(false);
-  const [paused, setPaused] = useState(false);
-
-  useEffect(() => {
-    if (paused) {
-      const t = setTimeout(() => setPaused(false), 1400);
-      return () => clearTimeout(t);
-    }
-
-    const phrase = SEARCH_PHRASES[phraseIdx];
-
-    if (!deleting) {
-      if (charIdx < phrase.length) {
-        const t = setTimeout(() => {
-          setDisplayed(phrase.slice(0, charIdx + 1));
-          setCharIdx(c => c + 1);
-        }, 55);
-        return () => clearTimeout(t);
-      } else {
-        setPaused(true);
-        setDeleting(true);
-      }
-    } else {
-      if (charIdx > 0) {
-        const t = setTimeout(() => {
-          setDisplayed(phrase.slice(0, charIdx - 1));
-          setCharIdx(c => c - 1);
-        }, 30);
-        return () => clearTimeout(t);
-      } else {
-        setDeleting(false);
-        setPhraseIdx(i => (i + 1) % SEARCH_PHRASES.length);
-      }
-    }
-  }, [charIdx, deleting, paused, phraseIdx]);
-
-  return (
-    <span className="text-muted-foreground/60 text-sm pointer-events-none select-none">
-      {displayed}
-      <span className="animate-pulse">|</span>
-    </span>
-  );
-}
 
 export function Header({
   onSearch,
@@ -93,7 +36,6 @@ export function Header({
   const [, navigate] = useLocation();
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState(initialSearchValue ?? "");
-  const [searchFocused, setSearchFocused] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -169,20 +111,13 @@ export function Header({
         {showSearchUI && (
           <form onSubmit={handleSubmit} className="flex-1 max-w-md relative hidden sm:block">
             <img src={searchImg} alt="Search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
-            {/* Typewriter placeholder shown when empty & unfocused */}
-            {!searchValue && !searchFocused && (
-              <div className="absolute left-10 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                <TypewriterPlaceholder />
-              </div>
-            )}
             <input
               type="search"
               value={searchValue}
+              placeholder="Search fresh seafood, meat & more"
               autoFocus={!!initialSearchValue}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-full bg-white border border-slate-200 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10 text-sm transition-all"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#69D84F] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
               data-testid="input-search-desktop"
             />
             <button
@@ -277,19 +212,13 @@ export function Header({
         <div className="sm:hidden px-3 pb-2.5 pt-1 bg-white">
           <form onSubmit={handleSubmit} className="relative">
             <img src={searchImg} alt="Search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
-            {!searchValue && !searchFocused && (
-              <div className="absolute left-10 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                <TypewriterPlaceholder />
-              </div>
-            )}
             <input
               type="search"
               autoFocus={(collapsibleMobileSearch && mobileSearchOpen) || !!initialSearchValue}
               value={searchValue}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
+              placeholder="Search fresh seafood, meat & more"
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-full bg-white border border-slate-200 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10 text-sm transition-all"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#69D84F] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
               data-testid="input-search-mobile"
             />
             <button
