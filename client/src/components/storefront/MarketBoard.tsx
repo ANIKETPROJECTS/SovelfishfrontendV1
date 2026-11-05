@@ -260,7 +260,7 @@ export function MarketBoard({ products }: MarketBoardProps) {
           <div>
             <p className="market-eyebrow"><span className="market-live-dot" /> LIVE MARKET</p>
             <h1 id="market-board-title">Today&apos;s Fresh Catch Rates</h1>
-            <p className="market-updated">Yesterday&apos;s close · today&apos;s saved updates</p>
+            <p className="market-updated">Fresh fish prices, updated as market rates change.</p>
           </div>
         </header>
 
