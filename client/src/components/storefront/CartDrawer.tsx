@@ -67,8 +67,8 @@ const TYPE_OPTIONS = [
 ];
 
 const emptyForm = {
-  name: "", phone: "", building: "", street: "", area: "", landmark: "",
-  city: "", state: "", country: "India", pincode: "", type: "house" as "house" | "office" | "other",
+  name: "", phone: "", building: "", street: "", area: "",
+  pincode: "", type: "house" as "house" | "office" | "other",
   label: "", instructions: "",
 };
 
@@ -747,9 +747,6 @@ export function CartDrawer() {
       building: placeName || f.building,
       street: street || f.street,
       area: area || f.area,
-      city: p.city || p.district || f.city,
-      state: p.state || f.state,
-      country: p.country || f.country,
       pincode: pincode || f.pincode,
     }));
     setLocSearch("");
@@ -856,9 +853,6 @@ export function CartDrawer() {
             pincode: pincode || f.pincode,
             area: area || f.area,
             street: street || f.street,
-            city: addr.city || addr.town || addr.state_district || f.city,
-            state: addr.state || f.state,
-            country: addr.country || f.country,
           }));
 
           const filled = [area, pincode].filter(Boolean).join(", ");
@@ -886,12 +880,8 @@ export function CartDrawer() {
   }, []);
 
   const saveAddress = async () => {
-    if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area || !addForm.city || !addForm.state) {
+    if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
-      return;
-    }
-    if (!/^\d{6}$/.test(addForm.pincode)) {
-      toast({ title: "Enter a valid 6-digit PIN code", variant: "destructive" });
       return;
     }
     if (addForm.pincode.length === 6 && !checkPincodeServiceability(addForm.pincode)) {
@@ -930,11 +920,6 @@ export function CartDrawer() {
   const afterCouponTotal = rawTotal - discountAmount;
   const walletDeduction = useWallet ? Math.min(walletBalance, afterCouponTotal) : 0;
   const finalTotal = afterCouponTotal - walletDeduction;
-  const hasPidgeTestProduct = items.some((item) => item.isPidgeTestProduct === true);
-  const isPidgeTestCart =
-    items.length === 1 &&
-    items[0]?.isPidgeTestProduct === true &&
-    Number(items[0]?.quantity) === 1;
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -961,7 +946,7 @@ export function CartDrawer() {
     } else {
       console.debug(`[checkout] Computed delivery charge ₹${pincodeDeliveryCharge} for pincode=${selected.pincode}`);
     }
-    const fullAddress = `${selected.building} · ${selected.street}, ${selected.area}, ${selected.city}, ${selected.state} · ${selected.pincode}`;
+    const fullAddress = `${selected.building} · ${selected.street}, ${selected.area} · ${selected.pincode}`;
     const orderItems = items.map(i => ({
       productId: i.originalId ?? String(i.id),
       quantity: i.quantity,
@@ -1014,10 +999,6 @@ export function CartDrawer() {
         building: selected.building,
         street: selected.street,
         area: selected.area,
-        landmark: selected.landmark,
-        city: selected.city,
-        state: selected.state,
-        country: selected.country || "India",
         pincode: selected.pincode,
         type: selected.type,
         label: selected.label,
@@ -1058,32 +1039,8 @@ export function CartDrawer() {
       });
       return;
     }
-    if (hasPidgeTestProduct && !isPidgeTestCart) {
-      toast({
-        title: "Keep the Pidge test item by itself",
-        description: "A test order can contain exactly one Pidge test item and no other products.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (isPidgeTestCart && (appliedCoupon || walletDeduction > 0)) {
-      toast({
-        title: "Remove discounts for the test order",
-        description: "Pidge test orders do not use coupons or wallet balance.",
-        variant: "destructive",
-      });
-      return;
-    }
     const selected = savedAddresses.find(a => a.id === activeAddressId);
     if (!selected) return;
-    if (!selected.city?.trim() || !selected.state?.trim() || !/^\d{6}$/.test(selected.pincode || "")) {
-      toast({
-        title: "Complete your delivery address",
-        description: "Please add a saved address with city, state, and a valid PIN code before placing this order.",
-        variant: "destructive",
-      });
-      return;
-    }
     const stockCheckItems = getStockCheckItems(items);
     const isUpiCheckout = paymentMethod === "online" && finalTotal > 0;
     if (isUpiCheckout && isHubReady) {
@@ -1135,34 +1092,6 @@ export function CartDrawer() {
     // unresolved default of 0, undercharging a real delivery fee.
     if (!isHubReady) {
       toast({ title: "Still loading delivery details, please try again in a moment", variant: "destructive" });
-      return;
-    }
-
-    if (isPidgeTestCart) {
-      const testTotal = totalPrice + pincodeDeliveryCharge;
-      const testPayload = {
-        ...buildOrderPayload(selected),
-        isPidgeTestOrder: true,
-        subtotal: totalPrice,
-        discount: 0,
-        discountAmount: null,
-        couponCode: null,
-        walletAmountUsed: 0,
-        slotCharge: pincodeDeliveryCharge,
-        total: testTotal,
-        payments: [],
-        paidAmount: 0,
-        dueAmount: testTotal,
-        paymentStatus: "unpaid",
-        paymentMethod: "pidge_test",
-        paymentMode: "pidge_test",
-      };
-      createOrder(testPayload, {
-        onSuccess: () => { setIsSuccess(true); clearCart(); setUseWallet(false); },
-        onError: (err: any) => {
-          toast({ title: err?.message || "Could not send the test order to Admin.", variant: "destructive" });
-        },
-      });
       return;
     }
 
@@ -2275,9 +2204,6 @@ export function CartDrawer() {
                           />
                           Shipping Address
                         </h3>
-                        <p className="text-[11px] text-muted-foreground -mt-2 mb-3">
-                          We share these delivery details with Pidge after an admin confirms your order.
-                        </p>
                         {customer && !showAddForm ? (
                           <Button
                             size="sm"
@@ -2307,7 +2233,7 @@ export function CartDrawer() {
                             </Button>
                           </div>
                           <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">PIN code *</Label>
+                            <Label className="text-xs text-muted-foreground">Pincode</Label>
                             <input
                               type="tel"
                               inputMode="numeric"
@@ -2379,38 +2305,6 @@ export function CartDrawer() {
                               placeholder="e.g. Thane West"
                               className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                               data-testid="input-address-area"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">City *</Label>
-                              <input
-                                value={addForm.city}
-                                onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
-                                placeholder="City"
-                                className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                                data-testid="input-address-city"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">State *</Label>
-                              <input
-                                value={addForm.state}
-                                onChange={e => setAddForm(f => ({ ...f, state: e.target.value }))}
-                                placeholder="State"
-                                className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                                data-testid="input-address-state"
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Landmark</Label>
-                            <input
-                              value={addForm.landmark}
-                              onChange={e => setAddForm(f => ({ ...f, landmark: e.target.value }))}
-                              placeholder="Nearby landmark (optional)"
-                              className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                              data-testid="input-address-landmark"
                             />
                           </div>
                           <div className="space-y-2">
@@ -2509,7 +2403,7 @@ export function CartDrawer() {
                                   </div>
                                   <p className="text-xs text-muted-foreground">{addr.phone || customer?.phone}</p>
                                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                    {[addr.building, addr.street, addr.area, addr.city, addr.state, addr.pincode].filter(Boolean).join(", ")}
+                                    {[addr.building, addr.street, addr.area, addr.pincode].filter(Boolean).join(", ")}
                                   </p>
                                 </div>
                               </div>
@@ -2561,7 +2455,7 @@ export function CartDrawer() {
                     )}
 
                     {/* Payment Method — hidden when wallet covers the full total */}
-                    {finalTotal > 0 && !hasPidgeTestProduct && (
+                    {finalTotal > 0 && (
                     <div className="px-4 mt-5 mb-4 space-y-3">
                       <h3 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
                         <span
@@ -2608,16 +2502,6 @@ export function CartDrawer() {
                   </div>
 
                   <div className="px-4 py-4 border-t border-border/30 bg-white sticky bottom-0 z-10">
-                    {isPidgeTestCart && (
-                      <p className="mb-3 text-xs leading-relaxed text-amber-800">
-                        No online payment is taken. Admin receives this as unpaid; confirming sends the due amount to Pidge as COD. Manual Allocation stays on.
-                      </p>
-                    )}
-                    {hasPidgeTestProduct && !isPidgeTestCart && (
-                      <p className="mb-3 text-xs text-amber-800">
-                        Keep the single Pidge test item by itself to submit a test order.
-                      </p>
-                    )}
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs text-muted-foreground">Total</p>
@@ -2643,9 +2527,7 @@ export function CartDrawer() {
                           !customer ||
                           savedAddresses.length === 0 ||
                           !isHubReady ||
-                          (hasPidgeTestProduct && !isPidgeTestCart) ||
-                          (isPidgeTestCart && (!!appliedCoupon || walletDeduction > 0)) ||
-                          (!isPidgeTestCart && paymentMethod === "online" && finalTotal > 0 && !phonePeEnabled)
+                          (paymentMethod === "online" && finalTotal > 0 && !phonePeEnabled)
                         }
                         className="h-12 px-8 !rounded-full font-bold bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 flex items-center gap-2"
                         data-testid="button-place-order"
@@ -2653,8 +2535,8 @@ export function CartDrawer() {
                         {!isHubReady
                           ? <><Loader2 className="w-4 h-4 animate-spin" />Loading delivery details...</>
                           : isPending || isProcessingPayment
-                         ? <><Loader2 className="w-4 h-4 animate-spin" />{isPidgeTestCart ? "Sending to Admin..." : paymentMethod === "online" && isProcessingPayment && finalTotal > 0 ? "Opening payment..." : "Placing..."}</>
-                          : <>{isPidgeTestCart ? "Send Test Order" : hasPidgeTestProduct ? "Test item must be alone" : paymentMethod === "online" && finalTotal > 0 ? "Pay Now" : "Place Order"} <ChevronRight className="w-4 h-4" /></>
+                         ? <><Loader2 className="w-4 h-4 animate-spin" />{paymentMethod === "online" && isProcessingPayment && finalTotal > 0 ? "Opening payment..." : "Placing..."}</>
+                          : <>{paymentMethod === "online" && finalTotal > 0 ? "Pay Now" : "Place Order"} <ChevronRight className="w-4 h-4" /></>
                         }
                       </Button>
                     </div>
@@ -2964,7 +2846,7 @@ export function CartDrawer() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">PIN code *</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode</Label>
                 <Input
                   value={addForm.pincode}
                   onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value }))}
@@ -2974,38 +2856,6 @@ export function CartDrawer() {
                   className="rounded-xl h-11 border-border/60"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">City *</Label>
-                <Input
-                  value={addForm.city}
-                  onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
-                  placeholder="City"
-                  className="rounded-xl h-11 border-border/60"
-                  data-testid="input-address-city"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">State *</Label>
-                <Input
-                  value={addForm.state}
-                  onChange={e => setAddForm(f => ({ ...f, state: e.target.value }))}
-                  placeholder="State"
-                  className="rounded-xl h-11 border-border/60"
-                  data-testid="input-address-state"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Landmark</Label>
-              <Input
-                value={addForm.landmark}
-                onChange={e => setAddForm(f => ({ ...f, landmark: e.target.value }))}
-                placeholder="Nearby landmark (optional)"
-                className="rounded-xl h-11 border-border/60"
-                data-testid="input-address-landmark"
-              />
             </div>
 
           </div>

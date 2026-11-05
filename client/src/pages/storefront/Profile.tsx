@@ -90,8 +90,8 @@ const addressTypeColors: Record<string, string> = {
 
 type EmptyAddress = Omit<CustomerAddress, "id">;
 const emptyAddress: EmptyAddress = {
-  name: "", phone: "", building: "", street: "", area: "", landmark: "",
-  city: "", state: "", country: "India", pincode: "", type: "house", label: "Home", instructions: "",
+  name: "", phone: "", building: "", street: "", area: "",
+  pincode: "", type: "house", label: "Home", instructions: "",
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode; bgColor?: string }> = {
@@ -1015,9 +1015,7 @@ export default function Profile() {
     setEditingAddress(addr);
     setAddressForm({
       name: addr.name, phone: addr.phone, building: addr.building,
-      street: addr.street, area: addr.area, landmark: addr.landmark || "",
-      city: addr.city || "", state: addr.state || "", country: addr.country || "India",
-      pincode: addr.pincode || "",
+      street: addr.street, area: addr.area, pincode: addr.pincode || "",
       type: addr.type, label: addr.label, instructions: addr.instructions,
     });
     setUseAccountDetails(false);
@@ -1041,7 +1039,7 @@ export default function Profile() {
   };
 
   const saveAddress = () => {
-    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area || !addressForm.city || !addressForm.state || !addressForm.pincode) {
+    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area || !addressForm.pincode) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
@@ -1379,38 +1377,6 @@ export default function Profile() {
                       placeholder="e.g. Thane West"
                       className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                       data-testid="input-address-area"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">City *</Label>
-                      <input
-                        value={addressForm.city}
-                        onChange={e => setAddressForm(f => ({ ...f, city: e.target.value }))}
-                        placeholder="City"
-                        className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                        data-testid="input-address-city"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">State *</Label>
-                      <input
-                        value={addressForm.state}
-                        onChange={e => setAddressForm(f => ({ ...f, state: e.target.value }))}
-                        placeholder="State"
-                        className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                        data-testid="input-address-state"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Landmark</Label>
-                    <input
-                      value={addressForm.landmark}
-                      onChange={e => setAddressForm(f => ({ ...f, landmark: e.target.value }))}
-                      placeholder="Nearby landmark (optional)"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                      data-testid="input-address-landmark"
                     />
                   </div>
                   <div className="space-y-2">

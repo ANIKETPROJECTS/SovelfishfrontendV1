@@ -33,8 +33,6 @@ import {
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
-import { createPidgeDelivery, PidgeError } from "./pidge";
-import { getPidgeTestOrderRejection, isPidgeTestCustomer } from "./pidgeTestCheckout";
 import { sendMetaWhatsAppOtp } from "./metaWhatsApp";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 import {
@@ -296,109 +294,6 @@ export async function registerRoutes(
       return next();
     }
     res.status(401).json({ message: "Unauthorized" });
-  };
-
-  const dispatchOrderToPidge = async (orderId: string, allowRetry = false) => {
-    const OrderModel = getOrderModel();
-    const current = await OrderModel.findById(orderId).lean() as any;
-    if (!current) throw Object.assign(new Error("Order not found"), { statusCode: 404 });
-    if (current.status !== "confirmed") {
-      throw Object.assign(new Error("Only confirmed orders can be sent to Pidge."), { statusCode: 409 });
-    }
-    if (["pending", "failed"].includes(String(current.paymentStatus ?? ""))) {
-      throw Object.assign(new Error("This order's payment is not complete."), { statusCode: 409 });
-    }
-    if (current.pidgeOrderId || current.pidgeDispatchStatus === "submitted") return current;
-    if (["submitting", "needs_review"].includes(String(current.pidgeDispatchStatus ?? ""))) {
-      if (!allowRetry && current.pidgeDispatchStatus === "submitting") return current;
-      throw Object.assign(
-        new Error("Pidge may already have received this order. Check the Pidge dashboard before attempting another dispatch."),
-        { statusCode: 409 },
-      );
-    }
-    if (!allowRetry && current.pidgeDispatchStatus === "failed") return current;
-
-    const claimableStatuses = allowRetry ? ["not_sent", "failed", null] : ["not_sent", null];
-    const claimed = await OrderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        status: "confirmed",
-        pidgeDispatchStatus: { $in: claimableStatuses },
-        pidgeOrderId: { $in: [null, ""] },
-      },
-      {
-        $set: {
-          pidgeDispatchStatus: "submitting",
-          pidgeDispatchError: null,
-          pidgeDispatchAttemptedAt: new Date(),
-          updatedAt: new Date(),
-        },
-      },
-      { new: true },
-    ).lean() as any;
-    if (!claimed) {
-      const latest = await OrderModel.findById(orderId).lean() as any;
-      if (latest?.pidgeOrderId || latest?.pidgeDispatchStatus === "submitted") return latest;
-      if (!allowRetry && latest?.pidgeDispatchStatus === "submitting") return latest;
-      throw Object.assign(new Error("Another Pidge dispatch is already in progress."), { statusCode: 409 });
-    }
-
-    let result: { pidgeOrderId: string };
-    try {
-      result = await createPidgeDelivery(claimed);
-    } catch (error: any) {
-      const uncertain = error instanceof PidgeError && error.uncertain;
-      const safeMessage = String(error?.message || "Pidge delivery request failed").slice(0, 500);
-      const updated = await OrderModel.findByIdAndUpdate(
-        orderId,
-        {
-          $set: {
-            pidgeDispatchStatus: uncertain ? "needs_review" : "failed",
-            pidgeDispatchError: safeMessage,
-            updatedAt: new Date(),
-          },
-        },
-        { new: true },
-      ).lean() as any;
-      return updated;
-    }
-
-    try {
-      const updated = await OrderModel.findByIdAndUpdate(
-        orderId,
-        {
-          $set: {
-            pidgeDispatchStatus: "submitted",
-            pidgeOrderId: result.pidgeOrderId,
-            pidgeDispatchError: null,
-            pidgeDispatchedAt: new Date(),
-            updatedAt: new Date(),
-          },
-        },
-        { new: true },
-      ).lean() as any;
-      if (updated) return updated;
-    } catch {
-      console.error("[Pidge] Pidge accepted an order, but saving its reference failed.");
-    }
-
-    // The request succeeded but the Pidge ID could not be safely persisted.
-    // Never mark this as retryable: that could create a second real delivery.
-    try {
-      return await OrderModel.findByIdAndUpdate(
-        orderId,
-        {
-          $set: {
-            pidgeDispatchStatus: "needs_review",
-            pidgeDispatchError: "Pidge accepted the order, but its reference could not be saved. Check Pidge before retrying.",
-            updatedAt: new Date(),
-          },
-        },
-        { new: true },
-      ).lean() as any;
-    } catch {
-      return { ...claimed, pidgeDispatchStatus: "needs_review" };
-    }
   };
   // Auth routes
   app.post(api.auth.login.path, passport.authenticate("local"), (req, res) => {
@@ -901,7 +796,6 @@ export async function registerRoutes(
       fishBatches,
       imageUrl: doc.imageUrl ?? null,
       isArchived: doc.isArchived ?? false,
-      isPidgeTestProduct: doc.isPidgeTestProduct === true,
       updatedAt: doc.updatedAt, sectionId: doc.sectionId ?? null,
       description: doc.description ?? null,
       grossWeight: doc.grossWeight == null ? null : String(doc.grossWeight),
@@ -964,45 +858,10 @@ export async function registerRoutes(
 
   // Products routes
   app.get(api.products.list.path, async (req, res) => {
-    res.setHeader("Cache-Control", "private, no-store");
-    res.setHeader("Vary", "Cookie, X-Hub-DB");
     const hub = await getReqHubModels(req);
     if (!hub) return res.json([]);
     const productFilter: Record<string, unknown> = { isArchived: { $ne: true } };
-    const isTestCustomer = isPidgeTestCustomer(process.env.OTP_TEST_PHONE, req.session?.customerPhone);
-    const isAdmin = Boolean(typeof req.isAuthenticated === "function" && req.isAuthenticated());
-    if (!isTestCustomer && !isAdmin) {
-      productFilter.isPidgeTestProduct = { $ne: true };
-    }
     const docs = await hub.Product.find(productFilter).lean();
-    if (isTestCustomer) {
-      const testProduct = await hub.Product.findOneAndUpdate(
-        { isPidgeTestProduct: true },
-        {
-          $setOnInsert: {
-            name: "Pidge Test Product (Test Only)",
-            category: "Testing",
-            status: "available",
-            price: 1,
-            quantity: 1,
-            unit: "100 g",
-            weight: "100 g",
-            grossWeight: "100 g",
-            netWeight: "100 g",
-            description: "Test checkout only. No online payment is taken. Admin approval sends the unpaid amount to Pidge as COD; keep rider allocation manual.",
-            imageUrl: null,
-            isArchived: false,
-            isPidgeTestProduct: true,
-            preorderMode: "normal",
-            updatedAt: new Date(),
-          },
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
-      ).lean() as any;
-      if (testProduct && testProduct.isArchived !== true && !docs.some((doc: any) => String(doc._id) === String(testProduct._id))) {
-        docs.push(testProduct);
-      }
-    }
     res.json(docs.map(toProduct));
   });
 
@@ -1507,13 +1366,6 @@ export async function registerRoutes(
       const hub = await getCheckoutHubModels(orderPayload.hubDbName);
       if (!hub) {
         return res.status(400).json({ message: "Please select a valid delivery hub." });
-      }
-      const containsPidgeTestProduct = await hub.Product.exists({
-        _id: { $in: orderPayload.items.map((item: any) => item.productId) },
-        isPidgeTestProduct: true,
-      });
-      if (containsPidgeTestProduct) {
-        return res.status(400).json({ message: "The Pidge test product cannot use online payment checkout." });
       }
       const stockResult = await validateCheckoutStock(hub, orderPayload.items);
       if (!stockResult.inStock) {
@@ -2861,55 +2713,6 @@ export async function registerRoutes(
   app.post(api.orders.create.path, async (req, res) => {
     try {
       const input = api.orders.create.input.parse(req.body);
-      const isPidgeTestOrder = input.isPidgeTestOrder === true;
-      if (isPidgeTestOrder) {
-        if (!isPidgeTestCustomer(process.env.OTP_TEST_PHONE, req.session?.customerPhone)) {
-          return res.status(403).json({ message: "Pidge test checkout is only available to the configured test account." });
-        }
-        if (input.items.length !== 1 || Number(input.items[0]?.quantity) !== 1) {
-          return res.status(400).json({ message: "A Pidge test order must contain exactly one test item." });
-        }
-        if (
-          input.deliveryType !== "delivery" ||
-          !/^\d{6}$/.test(String(input.deliveryAddressDetail?.pincode ?? "")) ||
-          !String(input.deliveryAddressDetail?.city ?? "").trim() ||
-          !String(input.deliveryAddressDetail?.state ?? "").trim()
-        ) {
-          return res.status(400).json({ message: "Add a complete delivery address before sending the Pidge test order." });
-        }
-        const testHub = await getCheckoutHubModels(input.hubDbName);
-        if (!testHub) return res.status(400).json({ message: "Select a valid delivery hub for the test order." });
-        let testProduct: any = null;
-        try {
-          testProduct = await testHub.Product.findById(input.items[0].productId).lean();
-        } catch {
-          return res.status(400).json({ message: "The Pidge test product is unavailable." });
-        }
-        const testOrderRejection = getPidgeTestOrderRejection({
-          configuredPhone: process.env.OTP_TEST_PHONE,
-          sessionPhone: req.session?.customerPhone,
-          orderPhone: input.phone,
-          itemCount: input.items.length,
-          itemQuantity: Number(input.items[0]?.quantity),
-          paymentCount: (input.payments ?? []).length,
-          hasPaymentReference: Boolean(
-            input.razorpayOrderId ||
-            input.phonepeOrderId ||
-            (input.payments ?? []).some((payment: any) => payment.reference)
-          ),
-          hasCoupon: Boolean(input.couponCode),
-          discount: Number(input.discount ?? input.discountAmount ?? 0),
-          walletAmountUsed: Number(input.walletAmountUsed ?? 0),
-          productIsPidgeTestProduct: testProduct?.isPidgeTestProduct === true,
-          productIsArchived: testProduct?.isArchived === true,
-          productStatus: testProduct?.status,
-          productPrice: Number(testProduct?.price),
-          itemPrice: Number(input.items[0]?.price),
-        });
-        if (testOrderRejection) {
-          return res.status(testOrderRejection.status).json({ message: testOrderRejection.message });
-        }
-      }
       const localAddress = req.socket.remoteAddress ?? "";
       const isLocalRequest =
         localAddress === "127.0.0.1" ||
@@ -3224,13 +3027,6 @@ export async function registerRoutes(
       // but never decrement quantity or batches while punching a storefront order.
       if (input.hubDbName && !isPaidWebhookRecovery) {
         const inventoryHub = await getHubModels(input.hubDbName);
-        const containsPidgeTestProduct = await inventoryHub.Product.exists({
-          _id: { $in: input.items.map((item: any) => item.productId) },
-          isPidgeTestProduct: true,
-        });
-        if (containsPidgeTestProduct && !isPidgeTestOrder) {
-          return res.status(403).json({ message: "The Pidge test product can only be submitted through test checkout." });
-        }
         const stockResult = await validateCheckoutStock(inventoryHub, input.items);
         if (!stockResult.inStock) {
           if (verifiedRazorpayPayment || verifiedPhonePePayment) {
@@ -3313,8 +3109,8 @@ export async function registerRoutes(
       const itemsTotal = (input.items as any[]).reduce(
         (sum: number, item: any) => sum + ((item.price ?? 0) * (item.quantity ?? 1)), 0
       );
-      const subtotal = isPidgeTestOrder ? itemsTotal : input.subtotal ?? itemsTotal;
-      const discount = isPidgeTestOrder ? 0 : input.discount ?? input.discountAmount ?? (resolvedCoupon?.discountAmount ?? 0);
+      const subtotal = input.subtotal ?? itemsTotal;
+      const discount = input.discount ?? input.discountAmount ?? (resolvedCoupon?.discountAmount ?? 0);
       const clientSlotCharge = input.slotCharge ?? input.instantDeliveryCharge ?? 0;
 
       // Authoritative delivery-charge recomputation: the client derives slotCharge from
@@ -3396,9 +3192,7 @@ export async function registerRoutes(
       const coupons = resolvedCoupon ? [resolvedCoupon] : [];
 
       // Derive paymentMode
-      const paymentMode = isPidgeTestOrder
-        ? "pidge_test"
-        : input.paymentMode ?? (input.paymentMethod === "upi" ? "upi" : "cash");
+      const paymentMode = input.paymentMode ?? (input.paymentMethod === "upi" ? "upi" : "cash");
 
       // Extract UPI transaction ID (Razorpay payment ID) from the payments array.
       // Set on all UPI-paid orders so the admin panel can find it at the top level
@@ -3457,10 +3251,6 @@ export async function registerRoutes(
             building: rawAddr.building ?? null,
             street: rawAddr.street ?? null,
             area: rawAddr.area ?? null,
-            landmark: rawAddr.landmark ?? null,
-            city: rawAddr.city ?? null,
-            state: rawAddr.state ?? null,
-            country: rawAddr.country ?? "India",
             pincode: rawAddr.pincode ?? null,
             type: rawAddr.type ?? "house",
             label: rawAddr.label ?? "Home",
@@ -3472,17 +3262,7 @@ export async function registerRoutes(
       // Build orderInput in the exact field order used by the admin POS schema.
       // orderId is intentionally omitted here — it is appended LAST via
       // findByIdAndUpdate after the document is saved (matching admin behaviour).
-      const paymentState = isPidgeTestOrder
-        ? {
-            paymentStatus: "unpaid",
-            payments: [],
-            paidAmount: 0,
-            dueAmount: total,
-            paymentMode: "pidge_test",
-            upiVariant: null,
-            upiTransactionId: null,
-          }
-        : verifiedRazorpayPayment
+      const paymentState = verifiedRazorpayPayment
         ? buildSuccessfulRazorpayPaymentState({
             total,
             paymentAmount: verifiedRazorpayPayment.amount,
@@ -3541,9 +3321,7 @@ export async function registerRoutes(
         deliveryArea: input.deliveryArea,
         deliveryAddressDetail: addrDetail,
         pickupLocation: "",
-        notes: isPidgeTestOrder
-          ? [input.notes, "Pidge test order — unpaid; keep rider allocation manual."].filter(Boolean).join(" | ")
-          : input.notes ?? "",
+        notes: input.notes ?? "",
         status: "pending",
         source: "online",
         subHubId: resolvedSubHubId ?? null,
@@ -3554,8 +3332,6 @@ export async function registerRoutes(
         couponCodes,
         coupons,
         ...paymentState,
-        paymentMethod: isPidgeTestOrder ? "pidge_test" : input.paymentMethod ?? null,
-        isPidgeTestOrder,
         inventoryDeducted: false,
         inventoryReviewRequired,
          orderType: input.orderType ?? null,
@@ -3743,19 +3519,11 @@ export async function registerRoutes(
       const oldOrder = await storage.getOrderRequest(req.params.id);
       const oldStatus = oldOrder?.status ?? "pending";
 
-      let order = await storage.updateOrderRequestStatus(req.params.id, input.status);
+      const order = await storage.updateOrderRequestStatus(req.params.id, input.status);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
       await storage.updateCustomerOrderStatus(order.phone, order.id, input.status);
-      if (
-        input.status === "confirmed" &&
-        oldStatus !== "confirmed" &&
-        !["pending", "failed"].includes(String(order.paymentStatus ?? ""))
-      ) {
-        await dispatchOrderToPidge(order.id);
-        order = (await storage.getOrderRequest(order.id)) ?? order;
-      }
 
       // ── Coupon lifecycle ────────────────────────────────────────────────
       const couponCode = order.coupon?.code;
@@ -3800,23 +3568,6 @@ export async function registerRoutes(
         return res.status(400).json({ message: err.errors[0].message });
       }
       res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.post("/api/orders/:id/pidge/dispatch", requireAuth, async (req, res) => {
-    try {
-      const order = await dispatchOrderToPidge(req.params.id, true);
-      if (order.pidgeDispatchStatus !== "submitted") {
-        return res.status(order.pidgeDispatchStatus === "needs_review" ? 409 : 502).json({
-          message: order.pidgeDispatchError || "Pidge did not confirm the delivery request.",
-          pidgeDispatchStatus: order.pidgeDispatchStatus,
-        });
-      }
-      const storedOrder = await storage.getOrderRequest(req.params.id);
-      return res.json(storedOrder ?? order);
-    } catch (error: any) {
-      const status = Number(error?.statusCode) || 500;
-      return res.status(status).json({ message: error?.message || "Could not send this order to Pidge." });
     }
   });
 

@@ -63,7 +63,6 @@ const productSchema = new mongoose.Schema({
   unit: { type: String, default: null },
   imageUrl: { type: String, default: null },
   isArchived: { type: Boolean, default: false },
-  isPidgeTestProduct: { type: Boolean, default: false },
   updatedAt: { type: Date, default: Date.now },
   sectionId: { type: mongoose.Schema.Types.Mixed, default: null },
   description: { type: String, default: null },

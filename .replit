@@ -52,17 +52,3 @@ waitForPort = 5000
 [agent]
 expertMode = true
 stack = "FULLSTACK_JS"
-
-[userenv]
-
-[userenv.development]
-PIDGE_POC_MOBILE = "9619590694"
-PIDGE_POC_NAME = "Fresh Stock Xchange"
-PIDGE_SENDER_ADDRESS_LINE_1 = "Flat no- 805/A Wing, 8th Floor"
-PIDGE_SENDER_ADDRESS_LINE_2 = "Hubtown Greenwood CHS, Pokhran Road No.1, Vartak Nagar"
-PIDGE_SENDER_CITY = "Thane"
-PIDGE_SENDER_COUNTRY = "India"
-PIDGE_SENDER_MOBILE = "9619590694"
-PIDGE_SENDER_NAME = "Fresh Stock Xchange"
-PIDGE_SENDER_PINCODE = "400606"
-PIDGE_SENDER_STATE = "Maharashtra"
