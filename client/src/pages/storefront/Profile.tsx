@@ -1502,6 +1502,15 @@ export default function Profile() {
                             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                               {[addr.building, addr.street, addr.area, addr.pincode].filter(Boolean).join(", ")}
                             </p>
+                            {getValidAddressCoordinates(addr) && (
+                              <div
+                                className="mt-1.5 inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-800"
+                                title="A delivery pin is saved for this address"
+                              >
+                                <MapPin className="h-3 w-3" aria-hidden="true" />
+                                <span>Pinned on map</span>
+                              </div>
+                            )}
                             {addr.instructions && (
                               <p className="text-[11px] text-muted-foreground/70 mt-1 italic">{addr.instructions}</p>
                             )}

@@ -150,7 +150,8 @@ export function AddressMapPicker({
       map = L.map(mapElement, {
         center: initialPosition,
         zoom: initialCoordinates ? 15 : 11,
-        scrollWheelZoom: false,
+        scrollWheelZoom: true,
+        touchZoom: true,
       });
       mapRef.current = map;
 
