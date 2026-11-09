@@ -84,10 +84,14 @@ export function AddressMapPicker({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PhotonFeature[]>([]);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
-  const mapElementRef = useRef<HTMLDivElement | null>(null);
+  const [mapElement, setMapElement] = useState<HTMLDivElement | null>(null);
+  const [mapError, setMapError] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const initialCoordinatesRef = useRef<AddressCoordinates | null>(null);
+  const mapElementRef = useCallback((element: HTMLDivElement | null) => {
+    setMapElement(element);
+  }, []);
 
   const placePin = useCallback((next: AddressCoordinates) => {
     setDraftCoordinates(next);
@@ -134,44 +138,58 @@ export function AddressMapPicker({
   };
 
   useEffect(() => {
-    if (!open || !mapElementRef.current) return;
+    if (!open || !mapElement) return;
 
     const initialCoordinates = initialCoordinatesRef.current;
     const initialPosition: L.LatLngExpression = initialCoordinates
       ? [initialCoordinates.latitude, initialCoordinates.longitude]
       : DEFAULT_MAP_CENTER;
-    const map = L.map(mapElementRef.current, {
-      center: initialPosition,
-      zoom: initialCoordinates ? 15 : 11,
-      scrollWheelZoom: false,
-    });
-    mapRef.current = map;
+    let map: L.Map | null = null;
+    setMapError(false);
+    try {
+      map = L.map(mapElement, {
+        center: initialPosition,
+        zoom: initialCoordinates ? 15 : 11,
+        scrollWheelZoom: false,
+      });
+      mapRef.current = map;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-    }).addTo(map);
-
-    if (initialCoordinates) {
-      markerRef.current = L.marker(initialPosition, {
-        icon: selectedPinIcon,
-        title: "Saved delivery pin",
-        keyboard: true,
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
       }).addTo(map);
+
+      if (initialCoordinates) {
+        markerRef.current = L.marker(initialPosition, {
+          icon: selectedPinIcon,
+          title: "Saved delivery pin",
+          keyboard: true,
+        }).addTo(map);
+      }
+    } catch (error) {
+      console.error("[AddressMapPicker] Failed to initialize Leaflet map:", error);
+      map?.remove();
+      mapRef.current = null;
+      markerRef.current = null;
+      setMapError(true);
+      return;
     }
 
     map.on("click", (event: L.LeafletMouseEvent) => {
       placePin({ latitude: event.latlng.lat, longitude: event.latlng.lng });
     });
 
-    const resizeTimer = window.setTimeout(() => map.invalidateSize(), 180);
+    const activeMap = map;
+    const resizeFrame = window.requestAnimationFrame(() => activeMap.invalidateSize());
+    const resizeTimer = window.setTimeout(() => activeMap.invalidateSize(), 250);
     return () => {
+      window.cancelAnimationFrame(resizeFrame);
       window.clearTimeout(resizeTimer);
-      map.remove();
-      if (mapRef.current === map) mapRef.current = null;
+      activeMap.remove();
+      if (mapRef.current === activeMap) mapRef.current = null;
       markerRef.current = null;
     };
-  }, [open, placePin]);
+  }, [mapElement, open, placePin]);
 
   useEffect(() => {
     if (!open) return;
@@ -321,11 +339,18 @@ export function AddressMapPicker({
             )}
           </div>
 
-          <div
-            ref={mapElementRef}
-            className="z-0 h-[42vh] min-h-[16rem] max-h-[420px] w-full overflow-hidden rounded-xl border border-border/60"
-            aria-label="Map for selecting a delivery pin"
-          />
+          <div className="relative z-0 h-[42vh] min-h-[16rem] max-h-[420px] w-full overflow-hidden rounded-xl border border-border/60">
+            <div
+              ref={mapElementRef}
+              className="h-full w-full"
+              aria-label="Map for selecting a delivery pin"
+            />
+            {mapError && (
+              <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-muted/95 px-6 text-center text-sm text-muted-foreground">
+                The map could not start. Try searching for a place or close and reopen the map.
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="min-w-0 flex-1 text-xs text-muted-foreground" aria-live="polite">
               {draftCoordinates
