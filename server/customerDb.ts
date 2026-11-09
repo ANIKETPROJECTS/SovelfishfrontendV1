@@ -42,6 +42,8 @@ const customerAddressSchema = new mongoose.Schema(
     type: { type: String, default: "house" },
     label: { type: String, default: "Home" },
     instructions: { type: String, default: "" },
+    latitude: { type: Number, min: -90, max: 90 },
+    longitude: { type: Number, min: -180, max: 180 },
   },
   { _id: true }
 );

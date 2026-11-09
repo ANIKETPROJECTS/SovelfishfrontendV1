@@ -15,7 +15,8 @@ import {
   getPhonePePendingCheckoutModel,
 } from "./ordersDb";
 import { setImage, getImage, deleteImage } from "./imageStore";
-import { insertCarouselSlideSchema, insertCategorySchema, insertSectionSchema, insertComboSchema, insertCustomerAddressSchema, updateCustomerSchema, insertInventoryBatchSchema } from "@shared/schema";
+import { insertCarouselSlideSchema, insertCategorySchema, insertSectionSchema, insertComboSchema, insertCustomerAddressSchema, updateCustomerAddressSchema, updateCustomerSchema, insertInventoryBatchSchema } from "@shared/schema";
+import { getValidAddressCoordinates } from "@shared/addressCoordinates";
 import { SuperHubModel, SubHubModel, OtpModel } from "./adminDb";
 import { getHubModels } from "./hubConnections";
 import { CustomerDbModel } from "./customerDb";
@@ -3255,6 +3256,7 @@ export async function registerRoutes(
             type: rawAddr.type ?? "house",
             label: rawAddr.label ?? "Home",
             instructions: rawAddr.instructions ?? "",
+            ...(getValidAddressCoordinates(rawAddr) ?? {}),
             _id: rawAddr._id ? String(rawAddr._id) : null,
           }
         : null;
@@ -4192,7 +4194,7 @@ export async function registerRoutes(
 
   app.patch("/api/customer/me/addresses/:addrId", requireCustomer, async (req, res) => {
     try {
-      const parsed = insertCustomerAddressSchema.partial().safeParse(req.body);
+      const parsed = updateCustomerAddressSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
       const customer = await storage.updateCustomerAddress(req.session.customerPhone!, req.params.addrId, parsed.data);
       if (!customer) return res.status(404).json({ message: "Address not found" });

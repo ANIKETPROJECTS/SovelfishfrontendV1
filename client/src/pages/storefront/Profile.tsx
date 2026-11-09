@@ -5,6 +5,7 @@ import { useProducts } from "@/hooks/use-products";
 import Lottie from "lottie-react";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
+import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -51,8 +52,9 @@ import { useHub } from "@/context/HubContext";
 import { OtpModal } from "@/components/storefront/OtpModal";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { apiRequest } from "@/lib/queryClient";
-import type { Customer, CustomerAddress, OrderRequest, Product } from "@shared/schema";
+import type { Customer, CustomerAddress, OrderRequest, Product, UpdateCustomerAddress } from "@shared/schema";
 import { isCustomerOrderVisible } from "@shared/customerOrderVisibility";
+import { getValidAddressCoordinates, hasAddressCoordinateFields } from "@shared/addressCoordinates";
 import fishImg from "@assets/Gemini_Generated_Image_w6wqkkw6wqkkw6wq_(1)_1772713077919.png";
 import prawnsImg from "@assets/Gemini_Generated_Image_5xy0sd5xy0sd5xy0_1772713090650.png";
 import chickenImg from "@assets/Gemini_Generated_Image_g0ecb4g0ecb4g0ec_1772713219972.png";
@@ -889,6 +891,7 @@ export default function Profile() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [addressForm, setAddressForm] = useState<EmptyAddress>(emptyAddress);
+  const [mapPinCleared, setMapPinCleared] = useState(false);
   const [useAccountDetails, setUseAccountDetails] = useState(false);
   const [showUnserviceablePopup, setShowUnserviceablePopup] = useState(false);
   const [unserviceablePincode, setUnserviceablePincode] = useState("");
@@ -980,7 +983,7 @@ export default function Profile() {
   });
 
   const updateAddressMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<EmptyAddress> }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateCustomerAddress }) =>
       apiRequest("PATCH", `/api/customer/me/addresses/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/me"] });
@@ -1001,6 +1004,7 @@ export default function Profile() {
 
   const openAddForm = () => {
     setEditingAddress(null);
+    setMapPinCleared(false);
     const isFirstAddress = (customer?.addresses?.length || 0) === 0;
     setAddressForm({
       ...emptyAddress,
@@ -1013,10 +1017,13 @@ export default function Profile() {
 
   const openEditForm = (addr: CustomerAddress) => {
     setEditingAddress(addr);
+    const coordinates = getValidAddressCoordinates(addr);
+    setMapPinCleared(hasAddressCoordinateFields(addr) && !coordinates);
     setAddressForm({
       name: addr.name, phone: addr.phone, building: addr.building,
       street: addr.street, area: addr.area, pincode: addr.pincode || "",
       type: addr.type, label: addr.label, instructions: addr.instructions,
+      ...(coordinates ?? {}),
     });
     setUseAccountDetails(false);
     setShowAddressForm(true);
@@ -1026,6 +1033,7 @@ export default function Profile() {
     setShowAddressForm(false);
     setEditingAddress(null);
     setAddressForm(emptyAddress);
+    setMapPinCleared(false);
     setUseAccountDetails(false);
   };
 
@@ -1061,7 +1069,12 @@ export default function Profile() {
       : addressForm.type === "house" ? "Home" : "Office";
     const entry = { ...addressForm, label };
     if (editingAddress) {
-      updateAddressMutation.mutate({ id: editingAddress.id, data: entry });
+      updateAddressMutation.mutate({
+        id: editingAddress.id,
+        data: mapPinCleared
+          ? { ...entry, latitude: null, longitude: null }
+          : entry,
+      });
     } else {
       addAddressMutation.mutate(entry);
     }
@@ -1378,6 +1391,26 @@ export default function Profile() {
                       className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                       data-testid="input-address-area"
                     />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Delivery pin (optional)</Label>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <AddressMapPicker
+                        coordinates={getValidAddressCoordinates(addressForm)}
+                        onSavePin={(coordinates) => {
+                          setAddressForm((form) => {
+                            const next = { ...form };
+                            delete next.latitude;
+                            delete next.longitude;
+                            return coordinates ? { ...next, ...coordinates } : next;
+                          });
+                          setMapPinCleared(coordinates === null);
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Optional exact pin for this address.
+                      </p>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Address Type</Label>

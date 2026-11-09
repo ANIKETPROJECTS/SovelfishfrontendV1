@@ -14,6 +14,7 @@ import orderSuccessAnim from "@/assets/lottie/order-success.json";
 import confettiAnim from "@/assets/lottie/confetti.json";
 import emptyCartBagAnim from "@/assets/lottie/empty-cart-bag.json";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
+import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
 import iconWalletImg from "@assets/wallet_1776953301704.png";
 import headerCartImg from "@assets/shopping-bag_1774706595493.png";
 import iconBinImg from "@assets/bin_1776927610776.png";
@@ -46,6 +47,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CustomerAddress, Coupon } from "@shared/schema";
+import { getValidAddressCoordinates } from "@shared/addressCoordinates";
 import { isPreorderDateAvailableForAll, normalizePreorderAvailability } from "@shared/preorderAvailability";
 import { format } from "date-fns";
 
@@ -66,7 +68,7 @@ const TYPE_OPTIONS = [
   { value: "other" as const, iconImg: null, icon: null, label: "Other" },
 ];
 
-const emptyForm = {
+const emptyForm: Omit<CustomerAddress, "id"> = {
   name: "", phone: "", building: "", street: "", area: "",
   pincode: "", type: "house" as "house" | "office" | "other",
   label: "", instructions: "",
@@ -892,13 +894,21 @@ export function CartDrawer() {
     const label =
       addForm.type === "other" ? (addForm.label || "Other") :
       addForm.type === "house" ? "Home" : "Office";
+    const addressPayload = { ...addForm, label };
+    const coordinates = getValidAddressCoordinates(addForm);
+    if (coordinates) {
+      Object.assign(addressPayload, coordinates);
+    } else {
+      delete addressPayload.latitude;
+      delete addressPayload.longitude;
+    }
 
     setIsSavingAddress(true);
     try {
       const res = await fetch("/api/customer/me/addresses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...addForm, label }),
+        body: JSON.stringify(addressPayload),
       });
       if (!res.ok) throw new Error("Failed to save address");
       const updated = await res.json();
@@ -947,6 +957,7 @@ export function CartDrawer() {
       console.debug(`[checkout] Computed delivery charge ₹${pincodeDeliveryCharge} for pincode=${selected.pincode}`);
     }
     const fullAddress = `${selected.building} · ${selected.street}, ${selected.area} · ${selected.pincode}`;
+    const selectedCoordinates = getValidAddressCoordinates(selected);
     const orderItems = items.map(i => ({
       productId: i.originalId ?? String(i.id),
       quantity: i.quantity,
@@ -1003,6 +1014,7 @@ export function CartDrawer() {
         type: selected.type,
         label: selected.label,
         instructions: selected.instructions,
+        ...(selectedCoordinates ?? {}),
       },
       notes: selected.instructions || "",
       items: orderItems,
@@ -2306,6 +2318,25 @@ export function CartDrawer() {
                               className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                               data-testid="input-address-area"
                             />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Delivery pin (optional)</Label>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <AddressMapPicker
+                                coordinates={getValidAddressCoordinates(addForm)}
+                                onSavePin={(coordinates) => {
+                                  setAddForm((form) => {
+                                    const next = { ...form };
+                                    delete next.latitude;
+                                    delete next.longitude;
+                                    return coordinates ? { ...next, ...coordinates } : next;
+                                  });
+                                }}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Optional exact pin for delivery.
+                              </p>
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs text-muted-foreground">Address Type</Label>

@@ -11,8 +11,10 @@ import type {
   InsertCustomer,
   UpdateCustomer,
   CustomerAddress,
+  UpdateCustomerAddress,
   EmbeddedOrder,
 } from "@shared/schema";
+import { getValidAddressCoordinates } from "@shared/addressCoordinates";
 
 function toUser(doc: any): User {
   return {
@@ -30,24 +32,28 @@ function toCustomer(doc: any): Customer {
     name: doc.name ?? null,
     email: doc.email ?? null,
     dateOfBirth: doc.dateOfBirth ?? null,
-    addresses: (doc.addresses ?? []).map((a: any, idx: number) => ({
-      // NOTE: every address should have a real Mongo _id (assigned by addCustomerAddress,
-      // or backfilled by the one-time migration for legacy/bulk-imported data — see
-      // scripts/backfill-address-ids.mjs). The composite-key fallback below only exists
-      // as a last resort for data that somehow still lacks an _id; it is inherently
-      // ambiguous (can mismatch when two addresses share the same building/area/pincode)
-      // and must never be relied on as the primary path.
-      id: a._id?.toString() || [a.building, a.area, a.pincode, a.phone, idx].filter((v) => v !== undefined && v !== null && v !== "").join("|"),
-      name: a.name ?? "",
-      phone: a.phone ?? "",
-      building: a.building ?? "",
-      street: a.street ?? "",
-      area: a.area ?? "",
-      pincode: a.pincode ?? "",
-      type: a.type ?? "house",
-      label: a.label ?? "Home",
-      instructions: a.instructions ?? "",
-    })),
+    addresses: (doc.addresses ?? []).map((a: any, idx: number) => {
+      const coordinates = getValidAddressCoordinates(a);
+      return {
+        // NOTE: every address should have a real Mongo _id (assigned by addCustomerAddress,
+        // or backfilled by the one-time migration for legacy/bulk-imported data — see
+        // scripts/backfill-address-ids.mjs). The composite-key fallback below only exists
+        // as a last resort for data that somehow still lacks an _id; it is inherently
+        // ambiguous (can mismatch when two addresses share the same building/area/pincode)
+        // and must never be relied on as the primary path.
+        id: a._id?.toString() || [a.building, a.area, a.pincode, a.phone, idx].filter((v) => v !== undefined && v !== null && v !== "").join("|"),
+        name: a.name ?? "",
+        phone: a.phone ?? "",
+        building: a.building ?? "",
+        street: a.street ?? "",
+        area: a.area ?? "",
+        pincode: a.pincode ?? "",
+        type: a.type ?? "house",
+        label: a.label ?? "Home",
+        instructions: a.instructions ?? "",
+        ...(coordinates ?? {}),
+      };
+    }),
     orders: (doc.orders ?? []).map((o: any) => ({
       orderId: o.orderId,
       customerName: o.customerName,
@@ -137,7 +143,7 @@ export interface IStorage {
   upsertCustomer(phone: string, data: Partial<InsertCustomer>): Promise<Customer>;
   updateCustomer(phone: string, updates: UpdateCustomer): Promise<Customer | undefined>;
   addCustomerAddress(phone: string, address: Omit<CustomerAddress, "id">): Promise<Customer | undefined>;
-  updateCustomerAddress(phone: string, addrId: string, updates: Partial<Omit<CustomerAddress, "id">>): Promise<Customer | undefined>;
+  updateCustomerAddress(phone: string, addrId: string, updates: UpdateCustomerAddress): Promise<Customer | undefined>;
   deleteCustomerAddress(phone: string, addrId: string): Promise<Customer | undefined>;
   getAllCustomers(): Promise<Customer[]>;
   pushOrderToCustomer(phone: string, order: Omit<EmbeddedOrder, "updatedAt">, customerId?: string | null): Promise<void>;
@@ -251,18 +257,36 @@ export class MongoStorage implements IStorage {
     return doc ? toCustomer(doc) : undefined;
   }
 
-  async updateCustomerAddress(phone: string, addrId: string, updates: Partial<Omit<CustomerAddress, "id">>): Promise<Customer | undefined> {
+  async updateCustomerAddress(phone: string, addrId: string, updates: UpdateCustomerAddress): Promise<Customer | undefined> {
     const mongoose = await import("mongoose");
     const isObjectId = mongoose.Types.ObjectId.isValid(addrId) && /^[a-f\d]{24}$/i.test(addrId);
+    const coordinateUpdateRequested =
+      Object.prototype.hasOwnProperty.call(updates, "latitude") ||
+      Object.prototype.hasOwnProperty.call(updates, "longitude");
+    const clearCoordinates = updates.latitude === null && updates.longitude === null;
+    const coordinates = getValidAddressCoordinates(updates);
+    if (coordinateUpdateRequested && !clearCoordinates && !coordinates) {
+      throw new Error("Latitude and longitude must be provided as a valid pair.");
+    }
+    const addressUpdates = { ...updates };
+    delete addressUpdates.latitude;
+    delete addressUpdates.longitude;
 
     if (isObjectId) {
       const setFields: Record<string, any> = { updatedAt: new Date() };
-      for (const [k, v] of Object.entries(updates)) {
+      for (const [k, v] of Object.entries(addressUpdates)) {
         setFields[`addresses.$.${k}`] = v;
       }
+      if (coordinates) {
+        setFields["addresses.$.latitude"] = coordinates.latitude;
+        setFields["addresses.$.longitude"] = coordinates.longitude;
+      }
+      const unsetFields = clearCoordinates
+        ? { "addresses.$.latitude": 1, "addresses.$.longitude": 1 }
+        : undefined;
       const doc = await CustomerDbModel.findOneAndUpdate(
         { phone, "addresses._id": new mongoose.Types.ObjectId(addrId) },
-        { $set: setFields },
+        { $set: setFields, ...(unsetFields ? { $unset: unsetFields } : {}) },
         { new: true }
       ).lean();
       return doc ? toCustomer(doc) : undefined;
@@ -293,12 +317,22 @@ export class MongoStorage implements IStorage {
     if (!matches[0].a._id) {
       setByIndex[`addresses.${addrIndex}._id`] = new mongoose.Types.ObjectId();
     }
-    for (const [k, v] of Object.entries(updates)) {
+    for (const [k, v] of Object.entries(addressUpdates)) {
       setByIndex[`addresses.${addrIndex}.${k}`] = v;
     }
+    if (coordinates) {
+      setByIndex[`addresses.${addrIndex}.latitude`] = coordinates.latitude;
+      setByIndex[`addresses.${addrIndex}.longitude`] = coordinates.longitude;
+    }
+    const unsetFields = clearCoordinates
+      ? {
+          [`addresses.${addrIndex}.latitude`]: 1,
+          [`addresses.${addrIndex}.longitude`]: 1,
+        }
+      : undefined;
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone },
-      { $set: setByIndex },
+      { $set: setByIndex, ...(unsetFields ? { $unset: unsetFields } : {}) },
       { new: true }
     ).lean();
     return doc ? toCustomer(doc) : undefined;

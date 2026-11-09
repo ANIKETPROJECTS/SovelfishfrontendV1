@@ -252,6 +252,8 @@ export type DeliveryAddressDetail = {
   type?: string | null;
   label?: string | null;
   instructions?: string | null;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type InsertOrderRequest = {
@@ -365,6 +367,16 @@ const deliveryAddressDetailSchema = z.object({
   type: z.string().nullable().optional(),
   label: z.string().nullable().optional(),
   instructions: z.string().nullable().optional(),
+  latitude: z.number().finite().min(-90).max(90).optional(),
+  longitude: z.number().finite().min(-180).max(180).optional(),
+}).superRefine((address, context) => {
+  if ((address.latitude === undefined) !== (address.longitude === undefined)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["latitude"],
+      message: "Latitude and longitude must be provided together.",
+    });
+  }
 });
 
 export const insertOrderRequestSchema = z.object({
@@ -472,6 +484,8 @@ export type CustomerAddress = {
   type: "house" | "office" | "other";
   label: string;
   instructions: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type EmbeddedOrder = {
@@ -514,7 +528,7 @@ export type UpdateCustomer = {
   dateOfBirth?: string | null;
 };
 
-export const insertCustomerAddressSchema = z.object({
+const customerAddressFieldsSchema = z.object({
   name: z.string().min(1, "Name is required"),
   phone: z.string().min(1, "Phone is required"),
   building: z.string().min(1, "Building is required"),
@@ -524,7 +538,40 @@ export const insertCustomerAddressSchema = z.object({
   type: z.enum(["house", "office", "other"]).optional().default("house"),
   label: z.string().optional().default("Home"),
   instructions: z.string().optional().default(""),
+  latitude: z.number().finite().min(-90).max(90).optional(),
+  longitude: z.number().finite().min(-180).max(180).optional(),
 });
+
+export const insertCustomerAddressSchema = customerAddressFieldsSchema.superRefine((address, context) => {
+  if ((address.latitude === undefined) !== (address.longitude === undefined)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["latitude"],
+      message: "Latitude and longitude must be provided together.",
+    });
+  }
+});
+
+export const updateCustomerAddressSchema = customerAddressFieldsSchema
+  .partial()
+  .extend({
+    latitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    longitude: z.number().finite().min(-180).max(180).nullable().optional(),
+  })
+  .superRefine((address, context) => {
+    const noCoordinates = address.latitude === undefined && address.longitude === undefined;
+    const clearCoordinates = address.latitude === null && address.longitude === null;
+    const validPair = typeof address.latitude === "number" && typeof address.longitude === "number";
+    if (!noCoordinates && !clearCoordinates && !validPair) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["latitude"],
+        message: "Latitude and longitude must be provided together.",
+      });
+    }
+  });
+
+export type UpdateCustomerAddress = z.infer<typeof updateCustomerAddressSchema>;
 
 export const updateCustomerSchema = z.object({
   name: z.string().nullable().optional(),
