@@ -219,6 +219,26 @@ export default function ProductDetail() {
   const sameCategory = availableProducts.filter((p) => p.category === product?.category);
   const otherCategory = availableProducts.filter((p) => p.category !== product?.category);
   const recommended = [...sameCategory, ...otherCategory].slice(0, 10);
+  const recommendedCards = recommended.flatMap((recommendedProduct) => {
+    const weightVariants = recommendedProduct.weightVariants ?? [];
+    if (weightVariants.length === 0) {
+      return [{
+        key: recommendedProduct.id,
+        product: recommendedProduct,
+        detailVariantKey: undefined,
+      }];
+    }
+
+    return weightVariants.map((variant, index) => {
+      const detailVariantKey = getProductVariantKey(variant);
+      const variantProduct = asVariantCartProduct(recommendedProduct, variant);
+      return {
+        key: `${recommendedProduct.id}-${detailVariantKey}-${index}`,
+        product: { ...variantProduct, weightVariants: [] },
+        detailVariantKey,
+      };
+    });
+  });
 
   if (isLoading) {
     return (
@@ -683,11 +703,14 @@ export default function ProductDetail() {
             <div className="relative">
               <div
                 ref={similarScrollRef}
-                className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x"
+                className="flex items-start gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x"
               >
-                {recommended.map((p) => (
-                  <div key={p.id} className="w-[210px] sm:w-[230px] shrink-0 snap-start">
-                    <ProductCard product={p} />
+                {recommendedCards.map((card) => (
+                  <div key={card.key} className="w-[210px] sm:w-[230px] shrink-0 snap-start">
+                    <ProductCard
+                      product={card.product}
+                      detailVariantKey={card.detailVariantKey}
+                    />
                   </div>
                 ))}
               </div>
