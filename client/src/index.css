@@ -136,6 +136,24 @@
   [style*="border-color: rgb(53, 79, 159)"] {
     border-color: var(--brand-navy) !important;
   }
+
+  /* Legacy blue actions are remapped to the brand navy above; keep their
+     labels and icons white so the foreground remains readable on navy. */
+  :is(button, a, [role="button"])[style*="background-color: rgb(54, 79, 159)"],
+  :is(button, a, [role="button"])[style*="background-color: rgb(53, 79, 159)"],
+  :is(button, a, [role="button"])[class~="bg-[#364F9F]"],
+  :is(button, a, [role="button"])[class~="bg-[#354f9f]"],
+  :is(button, a, [role="button"])[class~="bg-secondary"],
+  :is(button, a, [role="button"])[class~="bg-[#000035]"],
+  :is(button, a, [role="button"])[style*="background-color: rgb(54, 79, 159)"] *,
+  :is(button, a, [role="button"])[style*="background-color: rgb(53, 79, 159)"] *,
+  :is(button, a, [role="button"])[class~="bg-[#364F9F]"] *,
+  :is(button, a, [role="button"])[class~="bg-[#354f9f]"] *,
+  :is(button, a, [role="button"])[class~="bg-secondary"] *,
+  :is(button, a, [role="button"])[class~="bg-[#000035]"] * {
+    color: #fff !important;
+  }
+
   [style*="color: rgb(240, 91, 78)"] {
     color: var(--brand-seafoam) !important;
   }
