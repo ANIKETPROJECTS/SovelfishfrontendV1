@@ -16,5 +16,5 @@
 - [Combo page search visibility](combo-search-visibility.md) — /combos stays available on-site but is intentionally noindexed and excluded from the sitemap.
 - [Keep checkout helpers isolated](checkout-helper-imports.md) — stock calculations used by tests should not import DB-connected sync modules.
 - [Market price comparisons](market-price-comparisons.md) — Always show Mongo catalog rates; movements, ranges, and sparklines must use saved price history only.
-- [Homepage visual direction](homepage-visual-direction.md) — Use the wood palette and supplied homepage/footer textures; retain white cards and avoid bubbles or outer grid panels.
+- [Homepage visual direction](homepage-visual-direction.md) — Use the wood textures; keep section wrappers transparent, retain product cards, and avoid decorative bubbles.
 - [Address map privacy](address-map-privacy.md) — Geocoder queries must use a separate public-place search, never customer or apartment details.

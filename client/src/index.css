@@ -218,17 +218,8 @@
     position: relative;
     margin-inline: -2rem;
     padding: 18px 2rem 10px;
-    border-top: 1px solid rgb(139 58 15 / 18%);
-    border-bottom: 1px solid rgb(139 58 15 / 10%);
-    background:
-      repeating-linear-gradient(174deg, transparent 0 32px, rgb(200 101 27 / 6%) 33px, transparent 34px 82px),
-      linear-gradient(105deg, rgb(240 164 88 / 25%) 0%, rgb(255 255 255 / 15%) 48%, rgb(200 101 27 / 13%) 100%);
-  }
-
-  .home-content-section:nth-of-type(even) {
-    background:
-      repeating-linear-gradient(8deg, transparent 0 40px, rgb(139 58 15 / 5%) 41px, transparent 42px 96px),
-      linear-gradient(255deg, rgb(232 136 58 / 23%) 0%, rgb(255 255 255 / 18%) 50%, rgb(139 58 15 / 12%) 100%);
+    border: 0;
+    background: transparent;
   }
 
   .home-section-heading {
