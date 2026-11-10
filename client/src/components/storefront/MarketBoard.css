@@ -27,9 +27,11 @@
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 10px;
-  padding: 9px 12px;
-  border-left: 6px solid var(--market-green);
-  background: linear-gradient(105deg, rgb(var(--market-main-rgb) / 15%) 0%, rgb(var(--market-main-rgb) / 6%) 35%, rgb(255 255 255 / 50%) 62%, rgb(var(--market-deep-rgb) / 4%) 100%);
+  padding: 13px 18px;
+  border-left: 6px solid #F0A458;
+  border-radius: 14px;
+  background: linear-gradient(105deg, #7B3A14 0%, #8B3A0F 32%, #C8651B 72%, #E8883A 100%);
+  box-shadow: 0 12px 26px -19px rgb(var(--market-shadow-rgb) / 64%);
 }
 
 .market-eyebrow {
@@ -37,7 +39,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 3px;
-  color: #71817e;
+  color: #F0A458;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -49,14 +51,14 @@
   height: 8px;
   flex: 0 0 8px;
   border-radius: 999px;
-  background: var(--market-green-strong);
-  box-shadow: 0 0 0 3px rgb(var(--market-main-rgb) / 14%);
+  background: #F0A458;
+  box-shadow: 0 0 0 3px rgb(240 164 88 / 24%);
 }
 
 .market-live-dot::after {
   position: absolute;
   inset: -4px;
-  border: 1px solid rgb(var(--market-main-rgb) / 55%);
+  border: 1px solid rgb(240 164 88 / 72%);
   border-radius: inherit;
   content: "";
   animation: market-live-pulse 1.8s ease-out infinite;
@@ -64,7 +66,7 @@
 
 .market-board-header h1 {
   margin: 0;
-  color: var(--market-navy);
+  color: #fff;
   font-size: clamp(19px, 2vw, 24px);
   font-weight: 700;
   letter-spacing: -0.045em;
@@ -73,7 +75,7 @@
 
 .market-updated {
   margin: 5px 0 0;
-  color: #75837f;
+  color: rgb(255 255 255 / 86%);
   font-size: 11px;
   font-weight: 500;
 }

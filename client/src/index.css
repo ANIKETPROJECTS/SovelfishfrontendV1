@@ -195,28 +195,29 @@
     position: relative;
     isolation: isolate;
     overflow-x: clip;
-    background-color: #fff9f2;
+    background-color: #fff4e8;
     background-image:
-      repeating-linear-gradient(174deg, transparent 0 26px, rgb(200 101 27 / 7%) 27px, transparent 28px 71px),
-      repeating-linear-gradient(8deg, transparent 0 52px, rgb(139 58 15 / 3%) 53px, transparent 54px 103px),
-      linear-gradient(112deg, rgb(240 164 88 / 16%) 0%, transparent 38%, rgb(139 58 15 / 7%) 100%),
-      linear-gradient(180deg, #fff7ec 0%, #ffffff 28rem, #fff4e8 72rem, #ffffff 112rem, #fff7ec 100%);
+      repeating-linear-gradient(174deg, transparent 0 26px, rgb(200 101 27 / 8%) 27px, transparent 28px 71px),
+      repeating-linear-gradient(8deg, transparent 0 52px, rgb(139 58 15 / 4%) 53px, transparent 54px 103px),
+      linear-gradient(112deg, rgb(240 164 88 / 22%) 0%, transparent 38%, rgb(139 58 15 / 10%) 100%),
+      linear-gradient(180deg, #fff1df 0%, #fffaf4 28rem, #ffefd9 72rem, #fffaf4 112rem, #fff1df 100%);
   }
 
   .home-content-section {
     position: relative;
     margin-inline: -2rem;
     padding: 18px 2rem 10px;
-    border-top: 1px solid rgb(139 58 15 / 12%);
+    border-top: 1px solid rgb(139 58 15 / 18%);
+    border-bottom: 1px solid rgb(139 58 15 / 10%);
     background:
-      repeating-linear-gradient(174deg, transparent 0 32px, rgb(200 101 27 / 4%) 33px, transparent 34px 82px),
-      linear-gradient(105deg, rgb(240 164 88 / 16%) 0%, rgb(255 255 255 / 30%) 48%, rgb(200 101 27 / 8%) 100%);
+      repeating-linear-gradient(174deg, transparent 0 32px, rgb(200 101 27 / 6%) 33px, transparent 34px 82px),
+      linear-gradient(105deg, rgb(240 164 88 / 25%) 0%, rgb(255 255 255 / 15%) 48%, rgb(200 101 27 / 13%) 100%);
   }
 
   .home-content-section:nth-of-type(even) {
     background:
-      repeating-linear-gradient(8deg, transparent 0 40px, rgb(139 58 15 / 3%) 41px, transparent 42px 96px),
-      linear-gradient(255deg, rgb(232 136 58 / 14%) 0%, rgb(255 255 255 / 34%) 50%, rgb(139 58 15 / 8%) 100%);
+      repeating-linear-gradient(8deg, transparent 0 40px, rgb(139 58 15 / 5%) 41px, transparent 42px 96px),
+      linear-gradient(255deg, rgb(232 136 58 / 23%) 0%, rgb(255 255 255 / 18%) 50%, rgb(139 58 15 / 12%) 100%);
   }
 
   .home-section-heading {
@@ -228,9 +229,9 @@
   }
 
   .home-section-heading::before {
-    width: 30px;
-    height: 5px;
-    flex: 0 0 30px;
+    width: 36px;
+    height: 6px;
+    flex: 0 0 36px;
     border-radius: 999px;
     background: linear-gradient(90deg, var(--brand-light) 0%, var(--brand-main) 55%, var(--brand-deep) 100%);
     content: "";
