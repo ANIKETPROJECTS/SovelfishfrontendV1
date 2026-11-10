@@ -191,6 +191,16 @@
 }
 
 @layer components {
+  .footer-wood-bg {
+    background-color: #5b2b10;
+    background-image:
+      linear-gradient(118deg, rgb(55 25 9 / 58%) 0%, rgb(92 38 11 / 50%) 52%, rgb(73 30 9 / 56%) 100%),
+      url("/brand/footer-wood.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
   .home-storefront-page {
     position: relative;
     isolation: isolate;
