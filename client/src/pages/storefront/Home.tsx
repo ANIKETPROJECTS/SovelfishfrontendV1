@@ -241,7 +241,7 @@ export default function Home() {
                   };
                   const comboMaxQty = computeMaxQty(comboCartItem ?? buildComboPayload());
                   return (
-                    <div key={combo.id} className="group relative bg-card white-wood-surface flex flex-col transition-all duration-300 cursor-pointer rounded-2xl overflow-hidden border border-border/20">
+                    <div key={combo.id} className="group relative bg-card white-wood-surface flex flex-col transition-all duration-300 cursor-pointer overflow-hidden border border-border/20">
                       <Link href={`/combo/${combo.id}`}>
                         <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden">
                                   <ComboImages images={comboImages} imageUrl={combo.imageUrl} />
@@ -365,7 +365,7 @@ export default function Home() {
                           <div key={combo.id} className="min-w-0">
                             <div className="group relative bg-card white-wood-surface flex flex-col h-full transition-all duration-300 cursor-pointer">
                               <Link href={`/combo/${combo.id}`}>
-                                <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden mb-3 border border-border/20 rounded-xl">
+                                <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden mb-3 border border-border/20">
                           <ComboImages images={comboImages} imageUrl={combo.imageUrl} />
                                   <div className="absolute top-0 left-0 z-10">
                                     <div className="relative bg-accent text-white pl-3 pr-5 py-2 shadow-md rounded-tl-xl">

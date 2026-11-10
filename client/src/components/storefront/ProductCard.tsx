@@ -110,7 +110,7 @@ function SingleProductCard({
       }`}
       onClick={onProductClick ?? (disableNavigation ? undefined : () => setLocation(getProductDetailPath()))}
     >
-      <div className="relative aspect-square w-full bg-muted/30 overflow-hidden mb-3 border border-border/20 rounded-xl">
+      <div className="relative aspect-square w-full bg-muted/30 overflow-hidden mb-3 border border-border/20">
         <img
           src={product.imageUrl || getFallbackImage(product.category)}
           alt={product.name}
