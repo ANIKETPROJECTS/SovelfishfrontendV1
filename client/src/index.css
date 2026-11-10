@@ -212,13 +212,6 @@
     background-size: 1500px auto;
   }
 
-  .white-wood-surface {
-    background-image: url("/brand/white-painted-wood.jpg");
-    background-position: center;
-    background-repeat: repeat;
-    background-size: 900px auto;
-  }
-
   .home-content-section {
     position: relative;
     margin-inline: -2rem;
@@ -228,20 +221,22 @@
   }
 
   .home-section-heading {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    position: relative;
+    display: block;
     width: fit-content;
     margin-bottom: 14px;
   }
 
   .home-section-heading::before {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 12px);
     width: 36px;
     height: 6px;
-    flex: 0 0 36px;
     border-radius: 999px;
     background: linear-gradient(90deg, var(--brand-light) 0%, var(--brand-main) 55%, var(--brand-deep) 100%);
     content: "";
+    transform: translateY(-50%);
   }
 
   @media (min-width: 641px) and (max-width: 1023px) {
@@ -258,13 +253,11 @@
     }
 
     .home-section-heading {
-      gap: 9px;
       margin-bottom: 11px;
     }
 
     .home-section-heading::before {
       width: 24px;
-      flex-basis: 24px;
     }
   }
 }
