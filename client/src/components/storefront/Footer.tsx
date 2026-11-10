@@ -48,16 +48,16 @@ function LazyMap() {
 
 export function Footer() {
   return (
-    <footer className="mt-10 overflow-hidden border-t-4 border-[#69D84F] bg-[linear-gradient(118deg,#000035_0%,#071743_52%,#12432f_100%)] text-white">
+    <footer className="mt-10 overflow-hidden border-t-4 border-[#F0A458] bg-[linear-gradient(118deg,#7B3A14_0%,#8B3A0F_52%,#C8651B_100%)] text-white">
       <div className="mx-auto max-w-7xl px-5 pb-5 pt-8 sm:px-8 sm:pt-10">
         <section className="grid gap-4 border-b border-white/15 pb-6 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-7 lg:pb-8">
           <div>
             <div className="inline-flex max-w-full rounded-lg bg-white px-2.5 py-2">
-              <FreshStockXchangeLogo className="h-auto w-full max-w-[250px]" />
+              <FreshStockXchangeLogo className="h-14 w-[74px]" />
             </div>
             <h2 className="mt-3 text-xl font-semibold leading-tight tracking-tight sm:text-2xl">
               Fresh catch. Fair prices.{" "}
-              <span className="text-[#69D84F]">Delivered to your door.</span>
+              <span className="text-[#F0A458]">Delivered to your door.</span>
             </h2>
             <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-white/75">
               Fresh fish, seafood &amp; meat, cleaned, packed, and delivered straight to your doorstep.
@@ -67,7 +67,7 @@ export function Footer() {
           <div className="flex flex-wrap gap-2">
             <a
               href="tel:+919619590694"
-              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#69D84F] px-4 py-2 text-sm font-semibold text-[#000035] transition hover:bg-[#7ce865] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#F0A458] px-4 py-2 text-sm font-semibold text-[#7B3A14] transition hover:bg-[#E8883A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <Phone aria-hidden className="h-4 w-4" />
               Call us
@@ -76,7 +76,7 @@ export function Footer() {
               href="https://wa.me/919619590694"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/35 px-4 py-2 text-sm font-medium text-white transition hover:border-[#69D84F] hover:text-[#69D84F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#69D84F]"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/35 px-4 py-2 text-sm font-medium text-white transition hover:border-[#F0A458] hover:text-[#F0A458] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0A458]"
             >
               <MessageCircle aria-hidden className="h-4 w-4" />
               WhatsApp
@@ -86,7 +86,7 @@ export function Footer() {
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-6 py-6 sm:gap-x-8 sm:py-8 lg:grid-cols-[0.8fr_0.9fr_1.2fr_1.35fr]">
           <nav aria-label="Explore" className="min-w-0">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#69D84F]">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#F0A458]">
               Explore
             </h3>
             <ul className="space-y-2">
@@ -99,7 +99,7 @@ export function Footer() {
                 { label: "Combo Deals", href: "/combos" },
               ].map(({ label, href }) => (
                 <li key={label}>
-                  <Link href={href} className="text-sm text-white/80 transition-colors hover:text-[#69D84F]">
+                  <Link href={href} className="text-sm text-white/80 transition-colors hover:text-[#F0A458]">
                     {label}
                   </Link>
                 </li>
@@ -108,7 +108,7 @@ export function Footer() {
           </nav>
 
           <nav aria-label="Customer support" className="min-w-0">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#69D84F]">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#F0A458]">
               Customer care
             </h3>
             <ul className="space-y-2">
@@ -121,7 +121,7 @@ export function Footer() {
                 { label: "FAQ", to: "/faq" },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link href={to} className="text-sm text-white/80 transition-colors hover:text-[#69D84F]">
+                  <Link href={to} className="text-sm text-white/80 transition-colors hover:text-[#F0A458]">
                     {label}
                   </Link>
                 </li>
@@ -130,25 +130,25 @@ export function Footer() {
           </nav>
 
           <section aria-labelledby="footer-contact-heading" className="col-span-2 min-w-0 sm:col-span-1">
-            <h3 id="footer-contact-heading" className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#69D84F]">
+            <h3 id="footer-contact-heading" className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#F0A458]">
               Get in touch
             </h3>
             <ul className="space-y-3">
               <li className="flex items-center gap-3">
                 <img src={phoneIcon} alt="" aria-hidden className="h-4 w-4 shrink-0" style={whiteFilter} />
-                <a href="tel:+919619590694" className="break-all text-sm text-white/85 transition-colors hover:text-[#69D84F]">
+                <a href="tel:+919619590694" className="break-all text-sm text-white/85 transition-colors hover:text-[#F0A458]">
                   +91 9619590694
                 </a>
               </li>
               <li className="flex items-start gap-3">
-                <MapPin aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-[#69D84F]" />
+                <MapPin aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-[#F0A458]" />
                 <span className="text-sm leading-relaxed text-white/85">
                   RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400708
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <img src={mailIcon} alt="" aria-hidden className="h-4 w-4 shrink-0" style={whiteFilter} />
-                <a href="mailto:info@freshstockxchange.com" className="break-all text-sm text-white/85 transition-colors hover:text-[#69D84F]">
+                <a href="mailto:info@freshstockxchange.com" className="break-all text-sm text-white/85 transition-colors hover:text-[#F0A458]">
                   info@freshstockxchange.com
                 </a>
               </li>
@@ -163,7 +163,7 @@ export function Footer() {
 
           <section aria-labelledby="footer-location-heading" className="col-span-2 flex min-w-0 flex-col sm:col-span-1">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 id="footer-location-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-[#69D84F]">
+              <h3 id="footer-location-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-[#F0A458]">
                 Find us
               </h3>
               <span className="text-xs text-white/60">Airoli · Navi Mumbai</span>
@@ -182,7 +182,7 @@ export function Footer() {
               href="https://www.airavatatechnologies.com/"
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-white transition-colors hover:text-[#69D84F]"
+              className="font-medium text-white transition-colors hover:text-[#F0A458]"
             >
               AIRAVATA TECHNOLOGIES
             </a>

@@ -11,7 +11,7 @@ export function WhatsAppFloatingButton() {
       aria-label="Chat with Fresh Stock Xchange on WhatsApp"
       title="Chat with us on WhatsApp"
       data-testid="floating-whatsapp-button"
-      className="fixed bottom-3 right-3 z-[45] flex h-12 w-12 items-center justify-center rounded-full bg-transparent p-0 transition duration-200 hover:-translate-y-1 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#69D84F]/60 sm:bottom-4 sm:right-4"
+      className="fixed bottom-3 right-3 z-[45] flex h-12 w-12 items-center justify-center rounded-full bg-transparent p-0 transition duration-200 hover:-translate-y-1 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E8883A]/60 sm:bottom-4 sm:right-4"
     >
       <img
         src="/icons/whatsapp.png"

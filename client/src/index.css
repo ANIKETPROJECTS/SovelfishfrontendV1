@@ -6,27 +6,32 @@
 
 @layer base {
   :root {
-    /* Fresh Stock Xchange brand palette */
-    --brand-seafoam: #69D84F;
-    --brand-navy: #000035;
-    --primary: 108.6 63.7% 57.8%; /* #69D84F – Fresh green */
-    --primary-foreground: 240 100% 10.4%;
-    --secondary: 240 100% 10.4%; /* #000035 – Deep navy */
+    /* Fresh Stock Xchange wood-and-compass palette */
+    --brand-seafoam: #C8651B; /* legacy accent alias */
+    --brand-navy: #7B3A14; /* legacy text alias */
+    --brand-main: #C8651B;
+    --brand-highlight: #E8883A;
+    --brand-light: #F0A458;
+    --brand-shadow: #8B3A0F;
+    --brand-deep: #7B3A14;
+    --primary: 25.7 76.2% 44.5%; /* #C8651B – main wood tone */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 22.1 72% 28%; /* #7B3A14 – compass lettering */
     --secondary-foreground: 0 0% 100%;
-    --accent: 108.6 63.7% 57.8%; /* #69D84F – Fresh green */
+    --accent: 30 83.5% 64.3%; /* #F0A458 – light grain highlight */
     --background: 0 0% 100%;
-    --foreground: 240 100% 10.4%;
+    --foreground: 22.1 72% 28%;
 
     --font-sans: 'Poppins', sans-serif;
     --font-display: 'Poppins', sans-serif;
-    --accent-foreground: 240 100% 10.4%;
+    --accent-foreground: 22.1 72% 28%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 20% 90%;
-    --input: 240 20% 90%;
-    --ring: 108.6 63.7% 57.8%;
+    --border: 29.1 45% 87%;
+    --input: 29.1 45% 87%;
+    --ring: 26.9 79.1% 56.9%;
 
     --radius: 1rem;
   }
@@ -51,7 +56,10 @@
     @apply bg-background/80 backdrop-blur-lg border-b border-border/50;
   }
 
-  [class*="bg-primary"][class~="text-white"],
+  [class*="bg-primary"][class~="text-white"] {
+    color: #fff !important;
+  }
+
   [class*="bg-accent"][class~="text-white"] {
     color: var(--brand-navy) !important;
   }
@@ -112,6 +120,9 @@
   [class~="hover:bg-[#F05B4E]"]:hover,
   [class~="hover:bg-[#f05c4e]"]:hover {
     background-color: var(--brand-seafoam) !important;
+  }
+  [class~="hover:bg-[#2a3d7a]"]:hover {
+    background-color: var(--brand-shadow) !important;
   }
   [class~="hover:bg-[#F05B4E]"]:hover [class~="text-white"],
   [class~="hover:bg-[#f05c4e]"]:hover [class~="text-white"],
@@ -182,20 +193,20 @@
     isolation: isolate;
     overflow-x: clip;
     background:
-      linear-gradient(112deg, rgb(105 216 79 / 12%) 0%, transparent 38%, rgb(0 0 53 / 10%) 100%),
-      linear-gradient(180deg, #eef8ea 0%, #ffffff 28rem, #eff0f9 72rem, #ffffff 112rem, #eef8ea 100%);
+      linear-gradient(112deg, rgb(240 164 88 / 5%) 0%, transparent 38%, rgb(139 58 15 / 3%) 100%),
+      linear-gradient(180deg, #fffdfb 0%, #ffffff 28rem, #fffaf5 72rem, #ffffff 112rem, #fffdfb 100%);
   }
 
   .home-content-section {
     position: relative;
     margin-inline: -2rem;
     padding: 18px 2rem 10px;
-    border-top: 1px solid rgb(0 0 53 / 12%);
-    background: linear-gradient(105deg, rgb(105 216 79 / 14%) 0%, rgb(255 255 255 / 40%) 48%, rgb(0 0 53 / 8%) 100%);
+    border-top: 1px solid rgb(139 58 15 / 12%);
+    background: linear-gradient(105deg, rgb(240 164 88 / 7%) 0%, rgb(255 255 255 / 65%) 48%, rgb(200 101 27 / 3%) 100%);
   }
 
   .home-content-section:nth-of-type(even) {
-    background: linear-gradient(255deg, rgb(105 216 79 / 12%) 0%, rgb(255 255 255 / 42%) 50%, rgb(0 0 53 / 9%) 100%);
+    background: linear-gradient(255deg, rgb(232 136 58 / 6%) 0%, rgb(255 255 255 / 68%) 50%, rgb(139 58 15 / 3%) 100%);
   }
 
   .home-section-heading {
@@ -211,7 +222,7 @@
     height: 5px;
     flex: 0 0 30px;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--brand-seafoam) 0%, #38a833 55%, var(--brand-navy) 100%);
+    background: linear-gradient(90deg, var(--brand-light) 0%, var(--brand-main) 55%, var(--brand-deep) 100%);
     content: "";
   }
 

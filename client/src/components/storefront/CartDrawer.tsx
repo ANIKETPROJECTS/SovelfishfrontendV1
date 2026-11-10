@@ -1745,7 +1745,7 @@ export function CartDrawer() {
                 <Lottie animationData={confettiAnim} loop autoplay style={{ width: "100%", height: "100%" }} />
               </div>
               <div className="relative z-10 mt-4 mb-8">
-                <FreshStockXchangeLogo className="h-auto w-[min(80vw,360px)]" />
+                <FreshStockXchangeLogo className="h-16 w-20" />
               </div>
               <div className="relative z-10 w-40 h-40 -mb-2">
                 <Lottie

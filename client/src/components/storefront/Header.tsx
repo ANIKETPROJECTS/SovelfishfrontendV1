@@ -99,11 +99,11 @@ export function Header({
         <div className="flex items-center shrink-0">
           {onLogoClick ? (
             <button onClick={onLogoClick} className="flex items-center group focus:outline-none">
-              <FreshStockXchangeLogo className="h-auto w-[calc(100vw-180px)] max-w-[450px] sm:w-[min(34vw,450px)] md:w-[min(40vw,450px)]" />
+              <FreshStockXchangeLogo className="h-11 w-[58px] sm:h-12 sm:w-[66px]" />
             </button>
           ) : (
             <Link href="/" className="flex items-center group">
-              <FreshStockXchangeLogo className="h-auto w-[calc(100vw-180px)] max-w-[450px] sm:w-[min(34vw,450px)] md:w-[min(40vw,450px)]" />
+              <FreshStockXchangeLogo className="h-11 w-[58px] sm:h-12 sm:w-[66px]" />
             </Link>
           )}
         </div>
@@ -118,7 +118,7 @@ export function Header({
               placeholder="Search fresh seafood, meat & more"
               autoFocus={!!initialSearchValue}
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#69D84F] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
               data-testid="input-search-desktop"
             />
             <button
@@ -219,7 +219,7 @@ export function Header({
               value={searchValue}
               placeholder="Search fresh seafood, meat & more"
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#69D84F] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
               data-testid="input-search-mobile"
             />
             <button

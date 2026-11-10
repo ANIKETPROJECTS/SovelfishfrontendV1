@@ -144,15 +144,15 @@ function Sparkline({ row, featured = false }: { row: MarketRow; featured?: boole
     >
       <defs>
         <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={isDropped ? "#69D84F" : "#e58a8a"} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={isDropped ? "#69D84F" : "#e58a8a"} stopOpacity="0" />
+          <stop offset="0%" stopColor={isDropped ? "#C8651B" : "#8B3A0F"} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={isDropped ? "#C8651B" : "#8B3A0F"} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={paths.area} fill={`url(#${gradientId})`} className="market-spark-area" />
       <path
         d={paths.line}
         fill="none"
-        stroke={isDropped ? "#328a22" : "#d97b7b"}
+        stroke={isDropped ? "#8B3A0F" : "#7B3A14"}
         strokeWidth={featured ? "1.15" : "1.5"}
         vectorEffect="non-scaling-stroke"
         className="market-spark-line"

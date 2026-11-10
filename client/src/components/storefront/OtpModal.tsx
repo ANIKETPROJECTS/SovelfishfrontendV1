@@ -15,9 +15,9 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { motion, AnimatePresence } from "framer-motion";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 
-const BRAND_BLUE = "#1B324D";
-const BRAND_RED = "#59C39E";
-const BRAND_ORANGE = "#F97316";
+const BRAND_BLUE = "#7B3A14";
+const BRAND_RED = "#C8651B";
+const BRAND_ORANGE = "#E8883A";
 const createEmptyOtp = () => Array.from({ length: OTP_DIGIT_COUNT }, () => "");
 
 interface OtpModalProps {
@@ -289,7 +289,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
               className="absolute inset-0 z-50 flex flex-col items-center justify-start bg-white pt-16 px-6"
             >
               <div className="mt-4 mb-6">
-                <FreshStockXchangeLogo className="h-auto w-[min(80vw,360px)]" />
+                <FreshStockXchangeLogo className="h-16 w-20" />
               </div>
               <div className="w-72 h-72">
                 <Lottie animationData={successAnimation} loop={false} autoplay />
@@ -301,7 +301,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
         <div className="flex flex-col flex-1 px-7 pt-8 pb-8">
           {/* Logo — always visible */}
           <div className="flex justify-center mb-5">
-              <FreshStockXchangeLogo className="h-auto w-[min(80vw,360px)]" />
+              <FreshStockXchangeLogo className="h-16 w-20" />
           </div>
 
           {!otpSent ? (

@@ -8,7 +8,7 @@ import whatsappIcon from "@assets/logo_(16)_1779950540352.png";
 import callIcon from "@assets/call_(2)_1779950579819.png";
 import scooterImg from "@assets/animation-original_(51)_1779950354153.png";
 
-const BRAND_BLUE = "#1B324D";
+const BRAND_BLUE = "#7B3A14";
 const PHONE = "+919619590694";
 const PHONE_DISPLAY = "+91 9619590694";
 const WA_LINK = `https://wa.me/${PHONE.replace("+", "")}?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`;

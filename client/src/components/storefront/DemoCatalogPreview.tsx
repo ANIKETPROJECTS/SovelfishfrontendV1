@@ -101,15 +101,15 @@ function MealStepsSection() {
   return (
     <section
       aria-labelledby="meal-steps-heading"
-      className="relative isolate overflow-hidden rounded-3xl bg-[#1B324D] p-5 sm:p-7"
+      className="relative isolate overflow-hidden rounded-3xl bg-[#7B3A14] p-5 sm:p-7"
     >
       <div
         aria-hidden="true"
-        className="absolute -right-16 -top-20 -z-10 h-56 w-56 rounded-full border-[28px] border-[#59C39E]/20"
+        className="absolute -right-16 -top-20 -z-10 h-56 w-56 rounded-full border-[28px] border-[#E8883A]/20"
       />
       <div className="grid gap-5 lg:grid-cols-[0.8fr_2fr] lg:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#59C39E]">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F0A458]">
             Made for your table
           </p>
           <h2 id="meal-steps-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
@@ -122,10 +122,10 @@ function MealStepsSection() {
         <div className="grid gap-3 sm:grid-cols-3">
           {steps.map((step) => (
             <div key={step.number} className="rounded-2xl bg-white p-4 sm:p-5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#59C39E]/20 text-sm font-bold text-[#1B324D]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8883A]/20 text-sm font-bold text-[#7B3A14]">
                 {step.number}
               </span>
-              <h3 className="mt-4 font-semibold text-[#1B324D]">{step.title}</h3>
+              <h3 className="mt-4 font-semibold text-[#7B3A14]">{step.title}</h3>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">{step.description}</p>
             </div>
           ))}
@@ -139,22 +139,22 @@ function MasalaSpotlight({ onExplore }: { onExplore: () => void }) {
   return (
     <section
       aria-labelledby="masala-spotlight-heading"
-      className="grid overflow-hidden rounded-3xl bg-[#59C39E] sm:grid-cols-2"
+      className="grid overflow-hidden rounded-3xl bg-[#F0A458] sm:grid-cols-2"
     >
       <div className="flex flex-col items-start justify-center p-5 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#1B324D]/75">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7B3A14]/75">
           A little extra flavour
         </p>
-        <h2 id="masala-spotlight-heading" className="mt-2 text-2xl font-semibold text-[#1B324D] sm:text-3xl">
+        <h2 id="masala-spotlight-heading" className="mt-2 text-2xl font-semibold text-[#7B3A14] sm:text-3xl">
           Small pack. Big flavour.
         </h2>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-[#1B324D]/80 sm:text-base">
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-[#7B3A14]/80 sm:text-base">
           Find the finishing touch for your favourite seafood and meat dishes.
         </p>
         <button
           type="button"
           onClick={onExplore}
-          className="mt-5 rounded-full bg-[#1B324D] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#13253a] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
+          className="mt-5 rounded-full bg-[#8B3A0F] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#7B3A14] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
         >
           Explore masalas <span aria-hidden="true">→</span>
         </button>
@@ -186,7 +186,7 @@ export function DemoCatalogPreview() {
 
   return (
     <div className="space-y-8 pb-8 sm:space-y-10" data-testid="preview-catalog">
-      <section className="relative aspect-[21/9] w-full overflow-hidden rounded-3xl bg-[#1B324D] shadow-lg">
+      <section className="relative aspect-[21/9] w-full overflow-hidden rounded-3xl bg-[#7B3A14] shadow-lg">
         <img
           src="/banners/fresh-stock-xchange.jpg"
           alt="Fresh Stock Xchange banner featuring premium fish, meat, and chicken"
@@ -197,8 +197,8 @@ export function DemoCatalogPreview() {
       <section aria-labelledby="catalog-categories-heading">
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#248764]">Find your favourites</p>
-            <h2 id="catalog-categories-heading" className="mt-1 text-xl font-semibold text-[#1B324D] sm:text-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B3A0F]">Find your favourites</p>
+            <h2 id="catalog-categories-heading" className="mt-1 text-xl font-semibold text-[#7B3A14] sm:text-2xl">
               Shop by category
             </h2>
           </div>
@@ -213,8 +213,8 @@ export function DemoCatalogPreview() {
                 onClick={() => setSelectedCategory(category.value)}
                 aria-pressed={isSelected}
                 aria-label={`Show ${category.name} products`}
-                className={`group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#59C39E] ${
-                  isSelected ? "ring-4 ring-[#59C39E]" : ""
+                className={`group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E8883A] ${
+                  isSelected ? "ring-4 ring-[#E8883A]" : ""
                 }`}
               >
                 <span className="block aspect-square overflow-hidden bg-slate-50">
@@ -225,7 +225,7 @@ export function DemoCatalogPreview() {
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </span>
-                <span className="flex min-h-11 items-center justify-center px-2 py-2 text-center text-sm font-bold text-[#1B324D] sm:text-base">
+                <span className="flex min-h-11 items-center justify-center px-2 py-2 text-center text-sm font-bold text-[#7B3A14] sm:text-base">
                   {category.name}
                 </span>
               </button>
@@ -239,11 +239,11 @@ export function DemoCatalogPreview() {
         const isDeepGreenSection = section.id === "meat-counter";
         const isSeafoamSection = section.id === "kitchen-essentials";
         const sectionSurface = isNavySection
-          ? "border-[#1B324D] bg-[#1B324D]"
+          ? "border-[#7B3A14] bg-[#7B3A14]"
           : isDeepGreenSection
-            ? "border-[#248764] bg-[#248764]"
+            ? "border-[#8B3A0F] bg-[#8B3A0F]"
             : isSeafoamSection
-              ? "border-[#59C39E] bg-[#59C39E]"
+              ? "border-[#E8883A] bg-[#E8883A]"
               : "border-slate-200 bg-white";
 
         return [
@@ -256,7 +256,7 @@ export function DemoCatalogPreview() {
                 <div className="min-w-0">
                   <h2
                     id={section.id}
-                    className={`text-xl font-semibold sm:text-2xl ${isNavySection || isDeepGreenSection ? "text-white" : "text-[#1B324D]"}`}
+                    className={`text-xl font-semibold sm:text-2xl ${isNavySection || isDeepGreenSection ? "text-white" : "text-[#7B3A14]"}`}
                   >
                     {section.title}
                   </h2>
@@ -264,7 +264,7 @@ export function DemoCatalogPreview() {
                     {section.subtitle}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1B324D]">
+                <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#7B3A14]">
                   {section.products.length} picks
                 </span>
               </div>
@@ -298,10 +298,10 @@ export function DemoCatalogPreview() {
               />
               <div className="p-5 sm:p-6">
                 <DialogHeader className="text-left">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#248764]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8B3A0F]">
                     {openProduct.category}
                   </p>
-                  <DialogTitle className="text-2xl font-semibold text-[#1B324D]">
+                  <DialogTitle className="text-2xl font-semibold text-[#7B3A14]">
                     {openProduct.name}
                   </DialogTitle>
                   <DialogDescription>
@@ -309,7 +309,7 @@ export function DemoCatalogPreview() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="mt-5 flex items-center justify-between gap-4">
-                  <span className="text-2xl font-bold text-[#1B324D]">₹{openProduct.price}</span>
+                  <span className="text-2xl font-bold text-[#7B3A14]">₹{openProduct.price}</span>
                   <button
                     type="button"
                     onClick={() => {

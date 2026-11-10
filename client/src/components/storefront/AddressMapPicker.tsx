@@ -40,7 +40,7 @@ const MIN_SEARCH_LENGTH = 3;
 
 const selectedPinIcon = L.divIcon({
   className: "",
-  html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#69D84F;border:2px solid #000035;box-shadow:0 2px 8px rgba(0,0,0,.28);transform:rotate(-45deg)"></span>`,
+  html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#E8883A;border:2px solid #7B3A14;box-shadow:0 2px 8px rgba(0,0,0,.28);transform:rotate(-45deg)"></span>`,
   iconSize: [22, 22],
   iconAnchor: [11, 22],
 });

@@ -174,9 +174,9 @@ const TRACK_STEPS = [
   { status: "out_for_delivery", label: "Out for Delivery",  desc: "Your order is on the way",         img: trackDeliveryImg },
   { status: "delivered",        label: "Delivered",          desc: "Order delivered successfully",     img: trackDeliveredImg },
 ];
-const BRAND_RED_FILTER = "brightness(0) saturate(100%) invert(45%) sepia(89%) saturate(1620%) hue-rotate(331deg) brightness(99%) contrast(89%)";
-const BRAND_BLUE_FILTER = "brightness(0) saturate(100%) invert(28%) sepia(48%) saturate(1517%) hue-rotate(212deg) brightness(91%) contrast(89%)";
-const BRAND_ORANGE_FILTER = "brightness(0) saturate(100%) invert(63%) sepia(76%) saturate(1515%) hue-rotate(347deg) brightness(103%) contrast(96%)";
+const BRAND_RED_FILTER = "brightness(0) saturate(100%) invert(42%) sepia(73%) saturate(1700%) hue-rotate(349deg) brightness(92%) contrast(94%)";
+const BRAND_BLUE_FILTER = "brightness(0) saturate(100%) sepia(100%) saturate(1250%) hue-rotate(350deg) brightness(62%) contrast(95%)";
+const BRAND_ORANGE_FILTER = "brightness(0) saturate(100%) invert(66%) sepia(56%) saturate(1240%) hue-rotate(345deg) brightness(103%) contrast(96%)";
 const TRACK_STATUS_ORDER = ["pending", "confirmed", "out_for_delivery", "delivered"];
 
 function TrackOrderModal({ order, onClose }: { order: OrderRequest; onClose: () => void }) {
@@ -388,7 +388,7 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
 <div class="page">
   <div class="header">
     <div class="brand-block">
-      <img src="/brand/fresh-stock-xchange.png" alt="Fresh Stock Xchange" style="height:48px;width:auto;display:block;" />
+      <img src="/brand/fresh-stock-xchange-compass.png" alt="Fresh Stock Xchange" style="height:48px;width:55px;object-fit:contain;display:block;" />
        <div class="brand-sub">Fresh Seafood &amp; Meat &middot; Airoli, Navi Mumbai</div>
       <div class="company-details">
         <p><span class="detail-label">ADD :</span> RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400708</p>
@@ -451,10 +451,10 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
   const win = window.open("", "_blank", "width=700,height=900");
   if (!win) return;
   const brandedHtml = html
-    .replaceAll("#364F9F", "#1B324D")
-    .replaceAll("#354f9f", "#1B324D")
-    .replaceAll("#F05B4E", "#59C39E")
-    .replaceAll("#f05c4e", "#59C39E");
+    .replaceAll("#364F9F", "#7B3A14")
+    .replaceAll("#354f9f", "#7B3A14")
+    .replaceAll("#F05B4E", "#C8651B")
+    .replaceAll("#f05c4e", "#C8651B");
   win.document.write(brandedHtml);
   win.document.close();
   win.focus();
