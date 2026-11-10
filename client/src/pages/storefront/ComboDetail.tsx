@@ -120,7 +120,7 @@ function CouponCard({ code, desc }: { code: string; desc: string; onApply?: () =
         <div className="min-w-0 flex-1">
           <span
             className="font-mono font-bold text-xs tracking-wider rounded-full px-2.5 py-0.5 text-white inline-block"
-            style={{ backgroundColor: "#F05B4E" }}
+            style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
           >
             {code}
           </span>
@@ -598,20 +598,20 @@ export default function ComboDetail() {
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span
                   className="text-xs font-bold tracking-wide rounded-full px-2.5 py-0.5 text-white inline-block"
-                  style={{ backgroundColor: "#F05B4E" }}
+                  style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
                 >
                   Combo Pack
                 </span>
                 <span
                   className="text-xs font-bold tracking-wide rounded-full px-2.5 py-0.5 text-white inline-block"
-                  style={{ backgroundColor: "#F05B4E" }}
+                  style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
                 >
                   {combo.includes.length} Items
                 </span>
                 {combo.discount > 0 && (
                   <span
                     className="text-xs font-bold tracking-wide rounded-full px-2.5 py-0.5 text-white inline-block"
-                    style={{ backgroundColor: "#F05B4E" }}
+                    style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
                   >
                     {combo.discount}% Off
                   </span>
@@ -791,7 +791,7 @@ export default function ComboDetail() {
                         <ChefHat className="w-10 h-10 text-muted-foreground/30" />
                       )}
                       {recipe.difficulty && (
-                        <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-[#F97316] text-white shadow-sm">
+                        <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-[#8B3A0F] text-white shadow-sm">
                           {recipe.difficulty}
                         </span>
                       )}
