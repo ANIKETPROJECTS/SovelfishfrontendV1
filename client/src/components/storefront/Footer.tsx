@@ -48,7 +48,7 @@ function LazyMap() {
 
 export function Footer() {
   return (
-    <footer className="footer-woodgrain mt-10 overflow-hidden border-t-4 border-[#F0A458] text-white">
+    <footer className="mt-10 overflow-hidden border-t-4 border-[#F0A458] bg-[linear-gradient(118deg,#7B3A14_0%,#8B3A0F_52%,#C8651B_100%)] text-white">
       <div className="mx-auto max-w-7xl px-5 pb-5 pt-8 sm:px-8 sm:pt-10">
         <section className="grid gap-4 border-b border-white/15 pb-6 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-7 lg:pb-8">
           <div>

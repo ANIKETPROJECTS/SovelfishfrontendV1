@@ -191,15 +191,6 @@
 }
 
 @layer components {
-  .footer-woodgrain {
-    background-color: #7B3A14;
-    background-image:
-      repeating-linear-gradient(176deg, transparent 0 18px, rgb(240 164 88 / 16%) 19px, transparent 20px 47px),
-      repeating-linear-gradient(4deg, transparent 0 37px, rgb(123 58 20 / 24%) 38px, transparent 39px 93px),
-      repeating-linear-gradient(178deg, rgb(232 136 58 / 6%) 0 2px, transparent 3px 31px),
-      linear-gradient(118deg, #7B3A14 0%, #8B3A0F 52%, #C8651B 100%);
-  }
-
   .home-storefront-page {
     position: relative;
     isolation: isolate;
