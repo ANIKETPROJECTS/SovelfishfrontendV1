@@ -192,8 +192,10 @@
     position: relative;
     isolation: isolate;
     overflow-x: clip;
-    background:
-      linear-gradient(112deg, rgb(240 164 88 / 5%) 0%, transparent 38%, rgb(139 58 15 / 3%) 100%),
+    background-color: #fff;
+    background-image:
+      repeating-linear-gradient(174deg, transparent 0 26px, rgb(200 101 27 / 1.5%) 27px, transparent 28px 71px),
+      repeating-linear-gradient(8deg, transparent 0 52px, rgb(139 58 15 / 0.7%) 53px, transparent 54px 103px),
       linear-gradient(180deg, #fffdfb 0%, #ffffff 28rem, #fffaf5 72rem, #ffffff 112rem, #fffdfb 100%);
   }
 
