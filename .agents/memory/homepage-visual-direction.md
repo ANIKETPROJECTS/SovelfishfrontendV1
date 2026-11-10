@@ -7,4 +7,4 @@ Use the wood-and-compass palette (#C8651B, #E8883A, #F0A458, #8B3A0F, #7B3A14), 
 
 **Why:** the user requested this palette, chose a warm golden wood texture for the homepage, then explicitly requested plain white header and card backgrounds after rejecting tinted backgrounds, nested cards, and decorative bubbles.
 
-**How to apply:** use the latest supplied warm golden wood texture as the home page background without a color overlay; keep the header and card surfaces pure white, align header gutters with the main content, align section titles with their grids, keep card images square and flush to their edges, leave bottom padding under card content, and preserve behavior.
+**How to apply:** use the latest supplied warm golden wood texture as the home page background without a color overlay; keep the header and card surfaces pure white, align header gutters with the main content, align section titles with their grids, keep card images square and flush to their edges, give product and combo content balanced horizontal and bottom padding, and preserve behavior.

@@ -379,7 +379,7 @@ export default function Home() {
                                   </div>
                                 </div>
                               </Link>
-                              <div className="flex-1 flex flex-col px-1 pb-3">
+                              <div className="flex-1 flex flex-col p-3">
                                 <Link href={`/combo/${combo.id}`}>
                                   <h3 className="font-sans font-medium text-base sm:text-lg text-foreground leading-snug mb-1.5 line-clamp-2 hover:text-primary transition-colors">
                                     {combo.name}
