@@ -105,7 +105,7 @@ function SingleProductCard({
 
   return (
     <div
-      className={`group relative bg-card flex flex-col h-full transition-all duration-300 ${
+      className={`group relative bg-card white-wood-surface flex flex-col h-full transition-all duration-300 ${
         onProductClick || !disableNavigation ? "cursor-pointer" : ""
       }`}
       onClick={onProductClick ?? (disableNavigation ? undefined : () => setLocation(getProductDetailPath()))}
