@@ -365,7 +365,7 @@ export default function Home() {
                           <div key={combo.id} className="min-w-0">
                             <div className="group relative bg-white flex flex-col h-full transition-all duration-300 cursor-pointer">
                               <Link href={`/combo/${combo.id}`}>
-                                <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden mb-3 border border-border/20">
+                                <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden mb-3">
                           <ComboImages images={comboImages} imageUrl={combo.imageUrl} />
                                   <div className="absolute top-0 left-0 z-10">
                                     <div className="relative bg-accent text-white pl-3 pr-5 py-2 shadow-md rounded-tl-xl">
@@ -379,7 +379,7 @@ export default function Home() {
                                   </div>
                                 </div>
                               </Link>
-                              <div className="flex-1 flex flex-col px-1">
+                              <div className="flex-1 flex flex-col px-1 pb-3">
                                 <Link href={`/combo/${combo.id}`}>
                                   <h3 className="font-sans font-medium text-base sm:text-lg text-foreground leading-snug mb-1.5 line-clamp-2 hover:text-primary transition-colors">
                                     {combo.name}

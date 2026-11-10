@@ -110,7 +110,7 @@ function SingleProductCard({
       }`}
       onClick={onProductClick ?? (disableNavigation ? undefined : () => setLocation(getProductDetailPath()))}
     >
-      <div className="relative aspect-square w-full bg-muted/30 overflow-hidden mb-3 border border-border/20">
+      <div className="relative aspect-square w-full bg-muted/30 overflow-hidden mb-3">
         <img
           src={product.imageUrl || getFallbackImage(product.category)}
           alt={product.name}
@@ -144,7 +144,7 @@ function SingleProductCard({
         )}
       </div>
 
-      <div className="flex-1 flex flex-col px-1">
+      <div className="flex-1 flex flex-col px-1 pb-3">
         <h3 className="font-sans font-medium text-base sm:text-lg text-foreground leading-snug mb-1.5 line-clamp-2">
           {product.name}
         </h3>
