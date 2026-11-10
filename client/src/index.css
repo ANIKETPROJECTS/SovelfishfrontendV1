@@ -207,10 +207,11 @@
     overflow-x: clip;
     background-color: #fff4e8;
     background-image:
-      repeating-linear-gradient(174deg, transparent 0 26px, rgb(200 101 27 / 8%) 27px, transparent 28px 71px),
-      repeating-linear-gradient(8deg, transparent 0 52px, rgb(139 58 15 / 4%) 53px, transparent 54px 103px),
-      linear-gradient(112deg, rgb(240 164 88 / 22%) 0%, transparent 38%, rgb(139 58 15 / 10%) 100%),
-      linear-gradient(180deg, #fff1df 0%, #fffaf4 28rem, #ffefd9 72rem, #fffaf4 112rem, #fff1df 100%);
+      linear-gradient(112deg, rgb(255 247 236 / 62%) 0%, rgb(255 250 244 / 58%) 48%, rgb(255 244 232 / 64%) 100%),
+      url("/brand/home-cherry-wood.jpg");
+    background-position: center, center top;
+    background-repeat: no-repeat, repeat;
+    background-size: cover, 1500px auto;
   }
 
   .home-content-section {

@@ -3,8 +3,8 @@ name: Homepage visual direction
 description: The user's desired homepage background and section styling for Fresh Stock Xchange.
 ---
 
-Keep the homepage visually open: use the green and navy palette in broad color treatments and section accents, without adding an outer card/panel around product-card grids or decorative background bubbles.
+Use the wood-and-compass palette (#C8651B, #E8883A, #F0A458, #8B3A0F, #7B3A14) and the user's supplied cherry-wood texture behind homepage content. Keep product cards white and do not add outer grid panels or decorative bubbles. The footer uses its separate supplied brown-wood texture with a dark overlay for text contrast.
 
-**Why:** the user explicitly rejected the nested card look and bubble-like background decoration.
+**Why:** the user requested this palette and the two wood textures after rejecting nested cards and decorative background bubbles.
 
-**How to apply:** when changing the storefront home page, use background color bands, gradients, typography, and dividers while preserving the existing product cards and interaction behavior.
+**How to apply:** use the cherry-wood texture as the home page background with a light warm overlay; retain white cards and preserve existing layout and behavior.
