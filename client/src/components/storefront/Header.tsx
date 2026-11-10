@@ -99,11 +99,11 @@ export function Header({
         <div className="flex items-center shrink-0">
           {onLogoClick ? (
             <button onClick={onLogoClick} className="flex items-center group focus:outline-none">
-              <FreshStockXchangeLogo className="h-11 w-[58px] sm:h-12 sm:w-[66px]" />
+              <FreshStockXchangeLogo className="h-12 w-[64px] sm:h-[52px] sm:w-[72px]" />
             </button>
           ) : (
             <Link href="/" className="flex items-center group">
-              <FreshStockXchangeLogo className="h-11 w-[58px] sm:h-12 sm:w-[66px]" />
+              <FreshStockXchangeLogo className="h-12 w-[64px] sm:h-[52px] sm:w-[72px]" />
             </Link>
           )}
         </div>
@@ -111,14 +111,14 @@ export function Header({
         {/* Center: Search bar — desktop only */}
         {showSearchUI && (
           <form onSubmit={handleSubmit} className="flex-1 max-w-md relative hidden sm:block">
-            <img src={searchImg} alt="Search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
+            <img src={searchImg} alt="Search" className="header-theme-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
             <input
               type="search"
               value={searchValue}
               placeholder="Search fresh seafood, meat & more"
               autoFocus={!!initialSearchValue}
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#E8C8AA] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
               data-testid="input-search-desktop"
             />
             <button
@@ -129,8 +129,8 @@ export function Header({
               data-testid="button-voice-search-desktop"
             >
               {isListening
-                ? <MicOff className="w-4 h-4 text-red-500" />
-                : <img src={micImg} alt="Voice search" className="w-4 h-4 object-contain" style={{ filter: "brightness(0)" }} />
+                ? <MicOff className="w-4 h-4 text-[#C8651B]" />
+                : <img src={micImg} alt="Voice search" className="header-theme-icon w-4 h-4 object-contain" />
               }
             </button>
           </form>
@@ -148,7 +148,7 @@ export function Header({
               aria-label={mobileSearchOpen ? "Close search" : "Open search"}
               data-testid="button-toggle-mobile-search"
             >
-              <img src={searchImg} alt="Search" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+              <img src={searchImg} alt="Search" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
             </Button>
           )}
 
@@ -161,7 +161,7 @@ export function Header({
             aria-label="Categories"
             data-testid="button-categories"
           >
-            <img src={menuIconImg} alt="Categories" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+            <img src={menuIconImg} alt="Categories" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
           </Button>
 
           <Button
@@ -172,7 +172,7 @@ export function Header({
             aria-label={customer ? "My Profile" : "Login"}
             data-testid="button-profile"
           >
-            <img src={userImg} alt="Profile" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+            <img src={userImg} alt="Profile" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
           </Button>
 
           <Button
@@ -182,9 +182,9 @@ export function Header({
             className="relative text-foreground hover:bg-accent/10 rounded-full w-9 h-9"
             data-testid="button-cart"
           >
-            <img src={cartImg} alt="Cart" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+            <img src={cartImg} alt="Cart" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
             {totalItems > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-[#F05B4E] text-white text-[10px] font-bold flex items-center justify-center rounded-full shadow-md animate-in zoom-in">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-[#C8651B] text-white text-[10px] font-bold flex items-center justify-center rounded-full shadow-md animate-in zoom-in">
                 {totalItems}
               </span>
             )}
@@ -193,11 +193,11 @@ export function Header({
           {/* Location */}
           <button
             onClick={openPicker}
-            className="flex items-center pl-2 border-l border-slate-400 ml-0.5 hover:opacity-70 transition-opacity"
+            className="flex items-center pl-2 border-l border-[#E8C8AA] ml-0.5 hover:opacity-70 transition-opacity"
             data-testid="button-location-picker"
             aria-label="Check delivery area"
           >
-            <img src={locationImg} alt="Location" className="w-5 h-5 sm:w-5 sm:h-5 object-contain flex-shrink-0" />
+            <img src={locationImg} alt="Location" className="header-theme-icon w-5 h-5 sm:w-5 sm:h-5 object-contain flex-shrink-0" />
           </button>
         </div>
       </div>
@@ -212,14 +212,14 @@ export function Header({
       {showSearchUI && (!collapsibleMobileSearch || mobileSearchOpen) && (
         <div className="sm:hidden px-3 pb-2.5 pt-1 bg-white">
           <form onSubmit={handleSubmit} className="relative">
-            <img src={searchImg} alt="Search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
+            <img src={searchImg} alt="Search" className="header-theme-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
             <input
               type="search"
               autoFocus={(collapsibleMobileSearch && mobileSearchOpen) || !!initialSearchValue}
               value={searchValue}
               placeholder="Search fresh seafood, meat & more"
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-slate-300 focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#E8C8AA] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
               data-testid="input-search-mobile"
             />
             <button
@@ -230,8 +230,8 @@ export function Header({
               data-testid="button-voice-search-mobile"
             >
               {isListening
-                ? <MicOff className="w-4 h-4 text-red-500" />
-                : <img src={micImg} alt="Voice search" className="w-4 h-4 object-contain" style={{ filter: "brightness(0)" }} />
+                ? <MicOff className="w-4 h-4 text-[#C8651B]" />
+                : <img src={micImg} alt="Voice search" className="header-theme-icon w-4 h-4 object-contain" />
               }
             </button>
           </form>

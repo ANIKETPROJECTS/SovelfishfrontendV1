@@ -71,6 +71,9 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  .header-theme-icon {
+    filter: brightness(0) saturate(100%) invert(22%) sepia(71%) saturate(1580%) hue-rotate(350deg) brightness(88%) contrast(92%);
+  }
   @keyframes badge-blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.55; }
