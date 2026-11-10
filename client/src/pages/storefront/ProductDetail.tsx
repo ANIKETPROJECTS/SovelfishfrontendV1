@@ -67,7 +67,7 @@ function CouponCard({ code, description }: { code: string; description: string; 
         <div className="min-w-0 flex-1">
           <span
             className="font-mono font-bold text-xs tracking-wider rounded-full px-2.5 py-0.5 text-white inline-block"
-            style={{ backgroundColor: "#F05B4E" }}
+            style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
           >
             {code}
           </span>
@@ -346,7 +346,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span
                   className="text-xs font-bold tracking-wide rounded-full px-2.5 py-0.5 text-white inline-block"
-                  style={{ backgroundColor: "#F05B4E" }}
+                  style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
                   data-testid={`badge-category-${product.category}`}
                 >
                   {product.category}
@@ -354,7 +354,7 @@ export default function ProductDetail() {
                 {product.subCategory && product.subCategory !== product.name && (
                   <span
                     className="text-xs font-semibold tracking-wide rounded-full px-2.5 py-0.5 inline-block border"
-                    style={{ borderColor: "#364F9F", color: "#364F9F", backgroundColor: "transparent" }}
+                    style={{ borderColor: "#C8651B", color: "#7B3A14", backgroundColor: "#FFF4E8" }}
                   >
                     {product.subCategory}
                   </span>
@@ -470,11 +470,10 @@ export default function ProductDetail() {
                         setQty(1);
                       }}
                       aria-pressed={index === selectedVariantIndex}
-                      className={`rounded-full border px-3 py-2 text-sm font-semibold transition-colors ${
-                        index === selectedVariantIndex
-                          ? "border-primary bg-primary text-white"
-                          : "border-border bg-white text-foreground hover:border-primary"
-                      }`}
+                      className="rounded-full border px-3 py-2 text-sm font-semibold transition-colors"
+                      style={index === selectedVariantIndex
+                        ? { borderColor: "#8B3A0F", backgroundColor: "#8B3A0F", color: "#FFFFFF" }
+                        : { borderColor: "#C8651B", backgroundColor: "#FFFFFF", color: "#7B3A14" }}
                     >
                         {variant.label}
                         {variant.averageWeightLabel ? ` (avg ${variant.averageWeightLabel})` : ""}
@@ -645,7 +644,7 @@ export default function ProductDetail() {
                         </div>
                       )}
                       {r.difficulty && (
-                        <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-[#F97316] text-white shadow-sm">
+                        <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-[#8B3A0F] text-white shadow-sm">
                           {r.difficulty}
                         </span>
                       )}
