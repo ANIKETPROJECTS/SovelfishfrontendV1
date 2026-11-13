@@ -33,6 +33,7 @@ import {
   type CheckoutStockLine,
 } from "./checkoutStock";
 import {
+  getCatalogProductPrice,
   getDailyPriceRange,
   getMarketMovement,
   getYesterdayAndTodayHistory,
@@ -876,9 +877,7 @@ export async function registerRoutes(
         : "standard";
     const isWholeFish = fishInventoryMode === "whole_fish";
     const isBulkPortions = fishInventoryMode === "bulk_portions";
-    const catalogPrice = (isWholeFish || isBulkPortions) && Number.isFinite(pricePerKg) && pricePerKg > 0
-      ? pricePerKg
-      : doc.price ?? null;
+    const catalogPrice = getCatalogProductPrice(doc, isWholeFish || isBulkPortions);
     const formatWeightKg = (weightKg: number) => {
       const grams = Math.round(weightKg * 1000);
       return grams >= 1000
@@ -1101,15 +1100,25 @@ export async function registerRoutes(
       if (!existing) return res.status(404).json({ message: "Product not found" });
 
       const now = new Date();
-      const priceChanged =
-        Object.prototype.hasOwnProperty.call(input, "price") &&
-        input.price !== (existing.price ?? null);
+      const rawExistingMode = String(existing.fishInventoryMode ?? "").toLowerCase();
+      const existingUsesFishPerKgPricing =
+        rawExistingMode === "whole_fish" ||
+        rawExistingMode === "bulk_portions" ||
+        existing.wholeFishInventory === true ||
+        (Array.isArray(existing.bulkPortionOptions) && existing.bulkPortionOptions.length > 0) ||
+        (Array.isArray(existing.bulkPortionWeightsKg) && existing.bulkPortionWeightsKg.length > 0);
+      const hasPriceInput = Object.prototype.hasOwnProperty.call(input, "price");
+      const existingCatalogPrice = getCatalogProductPrice(existing, existingUsesFishPerKgPricing);
+      const priceChanged = hasPriceInput && input.price !== existingCatalogPrice;
       let update: Record<string, any> = { ...input, updatedAt: now };
+      if (hasPriceInput && existingUsesFishPerKgPricing) {
+        update.fishPricePerKg = input.price;
+      }
 
       if (priceChanged) {
         const historyEntries: Array<{ price: number; changedAt: Date; source: "baseline" | "admin" }> = [];
         const existingHistory = Array.isArray(existing.priceHistory) ? existing.priceHistory : [];
-        const previousPrice = existing.price == null ? null : Number(existing.price);
+        const previousPrice = existingCatalogPrice == null ? null : Number(existingCatalogPrice);
 
         if (
           existingHistory.length === 0 &&
@@ -1132,7 +1141,11 @@ export async function registerRoutes(
         }
 
         update = {
-          $set: { ...input, updatedAt: now },
+          $set: {
+            ...input,
+            ...(hasPriceInput && existingUsesFishPerKgPricing ? { fishPricePerKg: input.price } : {}),
+            updatedAt: now,
+          },
           ...(historyEntries.length > 0
             ? { $push: { priceHistory: { $each: historyEntries, $slice: -1000 } } }
             : {}),

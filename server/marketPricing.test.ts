@@ -2,11 +2,23 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   getDailyPriceRange,
+  getCatalogProductPrice,
   getMarketMovement,
   getYesterdayAndTodayHistory,
 } from "./marketPricing";
 
 const today = new Date("2026-10-21T10:30:00+05:30");
+
+test("uses the saved current fish rate for per-kg catalog products", () => {
+  assert.equal(
+    getCatalogProductPrice({ price: 1, fishPricePerKg: 600 }, true),
+    600,
+  );
+  assert.equal(
+    getCatalogProductPrice({ price: 240 }, false),
+    240,
+  );
+});
 
 test("compares the first price update of the day with the prior day's close", () => {
   const movement = getMarketMovement(

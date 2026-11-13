@@ -17,6 +17,18 @@ export type MarketPriceRange = {
   high: number;
 };
 
+export function getCatalogProductPrice(
+  product: { price?: number | null; fishPricePerKg?: number | null },
+  usesFishPerKgPricing: boolean,
+): number | null {
+  if (!usesFishPerKgPricing) return product.price ?? null;
+
+  const fishPricePerKg = Number(product.fishPricePerKg ?? product.price);
+  return Number.isFinite(fishPricePerKg) && fishPricePerKg > 0
+    ? fishPricePerKg
+    : product.price ?? null;
+}
+
 const INDIA_TIME_ZONE = "Asia/Kolkata";
 
 function getIndiaDayStart(date: Date): Date {
