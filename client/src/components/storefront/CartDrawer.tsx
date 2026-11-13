@@ -15,6 +15,7 @@ import confettiAnim from "@/assets/lottie/confetti.json";
 import emptyCartBagAnim from "@/assets/lottie/empty-cart-bag.json";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
+import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
 import iconWalletImg from "@assets/wallet_1776953301704.png";
 import headerCartImg from "@assets/shopping-bag_1774706595493.png";
 import iconBinImg from "@assets/bin_1776927610776.png";
@@ -2403,11 +2404,12 @@ export function CartDrawer() {
                               <p className="py-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
                             ) : (
                               <>
-                                <select
+                                <SearchableCityAreaSelect
                                   id="new-address-city-area"
                                   value={addForm.cityArea || addForm.area}
-                                  onChange={(event) => {
-                                    const option = findCityAreaOption(cityAreas, event.target.value);
+                                  options={cityAreas}
+                                  onValueChange={(value) => {
+                                    const option = findCityAreaOption(cityAreas, value);
                                     setSelectedCityArea(option?.name ?? null);
                                     setAddForm((form) => ({
                                       ...form,
@@ -2416,16 +2418,8 @@ export function CartDrawer() {
                                       city: option?.name ?? "",
                                     }));
                                   }}
-                                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-                                  data-testid="select-new-address-area-city"
-                                >
-                                  <option value="">Choose an area or city</option>
-                                  {cityAreas.map((option) => (
-                                    <option key={option.id ?? option.name} value={option.name}>
-                                      {option.name}
-                                    </option>
-                                  ))}
-                                </select>
+                                  testId="select-new-address-area-city"
+                                />
                                 <p className="text-[11px] text-muted-foreground">
                                   This Area/City is saved with the address and used for item pricing.
                                 </p>
@@ -3002,10 +2996,12 @@ export function CartDrawer() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Area/City *</Label>
-                <select
+                <SearchableCityAreaSelect
+                  id="legacy-address-area-city"
                   value={addForm.cityArea || addForm.area}
-                  onChange={(event) => {
-                    const option = findCityAreaOption(cityAreas, event.target.value);
+                  options={cityAreas}
+                  onValueChange={(value) => {
+                    const option = findCityAreaOption(cityAreas, value);
                     setAddForm((form) => ({
                       ...form,
                       area: option?.name ?? "",
@@ -3014,16 +3010,10 @@ export function CartDrawer() {
                     }));
                     setSelectedCityArea(option?.name ?? null);
                   }}
-                  className="w-full rounded-xl h-11 border border-border/60 bg-white px-3 text-sm"
-                  data-testid="select-address-area-city"
-                >
-                  <option value="">Choose area/city</option>
-                  {cityAreas.map((option) => (
-                    <option key={option.id ?? option.name} value={option.name}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Choose area/city"
+                  className="h-11 rounded-xl border-border/60"
+                  testId="select-address-area-city"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode</Label>

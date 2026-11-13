@@ -6,6 +6,7 @@ import Lottie from "lottie-react";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
 import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
+import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -1427,11 +1428,12 @@ export default function Profile() {
                     ) : cityAreas.length === 0 ? (
                       <p className="py-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
                     ) : (
-                      <select
+                      <SearchableCityAreaSelect
                         id="profile-address-city-area"
                         value={addressForm.cityArea || addressForm.area || ""}
-                        onChange={(event) => {
-                          const option = findCityAreaOption(cityAreas, event.target.value);
+                        options={cityAreas}
+                        onValueChange={(value) => {
+                          const option = findCityAreaOption(cityAreas, value);
                           setAddressForm((form) => ({
                             ...form,
                             area: option?.name ?? "",
@@ -1439,16 +1441,8 @@ export default function Profile() {
                             city: option?.name ?? "",
                           }));
                         }}
-                        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-                        data-testid="select-profile-address-area-city"
-                      >
-                        <option value="">Choose an area or city</option>
-                        {cityAreas.map((option) => (
-                          <option key={option.id ?? option.name} value={option.name}>
-                            {option.name}
-                          </option>
-                        ))}
-                      </select>
+                        testId="select-profile-address-area-city"
+                      />
                     )}
                   </div>
                   <div className="space-y-1">

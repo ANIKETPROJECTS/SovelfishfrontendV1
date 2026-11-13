@@ -11,6 +11,7 @@ import { ChevronLeft, Home, Briefcase, Tag, MapPin, X, Loader2 } from "lucide-re
 import { useGoogleMaps } from "@/hooks/use-google-maps";
 import { useCityArea } from "@/context/CityAreaContext";
 import { findCityAreaOption } from "@shared/cityAreaPricing";
+import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
 
 declare global { interface Window { google: any } }
 
@@ -350,10 +351,12 @@ export default function AddAddress() {
               ) : cityAreas.length === 0 ? (
                 <p className="text-xs text-red-700 py-3">No active areas configured.</p>
               ) : (
-                <select
+                <SearchableCityAreaSelect
+                  id="add-address-area-city"
                   value={form.cityArea || form.area}
-                  onChange={(event) => {
-                    const option = findCityAreaOption(cityAreas, event.target.value);
+                  options={cityAreas}
+                  onValueChange={(value) => {
+                    const option = findCityAreaOption(cityAreas, value);
                     setForm((current) => ({
                       ...current,
                       area: option?.name ?? "",
@@ -362,16 +365,10 @@ export default function AddAddress() {
                     }));
                     setSelectedCityArea(option?.name ?? null);
                   }}
-                  className="w-full rounded-xl h-12 border border-border/60 bg-white px-3 text-sm"
-                  data-testid="select-add-address-area-city"
-                >
-                  <option value="">Choose area/city</option>
-                  {cityAreas.map((option) => (
-                    <option key={option.id ?? option.name} value={option.name}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Choose area/city"
+                  className="h-12 rounded-xl border-border/60"
+                  testId="select-add-address-area-city"
+                />
               )}
             </div>
             <div className="space-y-1.5">
