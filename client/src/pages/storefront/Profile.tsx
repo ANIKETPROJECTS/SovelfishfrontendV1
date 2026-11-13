@@ -49,6 +49,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomer } from "@/context/CustomerContext";
 import { useHub } from "@/context/HubContext";
+import { useCityArea } from "@/context/CityAreaContext";
+import { findCityAreaOption } from "@shared/cityAreaPricing";
 import { OtpModal } from "@/components/storefront/OtpModal";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { apiRequest } from "@/lib/queryClient";
@@ -93,6 +95,7 @@ const addressTypeColors: Record<string, string> = {
 type EmptyAddress = Omit<CustomerAddress, "id">;
 const emptyAddress: EmptyAddress = {
   name: "", phone: "", building: "", street: "", area: "",
+  cityArea: "", city: "",
   pincode: "", type: "house", label: "Home", instructions: "",
 };
 
@@ -874,6 +877,13 @@ export default function Profile() {
   const { toast } = useToast();
   const { customer, isLoading: customerLoading, refetch, logout } = useCustomer();
   const { selectedSubHub } = useHub();
+  const {
+    cityAreas,
+    setSelectedCityArea,
+    isCityAreasLoading,
+    cityAreasError,
+    reloadCityAreas,
+  } = useCityArea();
   const queryClient = useQueryClient();
 
   const search = useSearch();
@@ -1022,6 +1032,7 @@ export default function Profile() {
     setAddressForm({
       name: addr.name, phone: addr.phone, building: addr.building,
       street: addr.street, area: addr.area, pincode: addr.pincode || "",
+      cityArea: addr.cityArea || "", city: addr.city || "",
       type: addr.type, label: addr.label, instructions: addr.instructions,
       ...(coordinates ?? {}),
     });
@@ -1059,6 +1070,18 @@ export default function Profile() {
       toast({ title: "Please enter a valid 6-digit pincode", variant: "destructive" });
       return;
     }
+    if (
+      isCityAreasLoading ||
+      cityAreasError ||
+      !findCityAreaOption(cityAreas, addressForm.cityArea)
+    ) {
+      toast({
+        title: "Choose an active delivery Area/City",
+        description: cityAreasError ?? "Select an area from the available list.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!checkPincodeServiceability(addressForm.pincode)) {
       setUnserviceablePincode(addressForm.pincode);
       setShowUnserviceablePopup(true);
@@ -1067,7 +1090,8 @@ export default function Profile() {
     const label = addressForm.type === "other"
       ? (addressForm.label || "Other")
       : addressForm.type === "house" ? "Home" : "Office";
-    const entry = { ...addressForm, label };
+    const activeArea = findCityAreaOption(cityAreas, addressForm.cityArea)!;
+    const entry = { ...addressForm, cityArea: activeArea.name, city: activeArea.name, label };
     if (editingAddress) {
       updateAddressMutation.mutate({
         id: editingAddress.id,
@@ -1078,6 +1102,7 @@ export default function Profile() {
     } else {
       addAddressMutation.mutate(entry);
     }
+    setSelectedCityArea(activeArea.name);
   };
 
   if (customerLoading) {
@@ -1391,6 +1416,43 @@ export default function Profile() {
                       className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                       data-testid="input-address-area"
                     />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="profile-address-city-area" className="text-xs text-muted-foreground">
+                      Delivery Area / City *
+                    </Label>
+                    {isCityAreasLoading ? (
+                      <p className="py-2 text-xs text-muted-foreground">Loading active areas…</p>
+                    ) : cityAreasError ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-red-700">{cityAreasError}</p>
+                        <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
+                      </div>
+                    ) : cityAreas.length === 0 ? (
+                      <p className="py-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
+                    ) : (
+                      <select
+                        id="profile-address-city-area"
+                        value={addressForm.cityArea ?? ""}
+                        onChange={(event) => {
+                          const option = findCityAreaOption(cityAreas, event.target.value);
+                          setAddressForm((form) => ({
+                            ...form,
+                            cityArea: option?.name ?? "",
+                            city: option?.name ?? "",
+                          }));
+                        }}
+                        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
+                        data-testid="select-profile-address-city-area"
+                      >
+                        <option value="">Choose your delivery area</option>
+                        {cityAreas.map((option) => (
+                          <option key={option.id ?? option.name} value={option.name}>
+                            {option.name} · ₹{option.charge} per product
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Delivery pin (optional)</Label>

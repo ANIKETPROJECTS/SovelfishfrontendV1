@@ -8,6 +8,7 @@ import { useProducts } from "@/hooks/use-products";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { useCityArea } from "@/context/CityAreaContext";
 import { useLocation } from "wouter";
 import { ChevronLeft, Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -64,6 +65,8 @@ export default function Home() {
   const { data: sections = [], isSuccess: sectionsLoaded } = useQuery<Section[]>({ queryKey: ["/api/sections"] });
   const { data: combos = [], isSuccess: combosLoaded } = useQuery<Combo[]>({ queryKey: ["/api/combos"] });
   const { addToCart, removeFromCart, updateQuantity, items: cartItems, computeMaxQty } = useCart();
+  const { selectedCityArea } = useCityArea();
+  const cityAreaCharge = selectedCityArea?.charge ?? 0;
   const [activeCategory, setActiveCategory] = useState("All");
   const [view, setView] = useState<"home" | "category">("home");
   const initialQ = (() => {
@@ -261,8 +264,8 @@ export default function Home() {
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{combo.description}</p>
                         <div className="flex items-center justify-between mt-auto">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-lg font-semibold text-foreground">₹{combo.discountedPrice}</span>
-                            {combo.originalPrice > combo.discountedPrice && <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice}</span>}
+                            <span className="text-lg font-semibold text-foreground">₹{combo.discountedPrice + cityAreaCharge}</span>
+                            {combo.originalPrice > combo.discountedPrice && <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice + cityAreaCharge}</span>}
                             {showPct > 0 && <span className="text-sm font-semibold text-green-600">{showPct}% off</span>}
                           </div>
                           {comboQty === 0 ? (
@@ -388,9 +391,9 @@ export default function Home() {
                                 <p className="text-sm text-muted-foreground mb-2.5 font-normal line-clamp-2">{combo.description}</p>
                                 <div className="flex items-center justify-between mt-auto pt-1">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-lg sm:text-xl font-semibold text-foreground">₹{combo.discountedPrice}</span>
+                                    <span className="text-lg sm:text-xl font-semibold text-foreground">₹{combo.discountedPrice + cityAreaCharge}</span>
                                     {combo.originalPrice > combo.discountedPrice && (
-                                      <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice}</span>
+                                      <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice + cityAreaCharge}</span>
                                     )}
                                     {showPct > 0 && (
                                       <span className="text-sm font-semibold text-green-600" data-testid={`text-combo-discount-${combo.id}`}>{showPct}% off</span>

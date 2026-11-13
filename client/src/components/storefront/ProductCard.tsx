@@ -2,6 +2,7 @@ import { Plus, Minus, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
+import { useCityArea } from "@/context/CityAreaContext";
 import { useLocation } from "wouter";
 import type { Product } from "@shared/schema";
 import {
@@ -54,6 +55,7 @@ function SingleProductCard({
   detailVariantKey,
 }: ProductCardProps) {
   const { addToCart, removeFromCart, updateQuantity, items, computeMaxQty } = useCart();
+  const { selectedCityArea } = useCityArea();
   const [, setLocation] = useLocation();
   const cartProduct = product;
   const originalProductId = (product as Product & { originalId?: string }).originalId ?? product.id;
@@ -68,10 +70,11 @@ function SingleProductCard({
   const dummyFallback = DUMMY_DETAILS[product.category] ?? DUMMY_DETAILS["Fish"];
   const piecesText = product.pieces || null;
   const servesText = product.serves || null;
-  const displayPrice = product.price;
+  const areaCharge = product.isPreviewOnly ? 0 : (selectedCityArea?.charge ?? 0);
+  const displayPrice = product.price == null ? null : product.price + areaCharge;
   const hasDiscount = product.originalPrice != null && product.price != null && product.originalPrice > product.price;
   const discountPct = hasDiscount ? Math.round((product.originalPrice! - product.price!) / product.originalPrice! * 100) : null;
-  const strikePrice = hasDiscount ? product.originalPrice : null;
+  const strikePrice = hasDiscount ? product.originalPrice! + areaCharge : null;
 
   const maxQty = computeMaxQty(
     (cartItem ?? { ...cartProduct, quantity: 0 }) as any,

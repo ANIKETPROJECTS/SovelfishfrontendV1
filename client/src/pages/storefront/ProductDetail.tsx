@@ -2,6 +2,7 @@ import { useRoute, useLocation, useSearch } from "wouter";
 import { useProducts } from "@/hooks/use-products";
 import { useProductCoupons } from "@/hooks/use-coupons";
 import { useCart } from "@/context/CartContext";
+import { useCityArea } from "@/context/CityAreaContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
@@ -145,6 +146,7 @@ export default function ProductDetail() {
   const { data: products, isLoading } = useProducts();
   const search = useSearch();
   const { addToCart, updateQuantity, appliedCoupon, setAppliedCoupon, items: cartItems, computeMaxQty } = useCart();
+  const { selectedCityArea } = useCityArea();
   const { customer, openLoginModal } = useCustomer();
   const [qty, setQty] = useState(1);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
@@ -208,12 +210,13 @@ export default function ProductDetail() {
   const liveCoupons = rawProductCoupons.filter(c => c.visibleOnWebsite !== false && !(!!customer && userCouponUsage[c.code]?.isExhausted));
 
   const dummy = product ? getDummyDetail(product.category) : null;
-  const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
+  const areaCharge = selectedCityArea?.charge ?? 0;
+  const displayPrice = (selectedVariant?.price ?? product?.price ?? 0) + areaCharge;
   const hasDiscount = !selectedVariant && product?.originalPrice != null && product?.price != null && product.originalPrice > product.price;
   const effectiveDiscountPct = hasDiscount
     ? Math.round((product!.originalPrice! - product!.price!) / product!.originalPrice! * 100)
     : 0;
-  const strikePrice = hasDiscount ? product!.originalPrice : null;
+  const strikePrice = hasDiscount ? product!.originalPrice! + areaCharge : null;
 
   const availableProducts = products?.filter((p) => !p.isArchived && p.id !== productId && isNormalStorefrontProduct(p) && isStorefrontProductVisible(p)) ?? [];
   const sameCategory = availableProducts.filter((p) => p.category === product?.category);
@@ -477,7 +480,7 @@ export default function ProductDetail() {
                     >
                         {variant.label}
                         {variant.averageWeightLabel ? ` (avg ${variant.averageWeightLabel})` : ""}
-                        {" · ₹"}{formatStorePrice(variant.price)}
+                        {" · ₹"}{formatStorePrice(variant.price + areaCharge)}
                     </button>
                   ))}
                 </div>

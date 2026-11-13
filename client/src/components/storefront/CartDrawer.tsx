@@ -29,6 +29,7 @@ import { useCreateOrder } from "@/hooks/use-orders";
 import { useProducts } from "@/hooks/use-products";
 import { useCustomer } from "@/context/CustomerContext";
 import { useHub } from "@/context/HubContext";
+import { useCityArea } from "@/context/CityAreaContext";
 import { useCoupons } from "@/hooks/use-coupons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getHubHeaders } from "@/lib/queryClient";
@@ -48,6 +49,7 @@ import {
 } from "@/components/ui/sheet";
 import type { CustomerAddress, Coupon } from "@shared/schema";
 import { getValidAddressCoordinates } from "@shared/addressCoordinates";
+import { findCityAreaOption } from "@shared/cityAreaPricing";
 import { isPreorderDateAvailableForAll, normalizePreorderAvailability } from "@shared/preorderAvailability";
 import {
   applyAutomaticNextDayDelivery,
@@ -75,6 +77,7 @@ const TYPE_OPTIONS = [
 
 const emptyForm: Omit<CustomerAddress, "id"> = {
   name: "", phone: "", building: "", street: "", area: "",
+  cityArea: "", city: "",
   pincode: "", type: "house" as "house" | "office" | "other",
   label: "", instructions: "",
 };
@@ -179,6 +182,7 @@ type StockCheckItem = {
   fishBatchId?: string;
   fishWeightKg?: number;
   price?: number | null;
+  basePrice?: number | null;
 };
 type StockCheckResult = {
   inStock: boolean;
@@ -226,6 +230,7 @@ function getStockCheckItems(items: CartItem[]): StockCheckItem[] {
     fishBatchId: item.fishBatchId,
     fishWeightKg: item.fishWeightKg,
     price: item.price,
+    basePrice: item.basePrice ?? (item.price == null ? null : item.price - (item.cityAreaCharge ?? 0)),
   }));
 }
 
@@ -293,6 +298,14 @@ export function CartDrawer() {
   const { mutate: createOrder, isPending } = useCreateOrder();
   const { customer } = useCustomer();
   const { selectedSubHub, isHubReady } = useHub();
+  const {
+    cityAreas,
+    selectedCityArea,
+    setSelectedCityArea,
+    isCityAreasLoading,
+    cityAreasError,
+    reloadCityAreas,
+  } = useCityArea();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -794,24 +807,45 @@ export function CartDrawer() {
 
   const activeAddressId = selectedAddressId ?? (savedAddresses[0]?.id || null);
 
-  // Pincode-based delivery charge from the selected sub-hub config.
-  const pincodeConfig = useMemo(() => {
-    if (!selectedSubHub?.pincodes?.length) return null;
-    if (showAddForm && addForm.pincode.length === 6) {
-      return selectedSubHub.pincodes.find(p => p.pincode === addForm.pincode) ?? null;
-    }
-    const selected = savedAddresses.find(a => a.id === activeAddressId);
-    if (!selected?.pincode) return null;
-    return selectedSubHub.pincodes.find(p => p.pincode === selected.pincode) ?? null;
-  }, [activeAddressId, savedAddresses, selectedSubHub, showAddForm, addForm.pincode]);
-
-  const pincodeDeliveryCharge = pincodeConfig?.charge ?? 0;
-
   // Helper: check if a pincode is unserviceable in the current hub
   const checkPincodeServiceability = useCallback((pincode: string): boolean => {
     if (pincode.length < 6 || !selectedSubHub?.pincodes?.length) return true;
     return !!selectedSubHub.pincodes.find(p => p.pincode === pincode);
   }, [selectedSubHub]);
+
+  useEffect(() => {
+    if (showAddForm) return;
+    const selected = savedAddresses.find((address) => address.id === activeAddressId);
+    const matchingArea = findCityAreaOption(
+      cityAreas,
+      selected?.cityArea || selected?.area || selected?.city,
+    );
+    setSelectedCityArea(matchingArea?.name ?? null);
+  }, [activeAddressId, savedAddresses, cityAreas, showAddForm, setSelectedCityArea]);
+
+  const handleSavedAddressAreaChange = async (name: string) => {
+    const option = findCityAreaOption(cityAreas, name);
+    const address = savedAddresses.find((entry) => entry.id === activeAddressId);
+    if (!option || !address) return;
+    const previousName = selectedCityArea?.name ?? null;
+    setSelectedCityArea(option.name);
+    try {
+      const response = await fetch(`/api/customer/me/addresses/${encodeURIComponent(address.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ cityArea: option.name, city: option.name }),
+      });
+      const updatedCustomer = await response.json().catch(() => null);
+      if (!response.ok || !updatedCustomer) {
+        throw new Error("Could not save the selected delivery area.");
+      }
+      queryClient.setQueryData(["/api/customer/me"], updatedCustomer);
+    } catch {
+      setSelectedCityArea(previousName);
+      toast({ title: "Could not save delivery area", description: "Please try again.", variant: "destructive" });
+    }
+  };
 
   // Show popup when switching between existing saved addresses with unserviceable pincodes
   useEffect(() => {
@@ -832,6 +866,8 @@ export function CartDrawer() {
       ...emptyForm,
       name: customer?.name ?? "",
       phone: customer?.phone ?? "",
+      cityArea: selectedCityArea?.name ?? "",
+      city: selectedCityArea?.name ?? "",
     });
     setGeoFillStatus("idle");
     setGeoFillMessage("");
@@ -917,6 +953,10 @@ export function CartDrawer() {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    if (!selectedCityArea || cityAreasError || cityAreas.length === 0) {
+      toast({ title: "Select an available delivery Area/City", variant: "destructive" });
+      return;
+    }
     if (addForm.pincode.length === 6 && !checkPincodeServiceability(addForm.pincode)) {
       setUnserviceablePincode(addForm.pincode);
       setShowUnserviceablePopup(true);
@@ -925,7 +965,12 @@ export function CartDrawer() {
     const label =
       addForm.type === "other" ? (addForm.label || "Other") :
       addForm.type === "house" ? "Home" : "Office";
-    const addressPayload = { ...addForm, label };
+    const addressPayload = {
+      ...addForm,
+      label,
+      cityArea: selectedCityArea.name,
+      city: selectedCityArea.name,
+    };
     const coordinates = getValidAddressCoordinates(addForm);
     if (coordinates) {
       Object.assign(addressPayload, coordinates);
@@ -957,7 +1002,7 @@ export function CartDrawer() {
   };
 
   const walletBalance = (customer as any)?.walletBalance ?? 0;
-  const rawTotal = totalPrice + pincodeDeliveryCharge;
+  const rawTotal = totalPrice;
   const afterCouponTotal = rawTotal - discountAmount;
   const walletDeduction = useWallet ? Math.min(walletBalance, afterCouponTotal) : 0;
   const finalTotal = afterCouponTotal - walletDeduction;
@@ -974,19 +1019,6 @@ export function CartDrawer() {
   };
 
   const buildOrderPayload = (selected: CustomerAddress, razorpayPaymentId?: string) => {
-    // Guard/log per the delivery-charge race investigation (see explain.md): record the
-    // charge we're about to submit alongside the pincode it was computed for, so a $0
-    // charge on a pincode that should have a fee is easy to spot in logs instead of
-    // being discovered later as missing revenue.
-    if (pincodeDeliveryCharge === 0 && selected.pincode) {
-      console.warn(
-        `[checkout] Submitting order with pincodeDeliveryCharge=0 for pincode=${selected.pincode} ` +
-        `(hubReady=${isHubReady}, subHub=${selectedSubHub?.dbName ?? "none"}). ` +
-        `This is expected only if that pincode is genuinely configured with a ₹0 fee.`
-      );
-    } else {
-      console.debug(`[checkout] Computed delivery charge ₹${pincodeDeliveryCharge} for pincode=${selected.pincode}`);
-    }
     const fullAddress = `${selected.building} · ${selected.street}, ${selected.area} · ${selected.pincode}`;
     const selectedCoordinates = getValidAddressCoordinates(selected);
     const orderItems = items.map(i => ({
@@ -994,6 +1026,9 @@ export function CartDrawer() {
       quantity: i.quantity,
       name: i.name,
       price: i.price,
+      basePrice: i.basePrice ?? (i.price == null ? null : i.price - (i.cityAreaCharge ?? 0)),
+      cityArea: selectedCityArea?.name ?? null,
+      cityAreaCharge: selectedCityArea?.charge ?? 0,
       unit: i.unit ?? null,
       weightKgPerUnit: i.weightKgPerUnit ?? null,
       weightMinKgPerUnit: i.weightMinKgPerUnit ?? null,
@@ -1002,7 +1037,7 @@ export function CartDrawer() {
       fishWeightKg: i.fishWeightKg ?? null,
       imageUrl: i.imageUrl ?? null,
     }));
-    const slotCharge = pincodeDeliveryCharge;
+    const slotCharge = 0;
     const subtotal = totalPrice;
     const deliveryDate = isPreorderCart
       ? getDateKey(selectedDeliveryDate)
@@ -1033,7 +1068,9 @@ export function CartDrawer() {
       phone: selected.phone || customer?.phone || "",
       email: customer?.email ?? null,
       customerId: customer?.id ?? null,
-      deliveryArea: selected.area,
+      deliveryArea: selectedCityArea?.name ?? selected.area,
+      cityArea: selectedCityArea?.name ?? null,
+      cityAreaCharge: selectedCityArea?.charge ?? 0,
       address: fullAddress,
       deliveryAddressDetail: {
         _id: selected.id,
@@ -1042,6 +1079,8 @@ export function CartDrawer() {
         building: selected.building,
         street: selected.street,
         area: selected.area,
+        cityArea: selectedCityArea?.name ?? null,
+        city: selectedCityArea?.name ?? null,
         pincode: selected.pincode,
         type: selected.type,
         label: selected.label,
@@ -1053,6 +1092,7 @@ export function CartDrawer() {
       subtotal,
       discount: discountAmount,
       slotCharge,
+      deliveryCharge: 0,
       total: afterCouponTotal,
       payments: orderPayments,
       paidAmount,
@@ -1079,6 +1119,22 @@ export function CartDrawer() {
       toast({
         title: "Order unavailable for these items",
         description: "Only items listed in the live catalog can be checked out. Remove these items to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isCityAreasLoading || cityAreasError) {
+      toast({
+        title: isCityAreasLoading ? "Loading delivery areas" : "Delivery areas unavailable",
+        description: cityAreasError ?? "Please wait and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!selectedCityArea) {
+      toast({
+        title: "Select a delivery Area/City",
+        description: "Choose an active area to confirm current product prices.",
         variant: "destructive",
       });
       return;
@@ -1129,11 +1185,8 @@ export function CartDrawer() {
         return;
       }
     }
-    // Hard guard against the delivery-charge race (see explain.md): never submit a
-    // delivery order before the hub/pincode config has loaded. Without this, a fast tap
-    // right after the app loads (or right after resuming from backgrounding a UPI app)
-    // can build the order payload while pincodeDeliveryCharge is still stuck at its
-    // unresolved default of 0, undercharging a real delivery fee.
+    // Don't submit until the selected hub is ready; this also prevents the server
+    // from receiving an order without its applicable area list.
     if (!isHubReady) {
       toast({ title: "Still loading delivery details, please try again in a moment", variant: "destructive" });
       return;
@@ -2198,11 +2251,7 @@ export function CartDrawer() {
                         )}
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Delivery fee</span>
-                          {pincodeDeliveryCharge > 0 ? (
-                            <span className="font-semibold text-amber-600">+₹{pincodeDeliveryCharge}</span>
-                          ) : (
-                            <span className="font-semibold text-emerald-600">FREE</span>
-                          )}
+                          <span className="font-semibold text-emerald-600">FREE</span>
                         </div>
                         {walletDeduction > 0 && (
                           <div className="flex justify-between text-sm">
@@ -2260,6 +2309,46 @@ export function CartDrawer() {
                           </Button>
                         ) : null}
                       </div>
+
+                      {!showAddForm && savedAddresses.length > 0 && (
+                        <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
+                          <Label htmlFor="checkout-city-area" className="text-xs font-semibold text-foreground">
+                            Delivery Area / City *
+                          </Label>
+                          {isCityAreasLoading ? (
+                            <p className="mt-2 text-xs text-muted-foreground">Loading active areas for {selectedSubHub?.name ?? "this hub"}…</p>
+                          ) : cityAreasError ? (
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              <p className="text-xs text-red-700">{cityAreasError}</p>
+                              <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
+                            </div>
+                          ) : cityAreas.length === 0 ? (
+                            <p className="mt-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
+                          ) : (
+                            <>
+                              <select
+                                id="checkout-city-area"
+                                value={selectedCityArea?.name ?? ""}
+                                onChange={(event) => { void handleSavedAddressAreaChange(event.target.value); }}
+                                className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
+                                data-testid="select-checkout-city-area"
+                              >
+                                <option value="">Choose your delivery area</option>
+                                {cityAreas.map((option) => (
+                                  <option key={option.id ?? option.name} value={option.name}>
+                                    {option.name} · ₹{option.charge} per product
+                                  </option>
+                                ))}
+                              </select>
+                              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                {selectedCityArea
+                                  ? `Area charge: ₹${selectedCityArea.charge} per product, included in item prices. Delivery is free.`
+                                  : "Select an area to see its product prices. Delivery is free."}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      )}
 
                       {/* Inline Add Address form */}
                       {customer && showAddForm && (
@@ -2350,6 +2439,51 @@ export function CartDrawer() {
                               className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                               data-testid="input-address-area"
                             />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="new-address-city-area" className="text-xs text-muted-foreground">
+                              Delivery Area / City *
+                            </Label>
+                            {isCityAreasLoading ? (
+                              <p className="py-2 text-xs text-muted-foreground">Loading active areas…</p>
+                            ) : cityAreasError ? (
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs text-red-700">{cityAreasError}</p>
+                                <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
+                              </div>
+                            ) : cityAreas.length === 0 ? (
+                              <p className="py-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
+                            ) : (
+                              <>
+                                <select
+                                  id="new-address-city-area"
+                                  value={selectedCityArea?.name ?? ""}
+                                  onChange={(event) => {
+                                    const option = findCityAreaOption(cityAreas, event.target.value);
+                                    setSelectedCityArea(option?.name ?? null);
+                                    setAddForm((form) => ({
+                                      ...form,
+                                      cityArea: option?.name ?? "",
+                                      city: option?.name ?? "",
+                                    }));
+                                  }}
+                                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
+                                  data-testid="select-new-address-city-area"
+                                >
+                                  <option value="">Choose your delivery area</option>
+                                  {cityAreas.map((option) => (
+                                    <option key={option.id ?? option.name} value={option.name}>
+                                      {option.name} · ₹{option.charge} per product
+                                    </option>
+                                  ))}
+                                </select>
+                                {selectedCityArea && (
+                                  <p className="text-[11px] text-muted-foreground">
+                                    Area charge: ₹{selectedCityArea.charge} per product. Pincode does not affect prices or delivery fees.
+                                  </p>
+                                )}
+                              </>
+                            )}
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Delivery pin (optional)</Label>
@@ -2468,6 +2602,11 @@ export function CartDrawer() {
                                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                                     {[addr.building, addr.street, addr.area, addr.pincode].filter(Boolean).join(", ")}
                                   </p>
+                                  {addr.cityArea && (
+                                    <p className="mt-1 text-[11px] font-medium text-orange-700">
+                                      Delivery area: {addr.cityArea}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </button>
@@ -2594,8 +2733,10 @@ export function CartDrawer() {
                         {walletDeduction > 0 && (
                           <p className="text-[10px] font-semibold" style={{ color: "#364F9F" }}>−₹{walletDeduction} from Wallet</p>
                         )}
-                        {pincodeDeliveryCharge > 0 && (
-                          <p className="text-[10px] text-amber-600">incl. ₹{pincodeDeliveryCharge} delivery fee</p>
+                        {selectedCityArea && (
+                          <p className="text-[10px] text-muted-foreground">
+                            ₹{selectedCityArea.charge} area charge per product · delivery free
+                          </p>
                         )}
                       </div>
                       <Button
@@ -2606,6 +2747,9 @@ export function CartDrawer() {
                           !customer ||
                           savedAddresses.length === 0 ||
                           !isHubReady ||
+                          !selectedCityArea ||
+                          isCityAreasLoading ||
+                          Boolean(cityAreasError) ||
                           (paymentMethod === "online" && finalTotal > 0 && !phonePeEnabled)
                         }
                         className="h-12 px-8 !rounded-full font-bold bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 flex items-center gap-2"

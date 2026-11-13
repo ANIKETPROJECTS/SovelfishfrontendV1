@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Plus, Minus } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useCityArea } from "@/context/CityAreaContext";
 import type { Section, Combo } from "@shared/schema";
 
 import noImageImg from "@/assets/coming-soon.png";
@@ -48,6 +49,8 @@ function ComboImages({ images, imageUrl }: { images: string[]; imageUrl?: string
 
 function ComboCard({ combo, productMap }: { combo: Combo; productMap: Record<string, any> }) {
   const { addToCart, removeFromCart, updateQuantity, items: cartItems, computeMaxQty } = useCart();
+  const { selectedCityArea } = useCityArea();
+  const cityAreaCharge = selectedCityArea?.charge ?? 0;
 
   const comboImages = combo.includes
     .map(inc => {
@@ -110,9 +113,9 @@ function ComboCard({ combo, productMap }: { combo: Combo; productMap: Record<str
         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{combo.description}</p>
         <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg font-semibold text-foreground">₹{combo.discountedPrice}</span>
+            <span className="text-lg font-semibold text-foreground">₹{combo.discountedPrice + cityAreaCharge}</span>
             {combo.originalPrice > combo.discountedPrice && (
-              <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice}</span>
+              <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice + cityAreaCharge}</span>
             )}
             {showPct > 0 && (
               <span className="text-sm font-semibold text-green-600">{showPct}% off</span>

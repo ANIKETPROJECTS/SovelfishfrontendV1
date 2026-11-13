@@ -167,6 +167,9 @@ export type OrderItem = {
   quantity: number;
   name: string;
   price: number | null;
+  basePrice?: number | null;
+  cityArea?: string | null;
+  cityAreaCharge?: number | null;
   unit?: string | null;
   weightKgPerUnit?: number | null;
   weightMinKgPerUnit?: number | null;
@@ -212,6 +215,8 @@ export type OrderRequest = {
   customerName: string;
   phone: string;
   deliveryArea: string;
+  cityArea?: string | null;
+  cityAreaCharge?: number | null;
   address: string;
   items: OrderItem[];
   status: string;
@@ -249,6 +254,8 @@ export type DeliveryAddressDetail = {
   building?: string | null;
   street?: string | null;
   area?: string | null;
+  cityArea?: string | null;
+  city?: string | null;
   pincode?: string | null;
   type?: string | null;
   label?: string | null;
@@ -264,12 +271,15 @@ export type InsertOrderRequest = {
   phone: string;
   email?: string | null;
   deliveryArea: string;
+  cityArea?: string | null;
+  cityAreaCharge?: number | null;
   address: string;
   deliveryAddressDetail?: DeliveryAddressDetail | null;
   items: OrderItem[];
   subtotal?: number | null;
   discount?: number | null;
   slotCharge?: number | null;
+  deliveryCharge?: number | null;
   total?: number | null;
   notes?: string | null;
   source?: string | null;
@@ -365,6 +375,8 @@ const deliveryAddressDetailSchema = z.object({
   building: z.string().nullable().optional(),
   street: z.string().nullable().optional(),
   area: z.string().nullable().optional(),
+  cityArea: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
   pincode: z.string().nullable().optional(),
   type: z.string().nullable().optional(),
   label: z.string().nullable().optional(),
@@ -387,6 +399,8 @@ export const insertOrderRequestSchema = z.object({
   email: z.string().nullable().optional(),
   customerId: z.string().nullable().optional(),
   deliveryArea: z.string().min(1, "Delivery area is required"),
+  cityArea: z.string().nullable().optional(),
+  cityAreaCharge: z.number().nullable().optional(),
   address: z.string().min(1, "Address is required"),
   deliveryAddressDetail: deliveryAddressDetailSchema.nullable().optional(),
   items: z.array(z.object({
@@ -394,6 +408,9 @@ export const insertOrderRequestSchema = z.object({
     quantity: z.number().min(1),
     name: z.string(),
     price: z.number().nullable(),
+    basePrice: z.number().nullable().optional(),
+    cityArea: z.string().nullable().optional(),
+    cityAreaCharge: z.number().nullable().optional(),
     unit: z.string().nullable().optional(),
     weightKgPerUnit: z.number().positive().nullable().optional(),
     weightMinKgPerUnit: z.number().positive().nullable().optional(),
@@ -405,6 +422,7 @@ export const insertOrderRequestSchema = z.object({
   subtotal: z.number().nullable().optional(),
   discount: z.number().nullable().optional(),
   slotCharge: z.number().nullable().optional(),
+  deliveryCharge: z.number().nullable().optional(),
   total: z.number().nullable().optional(),
   notes: z.string().nullable().optional(),
   source: z.string().nullable().optional(),
@@ -483,6 +501,8 @@ export type CustomerAddress = {
   building: string;
   street: string;
   area: string;
+  cityArea?: string;
+  city?: string;
   pincode: string;
   type: "house" | "office" | "other";
   label: string;
@@ -537,6 +557,8 @@ const customerAddressFieldsSchema = z.object({
   building: z.string().min(1, "Building is required"),
   street: z.string().optional().default(""),
   area: z.string().min(1, "Area is required"),
+  cityArea: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
   pincode: z.string().regex(/^\d{6}$/, "A valid 6-digit pincode is required"),
   type: z.enum(["house", "office", "other"]).optional().default("house"),
   label: z.string().optional().default("Home"),

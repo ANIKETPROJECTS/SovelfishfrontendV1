@@ -198,6 +198,15 @@ const pincodeSchema = new mongoose.Schema({
   timeDelay: { type: Number, default: 0 },
 }, { collection: "pincodes" });
 
+const cityAreaSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    charge: { type: Number, required: true, min: 0 },
+    isActive: { type: Boolean, default: true },
+  },
+  { collection: "city_areas", strict: false },
+);
+
 const couponUsageSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   couponCode: { type: String, required: true, uppercase: true, trim: true },
@@ -221,6 +230,7 @@ export interface HubModels {
   Combo: mongoose.Model<any>;
   Timeslot: mongoose.Model<any>;
   Pincode: mongoose.Model<any>;
+  CityArea: mongoose.Model<any>;
   Coupon: mongoose.Model<any>;
   CouponUsage: mongoose.Model<any>;
   CouponLocationUsage: mongoose.Model<any>;
@@ -247,6 +257,7 @@ export async function getHubModels(dbName: string): Promise<HubModels> {
     Combo: getModel("Combo", comboSchema),
     Timeslot: getModel("Timeslot", timeslotSchema),
     Pincode: getModel("Pincode", pincodeSchema),
+    CityArea: getModel("CityArea", cityAreaSchema),
     Coupon: getModel("Coupon", couponSchema),
     CouponUsage: getModel("CouponUsage", couponUsageSchema),
     CouponLocationUsage: getModel("CouponLocationUsage", couponLocationUsageSchema),

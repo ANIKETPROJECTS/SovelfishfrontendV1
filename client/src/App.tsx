@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { CustomerProvider } from "@/context/CustomerContext";
 import { HubProvider } from "@/context/HubContext";
+import { CityAreaProvider } from "@/context/CityAreaContext";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/storefront/Home";
 import ProductDetail from "@/pages/storefront/ProductDetail";
@@ -78,13 +79,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <HubProvider>
         <CustomerProvider>
-          <CartProvider>
-            <TooltipProvider>
-              <Toaster />
-              <ScrollToTop />
-              <Router />
-            </TooltipProvider>
-          </CartProvider>
+          <CityAreaProvider>
+            <CartProvider>
+              <TooltipProvider>
+                <Toaster />
+                <ScrollToTop />
+                <Router />
+              </TooltipProvider>
+            </CartProvider>
+          </CityAreaProvider>
         </CustomerProvider>
       </HubProvider>
     </QueryClientProvider>

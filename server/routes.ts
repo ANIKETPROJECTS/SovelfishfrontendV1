@@ -43,6 +43,13 @@ import { getPhonePeClient } from "./phonepe";
 import { sendMetaWhatsAppOtp } from "./metaWhatsApp";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 import {
+  findCityAreaOption,
+  normalizeCityAreaName,
+  priceItemsForCityArea,
+  sumPricedItems,
+  type CityAreaOption,
+} from "@shared/cityAreaPricing";
+import {
   buildFailedRazorpayPaymentState,
   buildSuccessfulRazorpayPaymentState,
   isRazorpayBackgroundGraceExpired,
@@ -357,6 +364,37 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/hubs/sub/:id/city-areas", async (req, res) => {
+    try {
+      if (!/^[a-f\d]{24}$/i.test(req.params.id)) {
+        return res.status(400).json({ message: "Choose a valid delivery hub." });
+      }
+      const subHub = await SubHubModel.findOne({
+        _id: req.params.id,
+        status: "Active",
+      }).select("_id dbName").lean() as any;
+      if (!subHub?.dbName) {
+        return res.status(404).json({ message: "This delivery hub is unavailable." });
+      }
+      const hub = await getHubModels(subHub.dbName);
+      const docs = await hub.CityArea.find({ isActive: { $ne: false } })
+        .select("_id name charge isActive")
+        .lean() as any[];
+      const options: CityAreaOption[] = docs
+        .filter((doc) => typeof doc.name === "string" && doc.name.trim())
+        .map((doc) => ({
+          id: String(doc._id),
+          name: String(doc.name).trim(),
+          charge: Number(doc.charge),
+        }))
+        .filter((option) => Number.isFinite(option.charge) && option.charge >= 0);
+      return res.json({ subHubId: String(subHub._id), options });
+    } catch (err) {
+      console.error("[city areas] Failed to load active delivery areas.");
+      return res.status(503).json({ message: "Delivery areas could not be loaded. Please try again." });
+    }
+  });
+
   // Helper: get hub models for the dbName in the X-Hub-DB header
   const getReqHubModels = async (req: any) => {
     const dbName = req.headers["x-hub-db"] as string | undefined;
@@ -369,6 +407,183 @@ export async function registerRoutes(
     const configuredHub = await SubHubModel.exists({ dbName });
     if (!configuredHub) return null;
     return getHubModels(dbName);
+  };
+
+  const getCityAreaOptions = async (hub: any): Promise<CityAreaOption[]> => {
+    const docs = await hub.CityArea.find({ isActive: { $ne: false } })
+      .select("_id name charge isActive")
+      .lean() as any[];
+    return docs
+      .filter((doc) => typeof doc.name === "string" && doc.name.trim())
+      .map((doc) => ({
+        id: String(doc._id),
+        name: String(doc.name).trim(),
+        charge: Number(doc.charge),
+      }))
+      .filter((option) => Number.isFinite(option.charge) && option.charge >= 0);
+  };
+
+  const priceDeliveryOrderForCityArea = async (payload: any, hub: any) => {
+    const activeSubHub = await SubHubModel.exists({
+      dbName: payload.hubDbName,
+      status: "Active",
+    });
+    if (!activeSubHub) {
+      throw Object.assign(new Error("Choose a valid active delivery hub."), { statusCode: 400 });
+    }
+    const address = payload.deliveryAddressDetail ?? {};
+    const requestedArea = [
+      payload.cityArea,
+      address.cityArea,
+      address.area,
+      address.city,
+      payload.deliveryArea,
+    ].find((value) => normalizeCityAreaName(value));
+    const cityArea = findCityAreaOption(await getCityAreaOptions(hub), requestedArea);
+    if (!cityArea) {
+      throw Object.assign(
+        new Error("Select an active delivery Area/City before checkout."),
+        { statusCode: 400, code: "CITY_AREA_REQUIRED" },
+      );
+    }
+
+    const ids = [...new Set((payload.items ?? [])
+      .map((item: any) => String(item.productId ?? "").trim())
+      .filter((id: string) => /^[a-f\d]{24}$/i.test(id)))];
+    if (!ids.length) {
+      throw Object.assign(new Error("Could not verify the delivery prices. Please review your cart."), { statusCode: 400 });
+    }
+    const [products, combos] = await Promise.all([
+      hub.Product.find({ _id: { $in: ids } }).lean() as Promise<any[]>,
+      hub.Combo.find({ _id: { $in: ids } }).lean() as Promise<any[]>,
+    ]);
+    const productsById = new Map(products.map((product) => [String(product._id), product]));
+    const combosById = new Map(combos.map((combo) => [String(combo._id), combo]));
+
+    const itemsWithBasePrice = (payload.items ?? []).map((item: any) => {
+      const id = String(item.productId ?? "").trim();
+      const product = productsById.get(id);
+      const combo = combosById.get(id);
+      if (product) {
+        if (product.isArchived || product.status === "unavailable") {
+          throw Object.assign(new Error(`"${product.name}" is no longer available.`), { statusCode: 400 });
+        }
+        const weighted = item.weightKgPerUnit != null || Boolean(item.fishBatchId);
+        const fishMode = ["whole_fish", "bulk_portions"].includes(
+          String(product.fishInventoryMode ?? "").toLowerCase(),
+        ) || product.wholeFishInventory === true;
+        const catalogPrice = fishMode
+          ? Number(product.fishPricePerKg ?? product.price)
+          : Number(product.price);
+        const basePrice = weighted ? Number(item.basePrice ?? item.price) : catalogPrice;
+        if (!Number.isFinite(basePrice) || basePrice < 0) {
+          throw Object.assign(new Error(`Could not verify the price for "${product.name}".`), { statusCode: 400 });
+        }
+        return { ...item, basePrice, name: String(product.name) };
+      }
+      if (combo && combo.isActive !== false) {
+        const basePrice = Number(combo.discountedPrice);
+        if (!Number.isFinite(basePrice) || basePrice < 0) {
+          throw Object.assign(new Error(`Could not verify the price for "${combo.name}".`), { statusCode: 400 });
+        }
+        return { ...item, basePrice, name: String(combo.name) };
+      }
+      throw Object.assign(new Error("One or more checkout items are no longer available."), { statusCode: 400 });
+    });
+
+    const pricedItems = priceItemsForCityArea(itemsWithBasePrice, cityArea);
+    for (let index = 0; index < pricedItems.length; index += 1) {
+      const clientItem = payload.items[index];
+      const expectedItem = pricedItems[index];
+      const clientPrice = Number(clientItem.price);
+      if (
+        !Number.isFinite(clientPrice) ||
+        Math.abs(clientPrice - expectedItem.price) > 0.01 ||
+        (clientItem.cityAreaCharge != null && Number(clientItem.cityAreaCharge) !== cityArea.charge) ||
+        (clientItem.cityArea != null && normalizeCityAreaName(clientItem.cityArea) !== normalizeCityAreaName(cityArea.name))
+      ) {
+        throw Object.assign(
+          new Error("Area pricing changed. Refresh the cart and review the updated prices before checkout."),
+          { statusCode: 409, code: "CITY_AREA_PRICE_CHANGED" },
+        );
+      }
+    }
+    if (payload.cityAreaCharge != null && Number(payload.cityAreaCharge) !== cityArea.charge) {
+      throw Object.assign(
+        new Error("Area pricing changed. Refresh the cart and review the updated prices before checkout."),
+        { statusCode: 409, code: "CITY_AREA_PRICE_CHANGED" },
+      );
+    }
+
+    return {
+      ...payload,
+      cityArea: cityArea.name,
+      cityAreaCharge: cityArea.charge,
+      deliveryArea: cityArea.name,
+      deliveryAddressDetail: {
+        ...address,
+        cityArea: cityArea.name,
+        city: cityArea.name,
+        area: address.area || cityArea.name,
+      },
+      items: pricedItems,
+      subtotal: sumPricedItems(pricedItems),
+      deliveryCharge: 0,
+    };
+  };
+
+  const calculateCouponDiscount = async (
+    payload: any,
+    hub: any,
+    subtotal: number,
+    customerPhone?: string | null,
+  ) => {
+    const code = String(payload.couponCode ?? "").trim().toUpperCase();
+    if (!code) return { code: null, discount: 0 };
+    const coupon = await hub.Coupon.findOne({ code, isActive: true }).lean() as any;
+    if (!coupon) {
+      throw Object.assign(new Error("The applied coupon is no longer valid."), { statusCode: 400 });
+    }
+    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+      throw Object.assign(new Error("The applied coupon has expired."), { statusCode: 400 });
+    }
+    if (Number(coupon.minOrderAmount ?? 0) > subtotal) {
+      throw Object.assign(new Error(`Minimum order of ₹${coupon.minOrderAmount} is required for this coupon.`), { statusCode: 400 });
+    }
+    if (customerPhone) {
+      const customer = await CustomerDbModel.findOne(
+        { phone: customerPhone },
+        { activeCoupons: 1, usedCoupons: 1 },
+      ).lean() as any;
+      const couponId = String(coupon._id);
+      const activeEntry = (customer?.activeCoupons ?? []).find(
+        (entry: any) => String(entry.couponId) === couponId,
+      );
+      const activeCount = activeEntry
+        ? (activeEntry.usedCount != null ? Number(activeEntry.usedCount) : 1)
+        : 0;
+      const historicalCount = (customer?.usedCoupons ?? []).filter(
+        (entry: any) => String(entry.couponId) === couponId,
+      ).length;
+      const limit = coupon.isFirstTimeOnly || code === "WELCOME100"
+        ? 1
+        : Number(coupon.maxUsage ?? 0) > 0
+          ? Number(coupon.maxUsage)
+          : null;
+      if (limit !== null && activeCount + historicalCount >= limit) {
+        throw Object.assign(new Error("This coupon has reached its usage limit."), { statusCode: 400 });
+      }
+    }
+    const discount = coupon.type === "flat"
+      ? Math.min(Number(coupon.discountValue), subtotal)
+      : Math.round((subtotal * Number(coupon.discountValue)) / 100);
+    return { code, discount };
+  };
+
+  const getInstantSlotCharge = async (payload: any, hub: any): Promise<number> => {
+    if (!payload.timeslotId) return 0;
+    const timeslot = await hub.Timeslot.findById(payload.timeslotId).lean() as any;
+    return timeslot?.isInstant ? Number(timeslot.extraCharge ?? 0) : 0;
   };
 
   const validateCheckoutStock = async (hub: any, rawItems: unknown) => {
@@ -413,7 +628,11 @@ export async function registerRoutes(
         maxWeightKgPerUnit,
         fishBatchId: rawItem?.fishBatchId == null ? null : String(rawItem.fishBatchId).trim(),
         fishWeightKg,
-        price: rawItem?.price == null ? null : Number(rawItem.price),
+        price: rawItem?.basePrice != null
+          ? Number(rawItem.basePrice)
+          : rawItem?.price == null
+            ? null
+            : Number(rawItem.price),
         name: rawItem?.name,
       };
     });
@@ -1126,8 +1345,32 @@ export async function registerRoutes(
       if (!rawOrderPayload || typeof rawOrderPayload !== "object" || Array.isArray(rawOrderPayload)) {
         return res.status(400).json({ message: "An order payload is required to start payment." });
       }
-      const orderPayload = applyAutomaticNextDayDelivery(rawOrderPayload);
-      const checkoutTotal = Number(orderPayload.total);
+      let orderPayload = applyAutomaticNextDayDelivery(rawOrderPayload);
+      let checkoutTotal = Number(orderPayload.total);
+      if ((orderPayload.deliveryType ?? "delivery") === "delivery") {
+        const hub = await getCheckoutHubModels(orderPayload.hubDbName);
+        if (!hub) {
+          return res.status(400).json({ message: "Please select a valid delivery hub." });
+        }
+        orderPayload = await priceDeliveryOrderForCityArea(orderPayload, hub);
+        const coupon = await calculateCouponDiscount(
+          orderPayload,
+          hub,
+          Number(orderPayload.subtotal),
+          String(req.session.customerPhone ?? "").replace(/\D/g, "").slice(-10) || null,
+        );
+        const slotCharge = await getInstantSlotCharge(orderPayload, hub);
+        checkoutTotal = Number(orderPayload.subtotal) - coupon.discount + slotCharge;
+        orderPayload = {
+          ...orderPayload,
+          couponCode: coupon.code,
+          discount: coupon.discount,
+          discountAmount: coupon.discount,
+          slotCharge,
+          deliveryCharge: 0,
+          total: checkoutTotal,
+        };
+      }
       const walletAmount = (Array.isArray(orderPayload.payments) ? orderPayload.payments : [])
         .filter((payment: any) => payment?.mode === "wallet")
         .reduce((sum: number, payment: any) => sum + Number(payment.amount ?? 0), 0);
@@ -1282,6 +1525,13 @@ export async function registerRoutes(
       });
     } catch (err: any) {
       console.error("[Razorpay] create-order error:", err);
+      const statusCode = Number(err?.statusCode);
+      if (statusCode === 400 || statusCode === 409) {
+        return res.status(statusCode).json({
+          message: err.message || "Checkout prices changed. Refresh your cart and try again.",
+          ...(err.code ? { code: err.code } : {}),
+        });
+      }
       return res.status(500).json({ message: "Failed to create payment order" });
     }
   });
@@ -1338,7 +1588,7 @@ export async function registerRoutes(
       if (!parsedOrder.success) {
         return res.status(400).json({ message: "The checkout details are incomplete. Please review your order." });
       }
-      const orderPayload = applyAutomaticNextDayDelivery(parsedOrder.data as any);
+      let orderPayload = applyAutomaticNextDayDelivery(parsedOrder.data as any);
       const orderPhone = String(orderPayload.phone ?? "").replace(/\D/g, "").slice(-10);
       if (!orderPhone || orderPhone !== sessionPhone) {
         return res.status(403).json({ message: "The checkout customer does not match the signed-in account." });
@@ -1351,6 +1601,9 @@ export async function registerRoutes(
       const hub = await getCheckoutHubModels(orderPayload.hubDbName);
       if (!hub) {
         return res.status(400).json({ message: "Please select a valid delivery hub." });
+      }
+      if ((orderPayload.deliveryType ?? "delivery") === "delivery") {
+        orderPayload = await priceDeliveryOrderForCityArea(orderPayload, hub);
       }
       const stockResult = await validateCheckoutStock(hub, orderPayload.items);
       if (!stockResult.inStock) {
@@ -1390,10 +1643,21 @@ export async function registerRoutes(
         const combo = combosById.get(id);
         if (product) {
           const hasValidatedSaleOption = item.weightKgPerUnit != null || Boolean(item.fishBatchId);
-          const price = hasValidatedSaleOption ? Number(item.price) : Number(product.price);
+          const fishMode = ["whole_fish", "bulk_portions"].includes(
+            String(product.fishInventoryMode ?? "").toLowerCase(),
+          ) || product.wholeFishInventory === true;
+          const catalogPrice = fishMode
+            ? Number(product.fishPricePerKg ?? product.price)
+            : Number(product.price);
+          const basePrice = hasValidatedSaleOption
+            ? Number(item.basePrice ?? Number(item.price) - Number(orderPayload.cityAreaCharge ?? 0))
+            : catalogPrice;
+          const price = basePrice + Number(orderPayload.cityAreaCharge ?? 0);
           if (
             product.isArchived ||
             product.status === "unavailable" ||
+            !Number.isFinite(basePrice) ||
+            basePrice < 0 ||
             !Number.isFinite(price) ||
             price < 0
           ) {
@@ -1402,20 +1666,27 @@ export async function registerRoutes(
           return {
             ...item,
             name: String(product.name),
+            basePrice,
             price,
+            cityArea: orderPayload.cityArea ?? null,
+            cityAreaCharge: Number(orderPayload.cityAreaCharge ?? 0),
             unit: hasValidatedSaleOption ? item.unit ?? product.unit ?? null : product.unit ?? item.unit ?? null,
             imageUrl: product.imageUrl ?? item.imageUrl ?? null,
           };
         }
         if (combo && combo.isActive !== false) {
-          const price = Number(combo.discountedPrice);
+          const basePrice = Number(combo.discountedPrice);
+          const price = basePrice + Number(orderPayload.cityAreaCharge ?? 0);
           if (!Number.isFinite(price) || price < 0) {
             throw Object.assign(new Error(`"${combo.name}" has an invalid price.`), { statusCode: 400 });
           }
           return {
             ...item,
             name: String(combo.name),
+            basePrice,
             price,
+            cityArea: orderPayload.cityArea ?? null,
+            cityAreaCharge: Number(orderPayload.cityAreaCharge ?? 0),
             imageUrl: combo.imageUrl ?? item.imageUrl ?? null,
           };
         }
@@ -1467,34 +1738,8 @@ export async function registerRoutes(
           : Math.round((subtotal * Number(coupon.discountValue)) / 100);
       }
       let slotCharge = Number(orderPayload.slotCharge ?? orderPayload.instantDeliveryCharge ?? 0);
-
-      // Match the authoritative delivery fee used when persisting orders so
-      // PhonePe never charges the stale client-side estimate.
-      if (orderPayload.hubDbName && (orderPayload.deliveryType ?? "delivery") === "delivery") {
-        try {
-          const pincode = orderPayload.deliveryAddressDetail?.pincode;
-          const subHub = await SubHubModel.findOne({ dbName: orderPayload.hubDbName }).lean() as any;
-          let pincodeConfig = pincode
-            ? (subHub?.pincodes ?? []).find((entry: any) => String(entry.pincode).trim() === String(pincode).trim())
-            : null;
-          if (!pincodeConfig && pincode) {
-            pincodeConfig = await hub.Pincode.findOne({
-              pincode: String(pincode).trim(),
-              isActive: { $ne: false },
-            }).lean() as any;
-          }
-          if (pincodeConfig) {
-            let instantCharge = 0;
-            if (orderPayload.timeslotId) {
-              const timeslot = await hub.Timeslot.findById(orderPayload.timeslotId).lean() as any;
-              if (timeslot?.isInstant) instantCharge = Number(timeslot.extraCharge ?? 0);
-            }
-            slotCharge = Number(pincodeConfig.charge ?? 0) + instantCharge;
-          }
-        } catch (chargeError) {
-          console.error("[PhonePe] Could not recompute delivery fee before checkout.");
-          return res.status(503).json({ message: "Could not verify the delivery fee. Please try again." });
-        }
+      if ((orderPayload.deliveryType ?? "delivery") === "delivery") {
+        slotCharge = await getInstantSlotCharge(orderPayload, hub);
       }
 
       const checkoutTotal = subtotal - discount + slotCharge;
@@ -2710,9 +2955,33 @@ export async function registerRoutes(
       // Payment initiation already stored the authoritative delivery date.
       // Trusted finalizers reuse it rather than recalculating after callbacks
       // or retries cross 5 PM or midnight in India.
-      const input = isInternalPaymentFinalizer
+      let input = isInternalPaymentFinalizer
         ? parsedInput
         : applyAutomaticNextDayDelivery(parsedInput);
+      if (!isInternalPaymentFinalizer && (input.deliveryType ?? "delivery") === "delivery") {
+        const hub = await getCheckoutHubModels(input.hubDbName);
+        if (!hub) {
+          return res.status(400).json({ message: "Please select a valid delivery hub." });
+        }
+        input = await priceDeliveryOrderForCityArea(input, hub);
+        const coupon = await calculateCouponDiscount(
+          input,
+          hub,
+          Number(input.subtotal),
+          String(input.phone ?? "").replace(/\D/g, "").slice(-10) || null,
+        );
+        const slotCharge = await getInstantSlotCharge(input, hub);
+        const total = Number(input.subtotal) - coupon.discount + slotCharge;
+        input = {
+          ...input,
+          couponCode: coupon.code,
+          discount: coupon.discount,
+          discountAmount: coupon.discount,
+          slotCharge,
+          deliveryCharge: 0,
+          total,
+        };
+      }
       const isPaidWebhookRecovery =
     req.headers["x-freshstockxchange-paid-recovery"] === "1" &&
         isInternalPaymentFinalizer;
@@ -3099,71 +3368,10 @@ export async function registerRoutes(
       );
       const subtotal = input.subtotal ?? itemsTotal;
       const discount = input.discount ?? input.discountAmount ?? (resolvedCoupon?.discountAmount ?? 0);
-      const clientSlotCharge = input.slotCharge ?? input.instantDeliveryCharge ?? 0;
+      const slotCharge = Number(input.slotCharge ?? input.instantDeliveryCharge ?? 0);
 
-      // Authoritative delivery-charge recomputation: the client derives slotCharge from
-      // in-memory hub/pincode config (via React state that can be stale — e.g. a UPI
-      // payment resumed long after checkout via the visibilitychange listener replays an
-      // old/empty closure). Never trust the client's number outright for a delivery order;
-      // recompute it here from the persisted sub-hub pincode config + timeslot doc and use
-      // that value, only falling back to the client-submitted figure if lookup is impossible
-      // (e.g. pickup/takeaway orders with no hub, or a legacy pincode not in the config yet).
-      let slotCharge = clientSlotCharge;
-      if (
-        !verifiedRazorpayPayment &&
-        !verifiedPhonePePayment &&
-        input.hubDbName &&
-        (input.deliveryType ?? "delivery") === "delivery"
-      ) {
-        try {
-          const pincode = input.deliveryAddressDetail?.pincode;
-          const subHubForCharge = await SubHubModel.findOne({ dbName: input.hubDbName }).lean() as any;
-           let pincodeConfig = pincode
-             ? (subHubForCharge?.pincodes ?? []).find((p: any) => String(p.pincode).trim() === String(pincode).trim())
-             : null;
-           if (!pincodeConfig && input.hubDbName && pincode) {
-             const hubForPincode = await getHubModels(input.hubDbName);
-             pincodeConfig = await hubForPincode.Pincode.findOne({
-               pincode: String(pincode).trim(),
-               isActive: { $ne: false },
-             }).lean() as any;
-           }
-          if (!pincodeConfig) {
-            // No authoritative config found (unknown pincode, hub/dbName mismatch, or missing
-            // pincode on the order) — we silently keep the client-submitted slotCharge below.
-            // Log it loudly so a $0 charge slipping through is visible in server logs
-            // immediately rather than being discovered later as missing revenue.
-            console.warn(
-              `[order:slotCharge] No pincode config match — keeping client-submitted slotCharge=${clientSlotCharge} ` +
-              `(pincode=${pincode}, hub=${input.hubDbName}, foundSubHub=${!!subHubForCharge})`
-            );
-          }
-          if (pincodeConfig) {
-            const baseCharge = pincodeConfig.charge ?? 0;
-            let extraCharge = 0;
-            if (input.timeslotId) {
-              try {
-                const hubForTimeslot = await getHubModels(input.hubDbName);
-                const timeslotDoc = await hubForTimeslot.Timeslot.findById(input.timeslotId).lean() as any;
-                if (timeslotDoc?.isInstant) extraCharge = timeslotDoc.extraCharge ?? 0;
-              } catch { /* non-fatal — fall back to base charge only */ }
-            }
-            const authoritativeCharge = baseCharge + extraCharge;
-            if (authoritativeCharge !== clientSlotCharge) {
-              console.warn(
-                `[order:slotCharge] Overriding client-submitted slotCharge=${clientSlotCharge} with authoritative ${authoritativeCharge} (pincode=${pincode}, hub=${input.hubDbName})`
-              );
-            }
-            slotCharge = authoritativeCharge;
-          }
-        } catch (chargeLookupErr) {
-          console.error("Delivery charge validation error:", chargeLookupErr);
-        }
-      }
-
-      // Always derive total from the (possibly corrected) slotCharge above rather than
-      // trusting a client-submitted total, so a stale/incorrect delivery charge can never
-      // silently carry through into the amount actually charged/recorded.
+      // Delivery is free. Only the configured instant timeslot surcharge can remain
+      // in slotCharge; pincode charges are never added to the order total.
       const total = subtotal - discount + slotCharge;
       if (verifiedPhonePePayment) {
         const walletPaid = (input.payments ?? [])
@@ -3194,6 +3402,9 @@ export async function registerRoutes(
         productId,
         name,
         price,
+        basePrice,
+        cityArea,
+        cityAreaCharge,
         quantity,
         unit,
         weightKgPerUnit,
@@ -3206,6 +3417,9 @@ export async function registerRoutes(
         productId,
         name,
         price,
+        basePrice: basePrice ?? null,
+        cityArea: cityArea ?? input.cityArea ?? null,
+        cityAreaCharge: cityAreaCharge ?? input.cityAreaCharge ?? 0,
         quantity,
         unit: unit ?? null,
         weightKgPerUnit: weightKgPerUnit ?? null,
@@ -3236,6 +3450,8 @@ export async function registerRoutes(
             building: rawAddr.building ?? null,
             street: rawAddr.street ?? null,
             area: rawAddr.area ?? null,
+            cityArea: rawAddr.cityArea ?? input.cityArea ?? null,
+            city: rawAddr.city ?? input.cityArea ?? null,
             pincode: rawAddr.pincode ?? null,
             type: rawAddr.type ?? "house",
             label: rawAddr.label ?? "Home",
@@ -3301,10 +3517,13 @@ export async function registerRoutes(
         subtotal,
         discount,
         slotCharge,
+        deliveryCharge: 0,
         total,
         deliveryType: input.deliveryType ?? "delivery",
         address: input.address,
         deliveryArea: input.deliveryArea,
+        cityArea: input.cityArea ?? null,
+        cityAreaCharge: Number(input.cityAreaCharge ?? 0),
         deliveryAddressDetail: addrDetail,
         pickupLocation: "",
         notes: input.notes ?? "",
@@ -3480,6 +3699,13 @@ export async function registerRoutes(
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      const statusCode = Number((err as any)?.statusCode);
+      if (statusCode === 400 || statusCode === 409) {
+        return res.status(statusCode).json({
+          message: (err as any).message || "Checkout prices changed. Please review your cart.",
+          ...((err as any).code ? { code: (err as any).code } : {}),
+        });
       }
       console.error("[orders.create] Order creation failed:", err);
       res.status(500).json({ message: "Internal server error" });

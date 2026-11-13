@@ -1,6 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { SeoHead } from "@/components/SeoHead";
 import { useCart } from "@/context/CartContext";
+import { useCityArea } from "@/context/CityAreaContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { useCoupons } from "@/hooks/use-coupons";
 import { Header } from "@/components/storefront/Header";
@@ -325,8 +326,8 @@ function ComboCard({ combo, productMap }: { combo: Combo; productMap: Record<str
         </p>
         <div className="flex items-center justify-between mt-auto pt-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg sm:text-xl font-semibold text-foreground">₹{combo.discountedPrice}</span>
-            <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice}</span>
+            <span className="text-lg sm:text-xl font-semibold text-foreground">₹{combo.discountedPrice + cityAreaCharge}</span>
+            <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice + cityAreaCharge}</span>
             {discountPct && <span className="text-sm font-semibold text-green-600">{discountPct}% off</span>}
           </div>
         </div>
@@ -342,6 +343,8 @@ export default function ComboDetail() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { addToCart, setIsCartOpen, appliedCoupon, setAppliedCoupon, computeMaxQty, items } = useCart();
+  const { selectedCityArea } = useCityArea();
+  const cityAreaCharge = selectedCityArea?.charge ?? 0;
   const { customer, openLoginModal } = useCustomer();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -660,8 +663,8 @@ export default function ComboDetail() {
             {/* Price block */}
             <div className="bg-muted/30 border border-border/30 rounded-2xl px-5 py-4">
               <div className="flex items-end gap-3 mb-1">
-                <span className="text-3xl font-bold text-foreground">₹{combo.discountedPrice}</span>
-                <span className="text-base text-muted-foreground line-through mb-0.5">₹{combo.originalPrice}</span>
+                <span className="text-3xl font-bold text-foreground">₹{combo.discountedPrice + cityAreaCharge}</span>
+                <span className="text-base text-muted-foreground line-through mb-0.5">₹{combo.originalPrice + cityAreaCharge}</span>
                 <span className="text-sm font-semibold text-green-600 mb-0.5">{combo.discount}% off</span>
               </div>
               <p className="text-xs text-muted-foreground">Inclusive of all taxes.</p>
@@ -709,7 +712,7 @@ export default function ComboDetail() {
                 {added ? (
                   <><Check className="w-5 h-5" /> Added to Cart!</>
                 ) : (
-                  <><ShoppingBag className="w-5 h-5" /> Add {qty} to Cart — ₹{combo.discountedPrice * qty}</>
+                  <><ShoppingBag className="w-5 h-5" /> Add {qty} to Cart — ₹{(combo.discountedPrice + cityAreaCharge) * qty}</>
                 )}
               </Button>
             </div>

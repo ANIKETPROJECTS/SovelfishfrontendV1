@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { SavedAddress } from "@/components/storefront/CartDrawer";
 import { ChevronLeft, Home, Briefcase, Tag, MapPin, X, Loader2 } from "lucide-react";
 import { useGoogleMaps } from "@/hooks/use-google-maps";
+import { useCityArea } from "@/context/CityAreaContext";
+import { findCityAreaOption } from "@shared/cityAreaPricing";
 
 declare global { interface Window { google: any } }
 
@@ -20,6 +22,7 @@ const TYPE_OPTIONS = [
 
 const emptyForm = {
   name: "", phone: "", building: "", street: "", area: "",
+  cityArea: "", city: "",
   pincode: "", type: "house" as "house" | "office" | "other",
   label: "", instructions: "",
 };
@@ -158,6 +161,13 @@ function GoogleMapPicker({ onConfirm, onClose }: {
 export default function AddAddress() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const {
+    cityAreas,
+    setSelectedCityArea,
+    isCityAreasLoading,
+    cityAreasError,
+    reloadCityAreas,
+  } = useCityArea();
 
   const [form, setForm] = useState(emptyForm);
   const [useAccountDetails, setUseAccountDetails] = useState(false);
@@ -191,6 +201,15 @@ export default function AddAddress() {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    const cityArea = findCityAreaOption(cityAreas, form.cityArea);
+    if (isCityAreasLoading || cityAreasError || !cityArea) {
+      toast({
+        title: "Choose an active delivery Area/City",
+        description: cityAreasError ?? "Select an area from the available list.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!/^\d{6}$/.test(form.pincode)) {
       toast({ title: "Please enter a valid 6-digit pincode", variant: "destructive" });
       return;
@@ -198,10 +217,17 @@ export default function AddAddress() {
     const label =
       form.type === "other" ? (form.label || "Other") :
       form.type === "house" ? "Home" : "Office";
-    const newAddr: SavedAddress = { ...form, label, id: Date.now().toString() };
+    const newAddr: SavedAddress = {
+      ...form,
+      cityArea: cityArea.name,
+      city: cityArea.name,
+      label,
+      id: Date.now().toString(),
+    };
     const existing: SavedAddress[] = JSON.parse(localStorage.getItem("fishtokri_addresses") || "[]");
     localStorage.setItem("fishtokri_addresses", JSON.stringify([...existing, newAddr]));
     toast({ title: "Address saved!" });
+    setSelectedCityArea(cityArea.name);
     navigate(-1 as any);
   };
 
@@ -315,6 +341,44 @@ export default function AddAddress() {
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Save Address As *</Label>
               <Input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} placeholder="e.g. Room, Gym, Parents Home" className="rounded-xl h-12 border-border/60 text-base" />
             </div>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Delivery Area / City *
+          </Label>
+          {isCityAreasLoading ? (
+            <p className="text-xs text-muted-foreground">Loading active delivery areas…</p>
+          ) : cityAreasError ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-red-700">{cityAreasError}</p>
+              <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
+            </div>
+          ) : cityAreas.length === 0 ? (
+            <p className="text-xs text-red-700">No active delivery areas are configured for this hub.</p>
+          ) : (
+            <select
+              value={form.cityArea}
+              onChange={(event) => {
+                const option = findCityAreaOption(cityAreas, event.target.value);
+                setForm((current) => ({
+                  ...current,
+                  cityArea: option?.name ?? "",
+                  city: option?.name ?? "",
+                }));
+                setSelectedCityArea(option?.name ?? null);
+              }}
+              className="w-full rounded-xl border border-border/60 bg-white px-3 py-3 text-base"
+              data-testid="select-add-address-city-area"
+            >
+              <option value="">Choose your delivery area</option>
+              {cityAreas.map((option) => (
+                <option key={option.id ?? option.name} value={option.name}>
+                  {option.name} · ₹{option.charge} per product
+                </option>
+              ))}
+            </select>
           )}
         </div>
 

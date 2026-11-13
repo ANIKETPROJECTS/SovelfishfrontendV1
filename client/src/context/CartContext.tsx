@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCustomer } from "@/context/CustomerContext";
 import { useProducts } from "@/hooks/use-products";
 import { useHub } from "@/context/HubContext";
+import { useCityArea } from "@/context/CityAreaContext";
 
 export interface ComboInclude {
   productId: string;
@@ -30,6 +31,9 @@ export interface CartItem extends Omit<Product, 'id'> {
   comboImages?: string[];
   comboCategories?: string[];
   comboIncludes?: ComboInclude[];
+  basePrice?: number | null;
+  cityArea?: string | null;
+  cityAreaCharge?: number | null;
 }
 
 interface CartContextType {
@@ -192,11 +196,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { customer, openLoginModal } = useCustomer();
   const { isPincodeVerified, openPicker } = useHub();
+  const { selectedCityArea } = useCityArea();
   const { data: liveProducts, isSuccess: liveProductsLoaded } = useProducts();
   const liveStockByProductId = useMemo(
     () => new Map((liveProducts ?? []).map((product) => [String(product.id), product.availableQty])),
     [liveProducts],
   );
+  const pricedItems = useMemo(() => items.map((item) => {
+    const basePrice = item.basePrice ?? item.price;
+    const cityAreaCharge = item.isPreviewOnly ? 0 : (selectedCityArea?.charge ?? 0);
+    return {
+      ...item,
+      basePrice,
+      price: basePrice == null ? null : basePrice + cityAreaCharge,
+      originalPrice: item.originalPrice == null
+        ? null
+        : item.originalPrice + cityAreaCharge,
+      cityArea: selectedCityArea?.name ?? null,
+      cityAreaCharge,
+    };
+  }), [items, selectedCityArea]);
   // Track IDs already notified so we only toast once per expiry event
   const notifiedExpiredIds = useRef<Set<string>>(new Set());
 
@@ -350,8 +369,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items, liveStockByProductId, liveProductsLoaded],
   );
 
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = items.reduce(
+  const totalItems = pricedItems.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = pricedItems.reduce(
     (acc, item) => acc + (item.price || 0) * item.quantity,
     0
   );
@@ -424,7 +443,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return (
     <CartContext.Provider
       value={{
-        items,
+        items: pricedItems,
         addToCart,
         removeFromCart,
         updateQuantity,

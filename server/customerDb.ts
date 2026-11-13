@@ -38,6 +38,8 @@ const customerAddressSchema = new mongoose.Schema(
     building: { type: String, default: "" },
     street: { type: String, default: "" },
     area: { type: String, required: true },
+    cityArea: { type: String, default: null },
+    city: { type: String, default: null },
     pincode: { type: String, default: "" },
     type: { type: String, default: "house" },
     label: { type: String, default: "Home" },

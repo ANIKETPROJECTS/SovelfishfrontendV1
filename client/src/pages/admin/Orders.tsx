@@ -50,6 +50,7 @@ export default function Orders() {
               const paymentPending = paymentStatus === "pending";
               const paymentFailed = paymentStatus === "failed";
               const paymentCompleted = paymentStatus === "completed" || paymentStatus === "paid";
+              const cityArea = order.cityArea ?? order.deliveryArea;
 
               return (
                 <TableRow key={order.id} className="group">
@@ -76,12 +77,31 @@ export default function Orders() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{order.deliveryArea}</div>
+                    <div className="font-medium">{cityArea}</div>
+                    {Number(order.cityAreaCharge ?? 0) > 0 && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        ₹{order.cityAreaCharge} area charge per item included
+                      </div>
+                    )}
                     {order.notes && <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[150px]">Note: {order.notes}</div>}
                   </TableCell>
                   <TableCell>
                     <div className="text-sm max-w-[200px]">
-                      {items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
+                      {items.map((item, index) => {
+                        const unitPrice = Number(item.price ?? 0);
+                        const basePrice = item.basePrice == null ? null : Number(item.basePrice);
+                        const itemAreaCharge = Number(item.cityAreaCharge ?? order.cityAreaCharge ?? 0);
+                        return (
+                          <div key={`${item.productId ?? item.name}-${index}`} className="mb-1 last:mb-0">
+                            <div>{item.quantity}× {item.name} · ₹{unitPrice} each</div>
+                            {itemAreaCharge > 0 && basePrice != null && (
+                              <div className="text-xs text-muted-foreground">
+                                Base ₹{basePrice} + ₹{itemAreaCharge} area
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </TableCell>
                   <TableCell className="font-bold">₹{total}</TableCell>
