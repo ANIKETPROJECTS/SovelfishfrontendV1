@@ -195,7 +195,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const { toast } = useToast();
   const { customer, openLoginModal } = useCustomer();
-  const { isPincodeVerified, openPicker } = useHub();
+  const { isLocationSelected, openPicker } = useHub();
   const { selectedCityArea } = useCityArea();
   const { data: liveProducts, isSuccess: liveProductsLoaded } = useProducts();
   const liveStockByProductId = useMemo(
@@ -225,7 +225,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       openLoginModal();
       return;
     }
-    if (!isPreviewOnly && !isPincodeVerified) {
+    if (!isPreviewOnly && !isLocationSelected) {
       openPicker();
       return;
     }

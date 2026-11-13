@@ -20,6 +20,7 @@ interface SearchableCityAreaSelectProps {
   placeholder?: string;
   searchPlaceholder?: string;
   className?: string;
+  popoverClassName?: string;
   testId?: string;
 }
 
@@ -31,6 +32,7 @@ export function SearchableCityAreaSelect({
   placeholder = "Choose an area or city",
   searchPlaceholder = "Search area or city...",
   className,
+  popoverClassName,
   testId,
 }: SearchableCityAreaSelectProps) {
   const [open, setOpen] = useState(false);
@@ -62,7 +64,7 @@ export function SearchableCityAreaSelect({
         align="start"
         sideOffset={4}
         avoidCollisions={false}
-        className="w-[var(--radix-popover-trigger-width)] overflow-hidden p-0"
+        className={cn("w-[var(--radix-popover-trigger-width)] overflow-hidden p-0", popoverClassName)}
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} className="h-10" />
