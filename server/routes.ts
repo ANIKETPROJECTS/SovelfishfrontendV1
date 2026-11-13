@@ -17,6 +17,12 @@ import {
 import { setImage, getImage, deleteImage } from "./imageStore";
 import { insertCarouselSlideSchema, insertCategorySchema, insertSectionSchema, insertComboSchema, insertCustomerAddressSchema, updateCustomerAddressSchema, updateCustomerSchema, insertInventoryBatchSchema } from "@shared/schema";
 import { getValidAddressCoordinates } from "@shared/addressCoordinates";
+import {
+  addDaysToDateKey,
+  applyAutomaticNextDayDelivery,
+  getIndiaDateKey,
+  getIndiaMinutesSinceMidnight,
+} from "@shared/nextDayDelivery";
 import { SuperHubModel, SubHubModel, OtpModel } from "./adminDb";
 import { getHubModels } from "./hubConnections";
 import { CustomerDbModel } from "./customerDb";
@@ -56,7 +62,6 @@ declare module "express-session" {
 }
 
 const OTP_TTL_MS = 5 * 60 * 1000;
-const INDIA_TIME_ZONE = "Asia/Kolkata";
 const RAZORPAY_HEARTBEAT_STALE_MS = 2 * 60 * 1000;
 const RAZORPAY_HEARTBEAT_RECHECK_MS = 30 * 1000;
 const RAZORPAY_HEARTBEAT_WATCHDOG_INTERVAL_MS = 15 * 1000;
@@ -72,28 +77,6 @@ function isRazorpayCancelTokenValid(token: unknown, storedHash: unknown): boolea
   const suppliedHash = Buffer.from(hashRazorpayCancelToken(token), "hex");
   const expectedHash = Buffer.from(storedHash, "hex");
   return suppliedHash.length === expectedHash.length && timingSafeEqual(suppliedHash, expectedHash);
-}
-
-function getIndiaDateKey(date = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: INDIA_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function getIndiaMinutesSinceMidnight(date = new Date()): number {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: INDIA_TIME_ZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return Number(values.hour) * 60 + Number(values.minute);
 }
 
 function parseTimeslotStartMinutes(timeslot: any): number | null {
@@ -1136,13 +1119,14 @@ export async function registerRoutes(
   app.post("/api/razorpay/create-order", async (req, res) => {
     if (!razorpay) return res.status(503).json({ message: "Payment service not configured" });
     try {
-      const { amount, orderPayload } = req.body;
+      const { amount, orderPayload: rawOrderPayload } = req.body;
       if (!amount || typeof amount !== "number" || amount <= 0) {
         return res.status(400).json({ message: "Invalid amount" });
       }
-      if (!orderPayload || typeof orderPayload !== "object" || Array.isArray(orderPayload)) {
+      if (!rawOrderPayload || typeof rawOrderPayload !== "object" || Array.isArray(rawOrderPayload)) {
         return res.status(400).json({ message: "An order payload is required to start payment." });
       }
+      const orderPayload = applyAutomaticNextDayDelivery(rawOrderPayload);
       const checkoutTotal = Number(orderPayload.total);
       const walletAmount = (Array.isArray(orderPayload.payments) ? orderPayload.payments : [])
         .filter((payment: any) => payment?.mode === "wallet")
@@ -1354,7 +1338,7 @@ export async function registerRoutes(
       if (!parsedOrder.success) {
         return res.status(400).json({ message: "The checkout details are incomplete. Please review your order." });
       }
-      const orderPayload = parsedOrder.data as any;
+      const orderPayload = applyAutomaticNextDayDelivery(parsedOrder.data as any);
       const orderPhone = String(orderPayload.phone ?? "").replace(/\D/g, "").slice(-10);
       if (!orderPhone || orderPhone !== sessionPhone) {
         return res.status(403).json({ message: "The checkout customer does not match the signed-in account." });
@@ -2713,7 +2697,7 @@ export async function registerRoutes(
   // Orders routes
   app.post(api.orders.create.path, async (req, res) => {
     try {
-      const input = api.orders.create.input.parse(req.body);
+      const parsedInput = api.orders.create.input.parse(req.body);
       const localAddress = req.socket.remoteAddress ?? "";
       const isLocalRequest =
         localAddress === "127.0.0.1" ||
@@ -2723,6 +2707,12 @@ export async function registerRoutes(
     req.headers["x-freshstockxchange-payment-finalizer"] === "1" && isLocalRequest;
       const isInternalPhonePeFinalizer =
         req.headers["x-freshstockxchange-phonepe-finalizer"] === "1" && isInternalPaymentFinalizer;
+      // Payment initiation already stored the authoritative delivery date.
+      // Trusted finalizers reuse it rather than recalculating after callbacks
+      // or retries cross 5 PM or midnight in India.
+      const input = isInternalPaymentFinalizer
+        ? parsedInput
+        : applyAutomaticNextDayDelivery(parsedInput);
       const isPaidWebhookRecovery =
     req.headers["x-freshstockxchange-paid-recovery"] === "1" &&
         isInternalPaymentFinalizer;
@@ -2843,11 +2833,8 @@ export async function registerRoutes(
         if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== dateText) {
           return res.status(400).json({ message: "Please choose a valid preorder delivery date." });
         }
-        const today = new Date();
-        const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+        const todayKey = getIndiaDateKey();
+        const tomorrowKey = addDaysToDateKey(todayKey, 1);
         if (dateText < tomorrowKey) {
           return res.status(400).json({ message: "Preorder delivery must be from tomorrow onward." });
         }
@@ -3201,10 +3188,7 @@ export async function registerRoutes(
       const upiTransactionId =
         (input.payments ?? []).find((p: any) => p.mode === "upi" && p.reference)?.reference ?? null;
 
-      // Today's date for deliveryDate fallback
-      const now2 = new Date();
-      const deliveryDate = input.deliveryDate ??
-        `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, "0")}-${String(now2.getDate()).padStart(2, "0")}`;
+      const deliveryDate = input.deliveryDate ?? getIndiaDateKey();
 
       const cleanedItems = (input.items as any[]).map(({
         productId,
@@ -3339,6 +3323,7 @@ export async function registerRoutes(
          orderType: input.orderType ?? null,
         scheduleType: input.scheduleType ?? "slot",
         deliveryDate,
+        nextDayOrder: input.nextDayOrder ?? false,
         timeslotId: input.timeslotId ?? null,
         timeslotLabel: input.timeslotLabel ?? null,
         timeslotStart: input.timeslotStart ?? null,

@@ -9,6 +9,7 @@
 - [TypeScript check heap limit](typescript-check-heap.md) — repository-wide tsc can exhaust Node memory here; use the production build as compile verification.
 - [Environment precedence](env-precedence.md) — keep ecosystem defaults intact; runtime Replit Secrets override them in the launcher.
 - [Preorder date eligibility](preorder-date-slots.md) — future preorder dates follow product schedules; checkout no longer requires a timeslot.
+- [Automatic next-day delivery](next-day-delivery.md) — normal delivery moves to tomorrow after 5 PM India time; payment finalizers reuse the schedule saved at initiation.
 - [Same-day slot cutoff](same-day-slot-cutoff.md) — enforce the 30-minute cutoff server-side in India time; stale carts can submit after the UI hides a slot.
 - [Cross-channel inventory mismatch](inventory-channel-mismatch.md) — storefront caps must match checkout stock; external POS batches cannot be added to storefront inventory without an atomic shared decrement.
 - [Production logging and polling](production-logging-and-polling.md) — production API logs stay concise; live catalog refresh is explicit rather than global.

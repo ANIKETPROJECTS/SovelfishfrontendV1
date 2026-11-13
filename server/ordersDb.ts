@@ -71,6 +71,7 @@ const orderSchema = new mongoose.Schema(
     scheduleType: { type: String, default: null },
     orderType: { type: String, default: null },
     deliveryDate: { type: String, default: null },
+    nextDayOrder: { type: Boolean, default: false },
     timeslotId: { type: String, default: null },
     timeslotLabel: { type: String, default: null },
     timeslotStart: { type: String, default: null },

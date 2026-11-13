@@ -120,6 +120,7 @@ function toOrder(doc: any): OrderRequest {
     upiVariant: doc.upiVariant ?? null,
     phonepeOrderId: doc.phonepeOrderId ?? null,
     deliveryDate: doc.deliveryDate ?? null,
+    nextDayOrder: doc.nextDayOrder ?? false,
     superHubId: doc.superHubId?.toString() ?? null,
     subHubId: doc.subHubId?.toString() ?? null,
     subHubName: doc.subHubName ?? null,

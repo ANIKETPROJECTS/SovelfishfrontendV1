@@ -6,7 +6,7 @@ import {
   CheckCircle2, Minus, Plus, ShoppingBag, Trash2,
   MapPin, Banknote, CreditCard, ChevronRight, ClipboardList,
   X, Home, Briefcase, Tag, Navigation, Loader2, AlertCircle, Search,
-  Ticket, ChevronDown, ChevronUp
+  Ticket, ChevronDown, ChevronUp, CalendarDays
 } from "lucide-react";
 import popperAnim from "@/assets/lottie/popper.json";
 import emptyAddressAnim from "@/assets/lottie/empty-address.json";
@@ -49,6 +49,11 @@ import {
 import type { CustomerAddress, Coupon } from "@shared/schema";
 import { getValidAddressCoordinates } from "@shared/addressCoordinates";
 import { isPreorderDateAvailableForAll, normalizePreorderAvailability } from "@shared/preorderAvailability";
+import {
+  applyAutomaticNextDayDelivery,
+  formatIndiaDateLabel,
+  getIndiaDateKey,
+} from "@shared/nextDayDelivery";
 import { format } from "date-fns";
 
 import noImageImg from "@/assets/coming-soon.png";
@@ -532,6 +537,7 @@ export function CartDrawer() {
   const [showAllCoupons, setShowAllCoupons] = useState(false);
   const [couponExpanded, setCouponExpanded] = useState(true);
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(startOfTomorrow);
+  const [scheduleNow, setScheduleNow] = useState<Date>(() => new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [applyingCouponId, setApplyingCouponId] = useState<string | null>(null);
@@ -640,6 +646,31 @@ export function CartDrawer() {
   }, [items.length]);
 
   const isPreorderCart = items.some((item) => item.isPreorderCheckout);
+  const currentDeliverySchedule = applyAutomaticNextDayDelivery(
+    {
+      deliveryType: "delivery",
+      orderType: isPreorderCart ? "preorder" : "normal",
+      scheduleType: "standard",
+      deliveryDate: getIndiaDateKey(scheduleNow),
+    },
+    scheduleNow,
+  );
+  const isNextDayDelivery = !isPreorderCart && currentDeliverySchedule.nextDayOrder;
+
+  useEffect(() => {
+    const refreshScheduleClock = () => setScheduleNow(new Date());
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") refreshScheduleClock();
+    };
+    const interval = window.setInterval(refreshScheduleClock, 15_000);
+    window.addEventListener("focus", refreshScheduleClock);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshScheduleClock);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const preorderItems = useMemo(
     () => items
@@ -973,8 +1004,9 @@ export function CartDrawer() {
     }));
     const slotCharge = pincodeDeliveryCharge;
     const subtotal = totalPrice;
-    const orderDate = isPreorderCart ? selectedDeliveryDate : new Date();
-    const deliveryDate = getDateKey(orderDate);
+    const deliveryDate = isPreorderCart
+      ? getDateKey(selectedDeliveryDate)
+      : currentDeliverySchedule.deliveryDate;
 
     const cashMode = paymentMethod === "online" ? "upi" : "cash";
     const paidAt = new Date().toISOString();
@@ -2482,6 +2514,22 @@ export function CartDrawer() {
                             />
                           </PopoverContent>
                         </Popover>
+                      </div>
+                    )}
+                    {!isPreorderCart && isNextDayDelivery && (
+                      <div
+                        className="mx-4 mt-4 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm"
+                        style={{ borderColor: "#E8883A", backgroundColor: "#FFF4E8", color: "#7B3A14" }}
+                        role="status"
+                        data-testid="next-day-delivery-notice"
+                      >
+                        <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span>
+                          <strong>Next-day delivery</strong>
+                          <span className="block text-xs">
+                            Expected {formatIndiaDateLabel(currentDeliverySchedule.deliveryDate)}
+                          </span>
+                        </span>
                       </div>
                     )}
 

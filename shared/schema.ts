@@ -239,6 +239,7 @@ export type OrderRequest = {
   subHubId?: string | null;
   subHubName?: string | null;
   phonepeOrderId?: string | null;
+  nextDayOrder?: boolean;
 };
 
 export type DeliveryAddressDetail = {
@@ -294,6 +295,7 @@ export type InsertOrderRequest = {
   subHubName?: string | null;
   razorpayOrderId?: string | null;
   phonepeOrderId?: string | null;
+  nextDayOrder?: boolean;
 };
 
 export type InventoryBatch = {
@@ -414,6 +416,7 @@ export const insertOrderRequestSchema = z.object({
   timeslotStart: z.string().nullable().optional(),
   timeslotEnd: z.string().nullable().optional(),
   deliveryDate: z.string().nullable().optional(),
+  nextDayOrder: z.boolean().optional(),
   orderType: z.enum(["normal", "preorder"]).nullable().optional(),
   instantDeliveryCharge: z.number().nullable().optional(),
   couponCode: z.string().nullable().optional(),
