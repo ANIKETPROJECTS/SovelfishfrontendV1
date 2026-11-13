@@ -834,7 +834,7 @@ export function CartDrawer() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ cityArea: option.name, city: option.name }),
+        body: JSON.stringify({ area: option.name, cityArea: option.name, city: option.name }),
       });
       const updatedCustomer = await response.json().catch(() => null);
       if (!response.ok || !updatedCustomer) {
@@ -866,6 +866,7 @@ export function CartDrawer() {
       ...emptyForm,
       name: customer?.name ?? "",
       phone: customer?.phone ?? "",
+      area: selectedCityArea?.name ?? "",
       cityArea: selectedCityArea?.name ?? "",
       city: selectedCityArea?.name ?? "",
     });
@@ -968,6 +969,7 @@ export function CartDrawer() {
     const addressPayload = {
       ...addForm,
       label,
+      area: selectedCityArea.name,
       cityArea: selectedCityArea.name,
       city: selectedCityArea.name,
     };
@@ -2313,7 +2315,7 @@ export function CartDrawer() {
                       {!showAddForm && savedAddresses.length > 0 && (
                         <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
                           <Label htmlFor="checkout-city-area" className="text-xs font-semibold text-foreground">
-                            Delivery Area / City *
+                            Area/City *
                           </Label>
                           {isCityAreasLoading ? (
                             <p className="mt-2 text-xs text-muted-foreground">Loading active areas for {selectedSubHub?.name ?? "this hub"}…</p>
@@ -2336,13 +2338,13 @@ export function CartDrawer() {
                                 <option value="">Choose your delivery area</option>
                                 {cityAreas.map((option) => (
                                   <option key={option.id ?? option.name} value={option.name}>
-                                    {option.name} · ₹{option.charge} per product
+                                    {option.name} · ₹{option.charge} per item
                                   </option>
                                 ))}
                               </select>
                               <p className="mt-1.5 text-[11px] text-muted-foreground">
                                 {selectedCityArea
-                                  ? `Area charge: ₹${selectedCityArea.charge} per product, included in item prices. Delivery is free.`
+                                  ? `Area charge: ₹${selectedCityArea.charge} per item, included in item prices. Delivery is free.`
                                   : "Select an area to see its product prices. Delivery is free."}
                               </p>
                             </>
@@ -2431,18 +2433,8 @@ export function CartDrawer() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Area / Suburb *</Label>
-                            <input
-                              value={addForm.area}
-                              onChange={e => setAddForm(f => ({ ...f, area: e.target.value }))}
-                              placeholder="e.g. Thane West"
-                              className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                              data-testid="input-address-area"
-                            />
-                          </div>
-                          <div className="space-y-1">
                             <Label htmlFor="new-address-city-area" className="text-xs text-muted-foreground">
-                              Delivery Area / City *
+                              Area/City *
                             </Label>
                             {isCityAreasLoading ? (
                               <p className="py-2 text-xs text-muted-foreground">Loading active areas…</p>
@@ -2457,29 +2449,30 @@ export function CartDrawer() {
                               <>
                                 <select
                                   id="new-address-city-area"
-                                  value={selectedCityArea?.name ?? ""}
+                                  value={addForm.cityArea || addForm.area}
                                   onChange={(event) => {
                                     const option = findCityAreaOption(cityAreas, event.target.value);
                                     setSelectedCityArea(option?.name ?? null);
                                     setAddForm((form) => ({
                                       ...form,
+                                      area: option?.name ?? "",
                                       cityArea: option?.name ?? "",
                                       city: option?.name ?? "",
                                     }));
                                   }}
                                   className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-                                  data-testid="select-new-address-city-area"
+                                  data-testid="select-new-address-area-city"
                                 >
-                                  <option value="">Choose your delivery area</option>
+                                  <option value="">Choose an area or city</option>
                                   {cityAreas.map((option) => (
                                     <option key={option.id ?? option.name} value={option.name}>
-                                      {option.name} · ₹{option.charge} per product
+                                      {option.name} · ₹{option.charge} per item
                                     </option>
                                   ))}
                                 </select>
                                 {selectedCityArea && (
                                   <p className="text-[11px] text-muted-foreground">
-                                    Area charge: ₹{selectedCityArea.charge} per product. Pincode does not affect prices or delivery fees.
+                                    ₹{selectedCityArea.charge} per item included in price. Delivery is free.
                                   </p>
                                 )}
                               </>
@@ -2604,7 +2597,7 @@ export function CartDrawer() {
                                   </p>
                                   {addr.cityArea && (
                                     <p className="mt-1 text-[11px] font-medium text-orange-700">
-                                      Delivery area: {addr.cityArea}
+                                      Area/City: {addr.cityArea}
                                     </p>
                                   )}
                                 </div>
@@ -2735,7 +2728,7 @@ export function CartDrawer() {
                         )}
                         {selectedCityArea && (
                           <p className="text-[10px] text-muted-foreground">
-                            ₹{selectedCityArea.charge} area charge per product · delivery free
+                            ₹{selectedCityArea.charge} area charge per item · delivery free
                           </p>
                         )}
                       </div>
@@ -3059,14 +3052,29 @@ export function CartDrawer() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Area *</Label>
-                <Input
-                  value={addForm.area}
-                  onChange={e => setAddForm(f => ({ ...f, area: e.target.value }))}
-                  placeholder="e.g. Andheri West"
-                  className="rounded-xl h-11 border-border/60"
-                  data-testid="input-address-area"
-                />
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Area/City *</Label>
+                <select
+                  value={addForm.cityArea || addForm.area}
+                  onChange={(event) => {
+                    const option = findCityAreaOption(cityAreas, event.target.value);
+                    setAddForm((form) => ({
+                      ...form,
+                      area: option?.name ?? "",
+                      cityArea: option?.name ?? "",
+                      city: option?.name ?? "",
+                    }));
+                    setSelectedCityArea(option?.name ?? null);
+                  }}
+                  className="w-full rounded-xl h-11 border border-border/60 bg-white px-3 text-sm"
+                  data-testid="select-address-area-city"
+                >
+                  <option value="">Choose area/city</option>
+                  {cityAreas.map((option) => (
+                    <option key={option.id ?? option.name} value={option.name}>
+                      {option.name} · ₹{option.charge} per item
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode</Label>

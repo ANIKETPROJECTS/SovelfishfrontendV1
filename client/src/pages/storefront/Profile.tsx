@@ -1032,7 +1032,7 @@ export default function Profile() {
     setAddressForm({
       name: addr.name, phone: addr.phone, building: addr.building,
       street: addr.street, area: addr.area, pincode: addr.pincode || "",
-      cityArea: addr.cityArea || "", city: addr.city || "",
+      cityArea: addr.cityArea || addr.area || "", city: addr.city || addr.cityArea || addr.area || "",
       type: addr.type, label: addr.label, instructions: addr.instructions,
       ...(coordinates ?? {}),
     });
@@ -1091,7 +1091,13 @@ export default function Profile() {
       ? (addressForm.label || "Other")
       : addressForm.type === "house" ? "Home" : "Office";
     const activeArea = findCityAreaOption(cityAreas, addressForm.cityArea)!;
-    const entry = { ...addressForm, cityArea: activeArea.name, city: activeArea.name, label };
+    const entry = {
+      ...addressForm,
+      area: activeArea.name,
+      cityArea: activeArea.name,
+      city: activeArea.name,
+      label,
+    };
     if (editingAddress) {
       updateAddressMutation.mutate({
         id: editingAddress.id,
@@ -1408,18 +1414,8 @@ export default function Profile() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Area / Suburb *</Label>
-                    <input
-                      value={addressForm.area}
-                      onChange={e => setAddressForm(f => ({ ...f, area: e.target.value }))}
-                      placeholder="e.g. Thane West"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
-                      data-testid="input-address-area"
-                    />
-                  </div>
-                  <div className="space-y-1">
                     <Label htmlFor="profile-address-city-area" className="text-xs text-muted-foreground">
-                      Delivery Area / City *
+                      Area/City *
                     </Label>
                     {isCityAreasLoading ? (
                       <p className="py-2 text-xs text-muted-foreground">Loading active areas…</p>
@@ -1433,22 +1429,23 @@ export default function Profile() {
                     ) : (
                       <select
                         id="profile-address-city-area"
-                        value={addressForm.cityArea ?? ""}
+                        value={addressForm.cityArea || addressForm.area || ""}
                         onChange={(event) => {
                           const option = findCityAreaOption(cityAreas, event.target.value);
                           setAddressForm((form) => ({
                             ...form,
+                            area: option?.name ?? "",
                             cityArea: option?.name ?? "",
                             city: option?.name ?? "",
                           }));
                         }}
                         className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-                        data-testid="select-profile-address-city-area"
+                        data-testid="select-profile-address-area-city"
                       >
-                        <option value="">Choose your delivery area</option>
+                        <option value="">Choose an area or city</option>
                         {cityAreas.map((option) => (
                           <option key={option.id ?? option.name} value={option.name}>
-                            {option.name} · ₹{option.charge} per product
+                            {option.name} · ₹{option.charge} per item
                           </option>
                         ))}
                       </select>

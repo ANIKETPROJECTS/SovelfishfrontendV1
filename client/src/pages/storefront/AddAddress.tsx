@@ -191,9 +191,20 @@ export default function AddAddress() {
   };
 
   const handleMapConfirm = (area: string, pincode: string) => {
-    setForm(f => ({ ...f, area: area || f.area, pincode: pincode || f.pincode }));
+    const matchingArea = findCityAreaOption(cityAreas, area);
+    setForm((current) => ({
+      ...current,
+      ...(matchingArea
+        ? { area: matchingArea.name, cityArea: matchingArea.name, city: matchingArea.name }
+        : {}),
+      pincode: pincode || current.pincode,
+    }));
+    if (matchingArea) setSelectedCityArea(matchingArea.name);
     setShowMap(false);
-    toast({ title: "Location set!", description: `${area}${pincode ? ` · ${pincode}` : ""}` });
+    toast({
+      title: "Location set!",
+      description: `${matchingArea?.name ?? area}${pincode ? ` · ${pincode}` : ""}`,
+    });
   };
 
   const save = () => {
@@ -201,10 +212,10 @@ export default function AddAddress() {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
-    const cityArea = findCityAreaOption(cityAreas, form.cityArea);
+    const cityArea = findCityAreaOption(cityAreas, form.cityArea || form.area);
     if (isCityAreasLoading || cityAreasError || !cityArea) {
       toast({
-        title: "Choose an active delivery Area/City",
+        title: "Choose an active Area/City",
         description: cityAreasError ?? "Select an area from the available list.",
         variant: "destructive",
       });
@@ -219,6 +230,7 @@ export default function AddAddress() {
       form.type === "house" ? "Home" : "Office";
     const newAddr: SavedAddress = {
       ...form,
+      area: cityArea.name,
       cityArea: cityArea.name,
       city: cityArea.name,
       label,
@@ -327,8 +339,40 @@ export default function AddAddress() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Area *</Label>
-              <Input value={form.area} onChange={e => setForm(f => ({ ...f, area: e.target.value }))} placeholder="e.g. Thane West" className="rounded-xl h-12 border-border/60 text-base" />
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Area/City *</Label>
+              {isCityAreasLoading ? (
+                <p className="text-xs text-muted-foreground py-3">Loading areas…</p>
+              ) : cityAreasError ? (
+                <div className="space-y-1">
+                  <p className="text-xs text-red-700">{cityAreasError}</p>
+                  <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
+                </div>
+              ) : cityAreas.length === 0 ? (
+                <p className="text-xs text-red-700 py-3">No active areas configured.</p>
+              ) : (
+                <select
+                  value={form.cityArea || form.area}
+                  onChange={(event) => {
+                    const option = findCityAreaOption(cityAreas, event.target.value);
+                    setForm((current) => ({
+                      ...current,
+                      area: option?.name ?? "",
+                      cityArea: option?.name ?? "",
+                      city: option?.name ?? "",
+                    }));
+                    setSelectedCityArea(option?.name ?? null);
+                  }}
+                  className="w-full rounded-xl h-12 border border-border/60 bg-white px-3 text-sm"
+                  data-testid="select-add-address-area-city"
+                >
+                  <option value="">Choose area/city</option>
+                  {cityAreas.map((option) => (
+                    <option key={option.id ?? option.name} value={option.name}>
+                      {option.name} · ₹{option.charge} per item
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode *</Label>
@@ -341,44 +385,6 @@ export default function AddAddress() {
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Save Address As *</Label>
               <Input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} placeholder="e.g. Room, Gym, Parents Home" className="rounded-xl h-12 border-border/60 text-base" />
             </div>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Delivery Area / City *
-          </Label>
-          {isCityAreasLoading ? (
-            <p className="text-xs text-muted-foreground">Loading active delivery areas…</p>
-          ) : cityAreasError ? (
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-red-700">{cityAreasError}</p>
-              <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
-            </div>
-          ) : cityAreas.length === 0 ? (
-            <p className="text-xs text-red-700">No active delivery areas are configured for this hub.</p>
-          ) : (
-            <select
-              value={form.cityArea}
-              onChange={(event) => {
-                const option = findCityAreaOption(cityAreas, event.target.value);
-                setForm((current) => ({
-                  ...current,
-                  cityArea: option?.name ?? "",
-                  city: option?.name ?? "",
-                }));
-                setSelectedCityArea(option?.name ?? null);
-              }}
-              className="w-full rounded-xl border border-border/60 bg-white px-3 py-3 text-base"
-              data-testid="select-add-address-city-area"
-            >
-              <option value="">Choose your delivery area</option>
-              {cityAreas.map((option) => (
-                <option key={option.id ?? option.name} value={option.name}>
-                  {option.name} · ₹{option.charge} per product
-                </option>
-              ))}
-            </select>
           )}
         </div>
 
