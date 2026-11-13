@@ -1445,7 +1445,7 @@ export default function Profile() {
                         <option value="">Choose an area or city</option>
                         {cityAreas.map((option) => (
                           <option key={option.id ?? option.name} value={option.name}>
-                            {option.name} · ₹{option.charge} per item
+                            {option.name}
                           </option>
                         ))}
                       </select>

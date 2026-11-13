@@ -823,30 +823,6 @@ export function CartDrawer() {
     setSelectedCityArea(matchingArea?.name ?? null);
   }, [activeAddressId, savedAddresses, cityAreas, showAddForm, setSelectedCityArea]);
 
-  const handleSavedAddressAreaChange = async (name: string) => {
-    const option = findCityAreaOption(cityAreas, name);
-    const address = savedAddresses.find((entry) => entry.id === activeAddressId);
-    if (!option || !address) return;
-    const previousName = selectedCityArea?.name ?? null;
-    setSelectedCityArea(option.name);
-    try {
-      const response = await fetch(`/api/customer/me/addresses/${encodeURIComponent(address.id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ area: option.name, cityArea: option.name, city: option.name }),
-      });
-      const updatedCustomer = await response.json().catch(() => null);
-      if (!response.ok || !updatedCustomer) {
-        throw new Error("Could not save the selected delivery area.");
-      }
-      queryClient.setQueryData(["/api/customer/me"], updatedCustomer);
-    } catch {
-      setSelectedCityArea(previousName);
-      toast({ title: "Could not save delivery area", description: "Please try again.", variant: "destructive" });
-    }
-  };
-
   // Show popup when switching between existing saved addresses with unserviceable pincodes
   useEffect(() => {
     const selected = savedAddresses.find(a => a.id === activeAddressId);
@@ -2312,45 +2288,25 @@ export function CartDrawer() {
                         ) : null}
                       </div>
 
-                      {!showAddForm && savedAddresses.length > 0 && (
-                        <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
-                          <Label htmlFor="checkout-city-area" className="text-xs font-semibold text-foreground">
-                            Area/City *
-                          </Label>
-                          {isCityAreasLoading ? (
-                            <p className="mt-2 text-xs text-muted-foreground">Loading active areas for {selectedSubHub?.name ?? "this hub"}…</p>
-                          ) : cityAreasError ? (
-                            <div className="mt-2 flex items-center justify-between gap-2">
-                              <p className="text-xs text-red-700">{cityAreasError}</p>
-                              <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
-                            </div>
-                          ) : cityAreas.length === 0 ? (
-                            <p className="mt-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
-                          ) : (
-                            <>
-                              <select
-                                id="checkout-city-area"
-                                value={selectedCityArea?.name ?? ""}
-                                onChange={(event) => { void handleSavedAddressAreaChange(event.target.value); }}
-                                className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-                                data-testid="select-checkout-city-area"
-                              >
-                                <option value="">Choose your delivery area</option>
-                                {cityAreas.map((option) => (
-                                  <option key={option.id ?? option.name} value={option.name}>
-                                    {option.name} · ₹{option.charge} per item
-                                  </option>
-                                ))}
-                              </select>
-                              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                                {selectedCityArea
-                                  ? `Area charge: ₹${selectedCityArea.charge} per item, included in item prices. Delivery is free.`
-                                  : "Select an area to see its product prices. Delivery is free."}
+                      {!showAddForm && savedAddresses.length > 0 &&
+                        (isCityAreasLoading || cityAreasError || cityAreas.length === 0 || !selectedCityArea) && (
+                          <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
+                            {isCityAreasLoading ? (
+                              <p className="text-xs text-muted-foreground">Checking the saved Area/City…</p>
+                            ) : cityAreasError ? (
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs text-red-700">{cityAreasError}</p>
+                                <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
+                              </div>
+                            ) : cityAreas.length === 0 ? (
+                              <p className="text-xs text-red-700">No active areas are configured for this hub.</p>
+                            ) : (
+                              <p className="text-xs text-red-700">
+                                This saved address has no active Area/City. Edit it in Profile or add a new address.
                               </p>
-                            </>
-                          )}
-                        </div>
-                      )}
+                            )}
+                          </div>
+                        )}
 
                       {/* Inline Add Address form */}
                       {customer && showAddForm && (
@@ -2466,15 +2422,13 @@ export function CartDrawer() {
                                   <option value="">Choose an area or city</option>
                                   {cityAreas.map((option) => (
                                     <option key={option.id ?? option.name} value={option.name}>
-                                      {option.name} · ₹{option.charge} per item
+                                      {option.name}
                                     </option>
                                   ))}
                                 </select>
-                                {selectedCityArea && (
-                                  <p className="text-[11px] text-muted-foreground">
-                                    ₹{selectedCityArea.charge} per item included in price. Delivery is free.
-                                  </p>
-                                )}
+                                <p className="text-[11px] text-muted-foreground">
+                                  This Area/City is saved with the address and used for item pricing.
+                                </p>
                               </>
                             )}
                           </div>
@@ -2725,11 +2679,6 @@ export function CartDrawer() {
                         )}
                         {walletDeduction > 0 && (
                           <p className="text-[10px] font-semibold" style={{ color: "#364F9F" }}>−₹{walletDeduction} from Wallet</p>
-                        )}
-                        {selectedCityArea && (
-                          <p className="text-[10px] text-muted-foreground">
-                            ₹{selectedCityArea.charge} area charge per item · delivery free
-                          </p>
                         )}
                       </div>
                       <Button
@@ -3071,7 +3020,7 @@ export function CartDrawer() {
                   <option value="">Choose area/city</option>
                   {cityAreas.map((option) => (
                     <option key={option.id ?? option.name} value={option.name}>
-                      {option.name} · ₹{option.charge} per item
+                      {option.name}
                     </option>
                   ))}
                 </select>

@@ -368,7 +368,7 @@ export default function AddAddress() {
                   <option value="">Choose area/city</option>
                   {cityAreas.map((option) => (
                     <option key={option.id ?? option.name} value={option.name}>
-                      {option.name} · ₹{option.charge} per item
+                      {option.name}
                     </option>
                   ))}
                 </select>
