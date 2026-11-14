@@ -780,7 +780,8 @@ export function CartDrawer() {
 
     // area fields: locality → district → city (never use p.name here — that's the place name)
     const area = p.locality || p.district || p.city || "";
-    const pincode = p.postcode?.replace(/\s/g, "") || "";
+    const extractedPincode = p.postcode?.replace(/\D/g, "").slice(0, 6) || "";
+    const pincode = /^\d{6}$/.test(extractedPincode) ? extractedPincode : "";
     const street = p.street || "";
 
     // p.name is the specific named place (e.g. "Hubtown Greenwoods") → Building/Floor
@@ -858,7 +859,8 @@ export function CartDrawer() {
           const data = await res.json();
           const addr = data?.address ?? {};
 
-          const pincode = addr.postcode?.replace(/\s/g, "") ?? "";
+          const extractedPincode = addr.postcode?.replace(/\D/g, "").slice(0, 6) ?? "";
+          const pincode = /^\d{6}$/.test(extractedPincode) ? extractedPincode : "";
 
           // Same priority chain the header uses for postcode, extended for area/street fields
           const area =
@@ -909,6 +911,10 @@ export function CartDrawer() {
   const saveAddress = async () => {
     if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
+      return;
+    }
+    if (addForm.pincode && !/^\d{6}$/.test(addForm.pincode)) {
+      toast({ title: "Pincode must be exactly 6 digits, or leave it blank", variant: "destructive" });
       return;
     }
     if (!selectedCityArea || cityAreasError || cityAreas.length === 0) {
@@ -973,11 +979,12 @@ export function CartDrawer() {
   };
 
   const buildOrderPayload = (selected: CustomerAddress, razorpayPaymentId?: string) => {
+    const pincode = /^\d{6}$/.test(selected.pincode || "") ? selected.pincode : "";
     const fullAddress = [
       selected.building,
       selected.street,
       selected.area,
-      selected.pincode,
+      pincode,
     ].filter(Boolean).join(", ");
     const selectedCoordinates = getValidAddressCoordinates(selected);
     const orderItems = items.map(i => ({
@@ -1046,7 +1053,7 @@ export function CartDrawer() {
         area: selected.area,
         cityArea: selectedCityArea?.name ?? null,
         city: selectedCityArea?.name ?? null,
-        pincode: selected.pincode,
+        pincode,
         type: selected.type,
         label: selected.label,
         instructions: selected.instructions,
@@ -2370,8 +2377,11 @@ export function CartDrawer() {
                             <Label className="text-xs text-muted-foreground">Pincode (optional)</Label>
                             <input
                               type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={6}
                               value={addForm.pincode}
-                              onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value }))}
+                              onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                               placeholder="400601"
                               className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                               data-testid="input-address-pincode"
@@ -3052,9 +3062,10 @@ export function CartDrawer() {
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode (optional)</Label>
                 <Input
                   value={addForm.pincode}
-                  onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value }))}
+                  onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                   placeholder="400001"
                   type="tel"
+                  inputMode="numeric"
                   maxLength={6}
                   className="rounded-xl h-11 border-border/60"
                 />

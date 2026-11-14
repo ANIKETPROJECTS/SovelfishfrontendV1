@@ -1050,6 +1050,10 @@ export default function Profile() {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    if (addressForm.pincode && !/^\d{6}$/.test(addressForm.pincode)) {
+      toast({ title: "Pincode must be exactly 6 digits, or leave it blank", variant: "destructive" });
+      return;
+    }
     if (!/^[6-9]\d{9}$/.test(addressForm.phone.trim())) {
       toast({ title: "Enter a valid 10-digit mobile number", variant: "destructive" });
       return;
@@ -1333,8 +1337,11 @@ export default function Profile() {
                     <Label className="text-xs text-muted-foreground">Pincode (optional)</Label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
                       value={addressForm.pincode}
-                      onChange={e => setAddressForm(f => ({ ...f, pincode: e.target.value }))}
+                      onChange={e => setAddressForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                       placeholder="400601"
                       className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                       data-testid="input-address-pincode"

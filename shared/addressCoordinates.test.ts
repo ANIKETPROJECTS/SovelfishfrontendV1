@@ -31,7 +31,9 @@ test("accepts only complete, finite, in-range coordinate pairs", () => {
 test("customer address creation allows no pin or a valid pin pair", () => {
   assert.equal(insertCustomerAddressSchema.safeParse(addressFields).success, true);
   assert.equal(insertCustomerAddressSchema.safeParse({ ...addressFields, pincode: "" }).success, true);
-  assert.equal(insertCustomerAddressSchema.safeParse({ ...addressFields, pincode: "PIN-UNKNOWN" }).success, true);
+  assert.equal(insertCustomerAddressSchema.safeParse({ ...addressFields, pincode: "123456" }).success, true);
+  assert.equal(insertCustomerAddressSchema.safeParse({ ...addressFields, pincode: "PIN-UNKNOWN" }).success, false);
+  assert.equal(insertCustomerAddressSchema.safeParse({ ...addressFields, pincode: "12345" }).success, false);
   const { pincode: _pincode, ...addressWithoutPincode } = addressFields;
   assert.equal(insertCustomerAddressSchema.safeParse(addressWithoutPincode).success, true);
   assert.equal(
@@ -50,7 +52,8 @@ test("customer address creation allows no pin or a valid pin pair", () => {
 
 test("address updates preserve omitted pins and clear or set both coordinates together", () => {
   assert.equal(updateCustomerAddressSchema.safeParse({ area: "Thane" }).success, true);
-  assert.equal(updateCustomerAddressSchema.safeParse({ pincode: "ANY-VALUE" }).success, true);
+  assert.equal(updateCustomerAddressSchema.safeParse({ pincode: "123456" }).success, true);
+  assert.equal(updateCustomerAddressSchema.safeParse({ pincode: "ANY-VALUE" }).success, false);
   assert.equal(
     updateCustomerAddressSchema.safeParse({ latitude: 19.2183, longitude: 72.9781 }).success,
     true,
@@ -79,6 +82,20 @@ test("order validation retains a complete pin and rejects partial coordinates", 
     deliveryAddressDetail: { latitude: 19.2183, longitude: 72.9781 },
   });
   assert.equal(parsed.success, true);
+  assert.equal(
+    insertOrderRequestSchema.safeParse({
+      ...order,
+      deliveryAddressDetail: { pincode: "" },
+    }).success,
+    true,
+  );
+  assert.equal(
+    insertOrderRequestSchema.safeParse({
+      ...order,
+      deliveryAddressDetail: { pincode: "PIN-UNKNOWN" },
+    }).success,
+    false,
+  );
   if (parsed.success) {
     assert.deepEqual(parsed.data.deliveryAddressDetail, {
       latitude: 19.2183,

@@ -70,7 +70,9 @@ function GoogleMapPicker({ onConfirm, onClose }: {
         setIsGeocoding(false);
         if (status !== "OK" || !results?.[0]) return;
         const comps = results[0].address_components;
-        const postal = comps.find((c: any) => c.types.includes("postal_code"))?.long_name ?? "";
+        const rawPostal = comps.find((c: any) => c.types.includes("postal_code"))?.long_name ?? "";
+        const digitsOnlyPostal = rawPostal.replace(/\D/g, "").slice(0, 6);
+        const postal = /^\d{6}$/.test(digitsOnlyPostal) ? digitsOnlyPostal : "";
         const sub = comps.find((c: any) =>
           c.types.includes("sublocality_level_1") || c.types.includes("sublocality")
         )?.long_name;
@@ -211,6 +213,10 @@ export default function AddAddress() {
   const save = () => {
     if (!form.name || !form.phone || !form.building || !form.area) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
+      return;
+    }
+    if (form.pincode && !/^\d{6}$/.test(form.pincode)) {
+      toast({ title: "Pincode must be exactly 6 digits, or leave it blank", variant: "destructive" });
       return;
     }
     const cityArea = findCityAreaOption(cityAreas, form.cityArea || form.area);
@@ -369,7 +375,16 @@ export default function AddAddress() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode (optional)</Label>
-              <Input value={form.pincode} onChange={e => setForm(f => ({ ...f, pincode: e.target.value }))} placeholder="400001" type="text" className="rounded-xl h-12 border-border/60 text-base" />
+              <Input
+                value={form.pincode}
+                onChange={e => setForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                placeholder="400001"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                className="rounded-xl h-12 border-border/60 text-base"
+              />
             </div>
           </div>
 
