@@ -909,12 +909,12 @@ export function CartDrawer() {
   }, []);
 
   const saveAddress = async () => {
-    if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area) {
+    if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area || !addForm.pincode) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
-    if (addForm.pincode && !/^\d{6}$/.test(addForm.pincode)) {
-      toast({ title: "Pincode must be exactly 6 digits, or leave it blank", variant: "destructive" });
+    if (!/^\d{6}$/.test(addForm.pincode)) {
+      toast({ title: "Enter a valid 6-digit pincode", variant: "destructive" });
       return;
     }
     if (!selectedCityArea || cityAreasError || cityAreas.length === 0) {
@@ -1127,6 +1127,14 @@ export function CartDrawer() {
     }
     const selected = savedAddresses.find(a => a.id === activeAddressId);
     if (!selected) return;
+    if (!/^\d{6}$/.test(selected.pincode || "")) {
+      toast({
+        title: "Add a valid 6-digit pincode",
+        description: "Update the selected delivery address before placing your order.",
+        variant: "destructive",
+      });
+      return;
+    }
     const stockCheckItems = getStockCheckItems(items);
     const isUpiCheckout = paymentMethod === "online" && finalTotal > 0;
     if (isUpiCheckout && isHubReady) {
@@ -2374,12 +2382,13 @@ export function CartDrawer() {
                             </Button>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Pincode (optional)</Label>
+                            <Label className="text-xs text-muted-foreground">Pincode *</Label>
                             <input
                               type="text"
                               inputMode="numeric"
                               pattern="[0-9]*"
                               maxLength={6}
+                              required
                               value={addForm.pincode}
                               onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                               placeholder="400601"
@@ -3059,7 +3068,7 @@ export function CartDrawer() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode (optional)</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode *</Label>
                 <Input
                   value={addForm.pincode}
                   onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
@@ -3067,6 +3076,7 @@ export function CartDrawer() {
                   type="tel"
                   inputMode="numeric"
                   maxLength={6}
+                  required
                   className="rounded-xl h-11 border-border/60"
                 />
               </div>

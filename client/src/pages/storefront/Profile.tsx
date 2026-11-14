@@ -1046,12 +1046,12 @@ export default function Profile() {
   };
 
   const saveAddress = () => {
-    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area) {
+    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area || !addressForm.pincode) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
-    if (addressForm.pincode && !/^\d{6}$/.test(addressForm.pincode)) {
-      toast({ title: "Pincode must be exactly 6 digits, or leave it blank", variant: "destructive" });
+    if (!/^\d{6}$/.test(addressForm.pincode)) {
+      toast({ title: "Enter a valid 6-digit pincode", variant: "destructive" });
       return;
     }
     if (!/^[6-9]\d{9}$/.test(addressForm.phone.trim())) {
@@ -1334,12 +1334,13 @@ export default function Profile() {
                     </Button>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Pincode (optional)</Label>
+                    <Label className="text-xs text-muted-foreground">Pincode *</Label>
                     <input
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       maxLength={6}
+                      required
                       value={addressForm.pincode}
                       onChange={e => setAddressForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                       placeholder="400601"

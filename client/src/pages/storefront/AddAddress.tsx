@@ -111,7 +111,7 @@ function GoogleMapPicker({ onConfirm, onClose }: {
                 <MapPin className="w-7 h-7 text-amber-500" />
               </div>
               <p className="text-sm font-semibold text-slate-700">Map unavailable</p>
-              <p className="text-xs text-slate-400 leading-relaxed">Google Maps billing is not active on your account. Please type your area manually; pincode is optional.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">Google Maps billing is not active on your account. Please type your area and 6-digit pincode manually.</p>
             </div>
           </div>
         ) : !mapsReady ? (
@@ -211,12 +211,12 @@ export default function AddAddress() {
   };
 
   const save = () => {
-    if (!form.name || !form.phone || !form.building || !form.area) {
+    if (!form.name || !form.phone || !form.building || !form.area || !form.pincode) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
-    if (form.pincode && !/^\d{6}$/.test(form.pincode)) {
-      toast({ title: "Pincode must be exactly 6 digits, or leave it blank", variant: "destructive" });
+    if (!/^\d{6}$/.test(form.pincode)) {
+      toast({ title: "Enter a valid 6-digit pincode", variant: "destructive" });
       return;
     }
     const cityArea = findCityAreaOption(cityAreas, form.cityArea || form.area);
@@ -374,7 +374,7 @@ export default function AddAddress() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode (optional)</Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode *</Label>
               <Input
                 value={form.pincode}
                 onChange={e => setForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
@@ -383,6 +383,7 @@ export default function AddAddress() {
                 inputMode="numeric"
                 pattern="[0-9]*"
                 maxLength={6}
+                required
                 className="rounded-xl h-12 border-border/60 text-base"
               />
             </div>

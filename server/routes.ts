@@ -495,6 +495,12 @@ export async function registerRoutes(
       throw Object.assign(new Error("Choose a valid active delivery hub."), { statusCode: 400 });
     }
     const address = payload.deliveryAddressDetail ?? {};
+    if (!/^\d{6}$/.test(String(address.pincode ?? ""))) {
+      throw Object.assign(
+        new Error("Enter a valid 6-digit pincode for the delivery address."),
+        { statusCode: 400, code: "PINCODE_REQUIRED" },
+      );
+    }
     const requestedArea = [
       payload.cityArea,
       address.cityArea,
