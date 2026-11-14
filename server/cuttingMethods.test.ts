@@ -28,11 +28,14 @@ test("keeps cart lines with different cutting selections separate", () => {
 
 test("accepts no selection and exact configured methods only", () => {
   const allowed = ["Cleaned and slices", "Cube Cut", "Fillet"];
-  assert.equal(isValidCuttingMethodSelection([], allowed), true);
-  assert.equal(isValidCuttingMethodSelection(["Fillet", "Cube Cut"], allowed), true);
+  assert.equal(isValidCuttingMethodSelection([], []), true);
+  assert.equal(isValidCuttingMethodSelection([], allowed), false);
+  assert.equal(isValidCuttingMethodSelection(["Fillet"], allowed), true);
   assert.equal(isValidCuttingMethodSelection(["Fillet "], allowed), false);
   assert.equal(isValidCuttingMethodSelection(["As it is(no cleaned)"], allowed), false);
   assert.equal(isValidCuttingMethodSelection(["Fillet", "Fillet"], allowed), false);
+  assert.equal(isValidCuttingMethodSelection(["Fillet", "Cube Cut"], allowed), false);
+  assert.equal(isValidCuttingMethodSelection(["Fillet"], []), false);
 });
 
 test("keeps cutting selections when parsing checkout items", () => {
@@ -46,12 +49,27 @@ test("keeps cutting selections when parsing checkout items", () => {
       quantity: 1,
       name: "Surmai",
       price: 900,
-      cuttingMethods: ["Cleaned and slices", "Fillet"],
+      cuttingMethods: ["Cleaned and slices"],
     }],
   });
 
   assert.equal(result.success, true);
   if (result.success) {
-    assert.deepEqual(result.data.items[0].cuttingMethods, ["Cleaned and slices", "Fillet"]);
+    assert.deepEqual(result.data.items[0].cuttingMethods, ["Cleaned and slices"]);
   }
+
+  const multiple = insertOrderRequestSchema.safeParse({
+    customerName: "Test Customer",
+    phone: "9876543210",
+    deliveryArea: "Thane",
+    address: "Test address",
+    items: [{
+      productId: "6ae98b72595b9bb2203cc069",
+      quantity: 1,
+      name: "Surmai",
+      price: 900,
+      cuttingMethods: ["Cleaned and slices", "Fillet"],
+    }],
+  });
+  assert.equal(multiple.success, false);
 });

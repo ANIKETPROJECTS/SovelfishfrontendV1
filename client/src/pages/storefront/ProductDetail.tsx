@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { isNormalStorefrontProduct } from "@shared/productVisibility";
 import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
+import { isValidCuttingMethodSelection } from "@shared/cuttingMethods";
 import {
   asVariantCartProduct,
   formatProductWeight,
@@ -167,6 +168,10 @@ export default function ProductDetail() {
     ? asVariantCartProduct(product, selectedVariant)
     : product;
   const availableCuttingMethods = product?.cuttingMethods ?? EMPTY_CUTTING_METHODS;
+  const cuttingMethodSelected = isValidCuttingMethodSelection(
+    selectedCuttingMethods,
+    availableCuttingMethods,
+  );
   const isUnavailable = product?.status === "unavailable";
 
   // Auto-redirect to home when the product disappears from the list (went out of stock
@@ -562,6 +567,14 @@ export default function ProductDetail() {
                   <Button
                     onClick={() => {
                       if (!customer) { openLoginModal(); return; }
+                      if (!cuttingMethodSelected) {
+                        toast({
+                          title: "Choose a cutting method",
+                          description: "Select one option before adding this product to your cart.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
                       if (!isInCart) {
                          addToCart(
                             {
@@ -576,7 +589,7 @@ export default function ProductDetail() {
                          );
                       }
                     }}
-                    disabled={isUnavailable || totalMax <= 0 || (isInCart && false)}
+                    disabled={isUnavailable || totalMax <= 0 || (!isInCart && !cuttingMethodSelected)}
                     className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-sm shadow-md"
                   >
                     {isUnavailable

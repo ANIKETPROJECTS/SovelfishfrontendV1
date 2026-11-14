@@ -420,7 +420,7 @@ export const insertOrderRequestSchema = z.object({
     fishBatchId: z.string().nullable().optional(),
     fishWeightKg: z.number().positive().nullable().optional(),
     imageUrl: z.string().nullable().optional(),
-    cuttingMethods: z.array(z.string().trim().min(1)).optional(),
+    cuttingMethods: z.array(z.string().trim().min(1)).max(1, "Choose one cutting method").optional(),
   })).min(1, "At least one item is required"),
   subtotal: z.number().nullable().optional(),
   discount: z.number().nullable().optional(),

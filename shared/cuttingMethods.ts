@@ -22,9 +22,11 @@ export function isValidCuttingMethodSelection(
   availableMethods: unknown,
 ): boolean {
   if (!Array.isArray(selectedMethods)) return false;
-  const available = new Set(normalizeCuttingMethods(availableMethods));
+  const allowedMethods = normalizeCuttingMethods(availableMethods);
+  if (allowedMethods.length === 0) return selectedMethods.length === 0;
+  if (selectedMethods.length !== 1) return false;
+  const available = new Set(allowedMethods);
   const selected = selectedMethods as unknown[];
   if (selected.some((method) => typeof method !== "string" || !method.trim())) return false;
-  if (new Set(selected).size !== selected.length) return false;
   return selected.every((method) => available.has(method as string));
 }

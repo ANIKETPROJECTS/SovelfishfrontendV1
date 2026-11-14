@@ -38,7 +38,10 @@ import {
   getMarketMovement,
   getYesterdayAndTodayHistory,
 } from "./marketPricing";
-import { isValidCuttingMethodSelection } from "../shared/cuttingMethods";
+import {
+  isValidCuttingMethodSelection,
+  normalizeCuttingMethods,
+} from "../shared/cuttingMethods";
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
@@ -92,27 +95,36 @@ async function validateCuttingMethodsForHub(hub: any, items: any[]): Promise<str
   const selectedItems = items.filter(
     (item) => Array.isArray(item.cuttingMethods) && item.cuttingMethods.length > 0,
   );
-  if (selectedItems.length === 0) return null;
-
-  const invalidId = selectedItems.some(
-    (item) => !/^[a-f\d]{24}$/i.test(String(item.productId ?? "")),
-  );
-  if (invalidId) {
+  if (selectedItems.some((item) => !/^[a-f\d]{24}$/i.test(String(item.productId ?? "")))) {
     return "We couldn’t verify the cutting choices for one of your items. Please update your cart.";
   }
 
-  const productIds = [...new Set(selectedItems.map((item) => String(item.productId)))];
+  const productIds = [...new Set(
+    items
+      .map((item) => String(item.productId ?? ""))
+      .filter((id) => /^[a-f\d]{24}$/i.test(id)),
+  )];
+  if (productIds.length === 0) return null;
+
   const products = await hub.Product.find({ _id: { $in: productIds } })
     .select("_id name cuttingMethods")
     .lean() as any[];
   const productsById = new Map(products.map((product) => [String(product._id), product]));
 
-  for (const item of selectedItems) {
+  for (const item of items) {
     const product = productsById.get(String(item.productId));
-    if (
-      !product ||
-      !isValidCuttingMethodSelection(item.cuttingMethods, product.cuttingMethods)
-    ) {
+    if (!product) {
+      if (Array.isArray(item.cuttingMethods) && item.cuttingMethods.length > 0) {
+        return `The cutting choices for "${item.name}" have changed. Please update your cart and try again.`;
+      }
+      continue;
+    }
+    const availableMethods = normalizeCuttingMethods(product.cuttingMethods);
+    const selectedMethods = Array.isArray(item.cuttingMethods) ? item.cuttingMethods : [];
+    if (availableMethods.length > 0 && selectedMethods.length === 0) {
+      return `Please choose one cutting method for "${item.name}" before checkout.`;
+    }
+    if (!isValidCuttingMethodSelection(selectedMethods, availableMethods)) {
       return `The cutting choices for "${item.name}" have changed. Please update your cart and try again.`;
     }
   }
@@ -3016,20 +3028,15 @@ export async function registerRoutes(
         ? parsedInput
         : applyAutomaticNextDayDelivery(parsedInput);
       const shouldValidateCuttingMethods = !isInternalPaymentFinalizer || isPendingRazorpayCreation;
-      if (shouldValidateCuttingMethods) {
+      if (shouldValidateCuttingMethods && (input.items as any[]).length > 0) {
         try {
-          const selectedCuttingItems = (input.items as any[]).filter(
-            (item) => Array.isArray(item.cuttingMethods) && item.cuttingMethods.length > 0,
-          );
-          if (selectedCuttingItems.length > 0) {
-            const cuttingHub = await getCheckoutHubModels(input.hubDbName);
-            if (!cuttingHub) {
-              return res.status(400).json({ message: "Please select a valid delivery location to verify cutting choices." });
-            }
-            const cuttingMethodsError = await validateCuttingMethodsForHub(cuttingHub, input.items as any[]);
-            if (cuttingMethodsError) {
-              return res.status(400).json({ message: cuttingMethodsError });
-            }
+          const cuttingHub = await getCheckoutHubModels(input.hubDbName);
+          if (!cuttingHub) {
+            return res.status(400).json({ message: "Please select a valid delivery location to verify cutting choices." });
+          }
+          const cuttingMethodsError = await validateCuttingMethodsForHub(cuttingHub, input.items as any[]);
+          if (cuttingMethodsError) {
+            return res.status(400).json({ message: cuttingMethodsError });
           }
         } catch (cuttingValidationError) {
           console.error("[Cutting methods] Validation failed.");

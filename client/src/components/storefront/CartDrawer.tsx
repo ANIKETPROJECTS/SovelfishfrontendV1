@@ -17,6 +17,7 @@ import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchange
 import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
 import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
 import { CuttingMethodSelector } from "@/components/storefront/CuttingMethodSelector";
+import { isValidCuttingMethodSelection } from "@shared/cuttingMethods";
 import iconWalletImg from "@assets/wallet_1776953301704.png";
 import headerCartImg from "@assets/shopping-bag_1774706595493.png";
 import iconBinImg from "@assets/bin_1776927610776.png";
@@ -1104,6 +1105,20 @@ export function CartDrawer() {
       });
       return;
     }
+    const itemMissingCuttingMethod = items.find(
+      (item) =>
+        !item.isCombo &&
+        item.availableCuttingMethods?.length &&
+        !isValidCuttingMethodSelection(item.cuttingMethods ?? [], item.availableCuttingMethods),
+    );
+    if (itemMissingCuttingMethod) {
+      toast({
+        title: "Choose a cutting method",
+        description: `Select one option for ${itemMissingCuttingMethod.name} before checkout.`,
+        variant: "destructive",
+      });
+      return;
+    }
     if (isCityAreasLoading || cityAreasError) {
       toast({
         title: isCityAreasLoading ? "Loading delivery areas" : "Delivery areas unavailable",
@@ -1931,7 +1946,7 @@ export function CartDrawer() {
                               {!item.isCombo && item.availableCuttingMethods?.length ? (
                                 <div className="mt-2">
                                   <p className="mb-1 text-[11px] font-semibold text-muted-foreground">
-                                    Cutting options (optional)
+                                    Cutting method (required)
                                   </p>
                                   <CuttingMethodSelector
                                     compact
