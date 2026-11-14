@@ -89,7 +89,7 @@ function SingleProductCard({
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart({ ...cartProduct, isPreorderCheckout: preorderContext } as any);
+    setLocation(getProductDetailPath());
   };
 
   const handleIncrease = (e: React.MouseEvent) => {
@@ -198,7 +198,7 @@ function SingleProductCard({
             <Button
               onClick={handleAdd}
               disabled={maxQty <= 0}
-              aria-label={`Buy ${cartProduct.name}`}
+              aria-label={`Choose options for ${cartProduct.name}`}
               data-testid={`button-add-product-${cartProduct.id}`}
               className="h-9 min-w-[56px] rounded-full px-3 text-sm leading-none font-semibold text-white shadow-sm flex items-center justify-center shrink-0 cursor-pointer bg-primary transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
             >

@@ -1943,7 +1943,9 @@ export function CartDrawer() {
                                   Cutting: {item.cuttingMethods.join(", ")}
                                 </p>
                               ) : null}
-                              {!item.isCombo && item.availableCuttingMethods?.length ? (
+                              {!item.isCombo &&
+                              item.availableCuttingMethods?.length &&
+                              item.cuttingMethods?.length !== 1 ? (
                                 <div className="mt-2">
                                   <p className="mb-1 text-[11px] font-semibold text-muted-foreground">
                                     Cutting method (required)
