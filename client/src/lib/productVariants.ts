@@ -10,9 +10,19 @@ export type VariantCartProduct = Product & {
   fishBatchId?: string;
   fishWeightKg?: number;
   fishBatchAvailableQty?: number;
+  bulkOptionId?: string;
+  batchNumber?: string | null;
 };
 
 export function getProductVariantKey(variant: ProductWeightVariant): string {
+  return variant.batchId
+    ? `fish:${variant.batchId}`
+    : variant.optionId
+      ? `bulk:${variant.optionId}`
+    : `portion:${variant.weightKg}:${variant.minWeightKg ?? ""}:${variant.maxWeightKg ?? ""}`;
+}
+
+export function getLegacyProductVariantKey(variant: ProductWeightVariant): string {
   return variant.batchId
     ? `fish:${variant.batchId}`
     : `portion:${variant.weightKg}:${variant.minWeightKg ?? ""}:${variant.maxWeightKg ?? ""}`;
@@ -23,6 +33,10 @@ export function asVariantCartProduct(
   variant: ProductWeightVariant,
 ): VariantCartProduct {
   const isWholeFish = variant.saleType === "whole_fish" && Boolean(variant.batchId);
+  const isOptionInventory = variant.saleType === "whole_fish" || variant.saleType === "bulk_portion" ||
+    product.fishInventoryMode === "whole_fish" ||
+    product.fishInventoryMode === "bulk_portions" ||
+    product.wholeFishInventory === true;
   const optionKey = `${product.id}::${getProductVariantKey(variant)}`;
   return {
     ...product,
@@ -39,6 +53,10 @@ export function asVariantCartProduct(
     fishBatchId: isWholeFish ? variant.batchId! : undefined,
     fishWeightKg: isWholeFish ? variant.weightKg : undefined,
     fishBatchAvailableQty: isWholeFish ? variant.availableQuantity : undefined,
+    bulkOptionId: variant.saleType === "bulk_portion" ? variant.optionId ?? undefined : undefined,
+    batchNumber: isWholeFish ? variant.batchNumber ?? null : null,
+    pieces: isOptionInventory ? variant.pieces ?? null : variant.pieces ?? product.pieces,
+    serves: isOptionInventory ? variant.serves ?? null : variant.serves ?? product.serves,
   } as VariantCartProduct;
 }
 
@@ -59,4 +77,19 @@ export function formatStorePrice(price: number | null | undefined): string {
     maximumFractionDigits: 2,
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
   }).format(value);
+}
+
+export function formatProductMetadataValue(
+  value: string | number | null | undefined,
+  label: "Pieces" | "Serves",
+): string | null {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const withoutPrefix = label === "Pieces"
+    ? text.replace(/^pieces\s*:?\s*/i, "").trim()
+    : text.replace(/^serves?\s*:?\s*/i, "").trim();
+  const formatted = label === "Pieces"
+    ? withoutPrefix.replace(/\\s+pieces?$/i, "").trim()
+    : withoutPrefix.replace(/\\s+serves?$/i, "").trim();
+  return formatted || null;
 }

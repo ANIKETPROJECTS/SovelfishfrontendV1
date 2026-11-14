@@ -94,6 +94,18 @@ export default function Orders() {
                         return (
                           <div key={`${item.productId ?? item.name}-${index}`} className="mb-1 last:mb-0">
                             <div>{item.quantity}× {item.name} · ₹{unitPrice} each</div>
+                            {(item.pieces || item.serves) && (
+                              <div className="text-xs text-muted-foreground">
+                                {item.pieces && `Pieces: ${item.pieces}`}
+                                {item.pieces && item.serves ? " · " : ""}
+                                {item.serves && `Serves: ${item.serves}`}
+                              </div>
+                            )}
+                            {item.batchNumber && (
+                              <div className="text-xs text-muted-foreground">
+                                Batch: {item.batchNumber}
+                              </div>
+                            )}
                             {Array.isArray(item.cuttingMethods) && item.cuttingMethods.length > 0 && (
                               <div className="text-xs font-medium text-[#7B3A14]">
                                 Cutting: {item.cuttingMethods.join(", ")}

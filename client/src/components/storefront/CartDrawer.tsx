@@ -18,6 +18,7 @@ import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
 import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
 import { CuttingMethodSelector } from "@/components/storefront/CuttingMethodSelector";
 import { isValidCuttingMethodSelection } from "@shared/cuttingMethods";
+import { formatProductMetadataValue } from "@/lib/productVariants";
 import iconWalletImg from "@assets/wallet_1776953301704.png";
 import headerCartImg from "@assets/shopping-bag_1774706595493.png";
 import iconBinImg from "@assets/bin_1776927610776.png";
@@ -1016,6 +1017,11 @@ export function CartDrawer() {
       weightMaxKgPerUnit: i.weightMaxKgPerUnit ?? null,
       fishBatchId: i.fishBatchId ?? null,
       fishWeightKg: i.fishWeightKg ?? null,
+      bulkOptionId: i.bulkOptionId ?? null,
+      inventoryBatchId: i.inventoryBatchId ?? i.fishBatchId ?? null,
+      batchNumber: i.batchNumber ?? null,
+      pieces: i.pieces ?? null,
+      serves: i.serves ?? null,
       imageUrl: i.imageUrl ?? null,
       cuttingMethods: i.cuttingMethods ?? [],
     }));
@@ -1938,6 +1944,13 @@ export function CartDrawer() {
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-foreground text-sm truncate">{item.name}</h4>
                               <p className="text-xs text-muted-foreground">{item.unit}</p>
+                              {(item.pieces || item.serves) && (
+                                <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+                                  {item.pieces && `Pieces: ${formatProductMetadataValue(item.pieces, "Pieces")}`}
+                                  {item.pieces && item.serves ? " · " : ""}
+                                  {item.serves && `Serves: ${formatProductMetadataValue(item.serves, "Serves")}`}
+                                </p>
+                              )}
                               {item.cuttingMethods?.length ? (
                                 <p className="mt-1 text-[11px] leading-snug text-[#7B3A14]">
                                   Cutting: {item.cuttingMethods.join(", ")}
@@ -2251,6 +2264,13 @@ export function CartDrawer() {
                         <div key={item.id} className="flex justify-between text-sm">
                           <span className="text-muted-foreground min-w-0 truncate mr-2">
                             {item.name} × {item.quantity}
+                            {(item.pieces || item.serves) && (
+                              <span className="block truncate text-[11px] text-muted-foreground">
+                                {item.pieces && `Pieces: ${formatProductMetadataValue(item.pieces, "Pieces")}`}
+                                {item.pieces && item.serves ? " · " : ""}
+                                {item.serves && `Serves: ${formatProductMetadataValue(item.serves, "Serves")}`}
+                              </span>
+                            )}
                             {item.cuttingMethods?.length ? (
                               <span className="block truncate text-[11px] text-[#7B3A14]">
                                 Cutting: {item.cuttingMethods.join(", ")}

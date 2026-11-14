@@ -70,20 +70,27 @@ export type Product = {
   fishPricePerKg?: number | null;
   cuttingMethods?: string[];
   bulkSaleOptions?: Array<{
+    optionId?: string;
     weightKg: number;
     label: string;
+    weightLabel?: string;
     price: number;
     minWeightKg?: number | null;
     maxWeightKg?: number | null;
     averageWeightLabel?: string | null;
     availableQuantity: number;
+    pieces?: string | null;
+    serves?: string | null;
   }>;
   fishBatches?: Array<{
     batchId: string;
+    batchNumber?: string | null;
     weightKg: number;
     price: number;
     quantity: number;
     expiryDate: string | null;
+    pieces?: string | null;
+    serves?: string | null;
   }>;
   pieces: string | null;
   serves: string | null;
@@ -99,13 +106,18 @@ export type Product = {
   weightVariants?: Array<{
     weightKg: number;
     label: string;
+    weightLabel?: string;
     price: number;
     minWeightKg?: number | null;
     maxWeightKg?: number | null;
     averageWeightLabel?: string | null;
+    optionId?: string | null;
     batchId?: string | null;
+    batchNumber?: string | null;
     availableQuantity?: number;
     saleType?: "bulk_portion" | "whole_fish";
+    pieces?: string | null;
+    serves?: string | null;
   }>;
   marketMovement?: {
     direction: "up" | "down" | "steady";
@@ -419,6 +431,11 @@ export const insertOrderRequestSchema = z.object({
     weightMaxKgPerUnit: z.number().positive().nullable().optional(),
     fishBatchId: z.string().nullable().optional(),
     fishWeightKg: z.number().positive().nullable().optional(),
+    bulkOptionId: z.string().nullable().optional(),
+    inventoryBatchId: z.string().nullable().optional(),
+    batchNumber: z.string().nullable().optional(),
+    pieces: z.string().nullable().optional(),
+    serves: z.string().nullable().optional(),
     imageUrl: z.string().nullable().optional(),
     cuttingMethods: z.array(z.string().trim().min(1)).max(1, "Choose one cutting method").optional(),
   })).min(1, "At least one item is required"),

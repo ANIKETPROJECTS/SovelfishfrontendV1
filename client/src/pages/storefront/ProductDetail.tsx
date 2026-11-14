@@ -12,7 +12,6 @@ import { CuttingMethodSelector } from "@/components/storefront/CuttingMethodSele
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getDummyDetail } from "@/lib/productDummyData";
 import {
   ChevronLeft, Plus, Minus, Copy, Check, ChefHat, ShoppingBasket,
   ChevronDown, ChevronUp,
@@ -26,7 +25,9 @@ import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
 import { isValidCuttingMethodSelection } from "@shared/cuttingMethods";
 import {
   asVariantCartProduct,
+  formatProductMetadataValue,
   formatProductWeight,
+  getLegacyProductVariantKey,
   formatStorePrice,
   getProductVariantKey,
 } from "@/lib/productVariants";
@@ -168,6 +169,19 @@ export default function ProductDetail() {
     ? asVariantCartProduct(product, selectedVariant)
     : product;
   const availableCuttingMethods = product?.cuttingMethods ?? EMPTY_CUTTING_METHODS;
+  const optionScopedProduct = selectedVariant?.saleType === "whole_fish" ||
+    selectedVariant?.saleType === "bulk_portion" ||
+    product?.fishInventoryMode === "whole_fish" ||
+    product?.fishInventoryMode === "bulk_portions" ||
+    product?.wholeFishInventory === true;
+  const displayPieces = formatProductMetadataValue(
+    optionScopedProduct ? selectedVariant?.pieces : cartProduct?.pieces,
+    "Pieces",
+  );
+  const displayServes = formatProductMetadataValue(
+    optionScopedProduct ? selectedVariant?.serves : cartProduct?.serves,
+    "Serves",
+  );
   const cuttingMethodSelected = isValidCuttingMethodSelection(
     selectedCuttingMethods,
     availableCuttingMethods,
@@ -189,7 +203,10 @@ export default function ProductDetail() {
 
   // Inventory cap — same logic as home screen and ComboDetail
   const cartLineId = cartProduct
-    ? getCartLineId(cartProduct.id, selectedCuttingMethods)
+    ? getCartLineId(cartProduct.id, selectedCuttingMethods, {
+        pieces: cartProduct.pieces,
+        serves: cartProduct.serves,
+      })
     : null;
   const cartItem = cartItems.find(i => String(i.id) === cartLineId);
   const currentCartQty = cartItem?.quantity ?? 0;
@@ -212,7 +229,10 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!requestedSaleOption || variants.length === 0) return;
-    const index = variants.findIndex((variant) => getProductVariantKey(variant) === requestedSaleOption);
+    const index = variants.findIndex((variant) =>
+      getProductVariantKey(variant) === requestedSaleOption ||
+      getLegacyProductVariantKey(variant) === requestedSaleOption,
+    );
     if (index >= 0) setSelectedVariantIndex(index);
   }, [productId, requestedSaleOption, variants]);
 
@@ -230,7 +250,6 @@ export default function ProductDetail() {
   });
   const liveCoupons = rawProductCoupons.filter(c => c.visibleOnWebsite !== false && !(!!customer && userCouponUsage[c.code]?.isExhausted));
 
-  const dummy = product ? getDummyDetail(product.category) : null;
   const areaCharge = selectedCityArea?.charge ?? 0;
   const displayPrice = (selectedVariant?.price ?? product?.price ?? 0) + areaCharge;
   const hasDiscount = !selectedVariant && product?.originalPrice != null && product?.price != null && product.originalPrice > product.price;
@@ -284,7 +303,7 @@ export default function ProductDetail() {
     );
   }
 
-  if (!product || !dummy) {
+  if (!product) {
     // The useEffect above will redirect to home. Render a blank screen in the
     // interim so there's no jarring "Product not found." flash behind the cart drawer.
     return <div className="min-h-screen bg-background" />;
@@ -393,9 +412,10 @@ export default function ProductDetail() {
             )}
 
             {/* Pieces / Serves / Weight — wraps gracefully when text is long */}
+            {(displayPieces || displayServes || product.grossWeight || product.netWeight) && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3 py-1 text-black dark:text-white">
               {/* Pieces */}
-              <div className="flex items-center gap-2 shrink-0">
+              {displayPieces && <div className="flex items-center gap-2 shrink-0">
                 <span
                   aria-hidden
                   className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
@@ -411,14 +431,16 @@ export default function ProductDetail() {
                   }}
                 />
                 <span className="text-sm sm:text-lg font-semibold leading-tight whitespace-nowrap">
-                  {product.pieces || dummy.pieces}
+                  Pieces: {displayPieces}
                 </span>
-              </div>
+              </div>}
 
-              <span aria-hidden className="block w-px h-6 sm:h-7 bg-black/70 dark:bg-white/70 shrink-0" />
+              {displayPieces && displayServes && (
+                <span aria-hidden className="block w-px h-6 sm:h-7 bg-black/70 dark:bg-white/70 shrink-0" />
+              )}
 
               {/* Serves */}
-              <div className="flex items-center gap-2 shrink-0">
+              {displayServes && <div className="flex items-center gap-2 shrink-0">
                 <span
                   aria-hidden
                   className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
@@ -434,14 +456,11 @@ export default function ProductDetail() {
                   }}
                 />
                 <span className="text-sm sm:text-lg font-semibold leading-tight whitespace-nowrap">
-                  {product.serves || dummy.serves}
-                  {product.serves && !product.serves.toLowerCase().includes("serv") && (
-                    <span className="text-xs sm:text-sm font-normal ml-1">Serving</span>
-                  )}
+                  Serves: {displayServes}
                 </span>
-              </div>
+              </div>}
 
-              {(product.grossWeight || product.netWeight) && (
+              {(displayPieces || displayServes) && (product.grossWeight || product.netWeight) && (
                 <span aria-hidden className="block w-px h-6 sm:h-7 bg-black/70 dark:bg-white/70 shrink-0" />
               )}
 
@@ -480,6 +499,7 @@ export default function ProductDetail() {
                 </div>
               )}
             </div>
+            )}
 
             {variants.length > 0 && (
               <div>

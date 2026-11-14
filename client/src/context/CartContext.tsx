@@ -29,6 +29,9 @@ export interface CartItem extends Omit<Product, 'id'> {
   fishBatchId?: string;
   fishWeightKg?: number;
   fishBatchAvailableQty?: number;
+  bulkOptionId?: string;
+  batchNumber?: string | null;
+  inventoryBatchId?: string | null;
   comboImages?: string[];
   comboCategories?: string[];
   comboIncludes?: ComboInclude[];
@@ -195,13 +198,57 @@ function calcMaxQty(
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cartHydratedForKey, setCartHydratedForKey] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const { toast } = useToast();
-  const { customer, openLoginModal } = useCustomer();
-  const { isLocationSelected, openPicker } = useHub();
+  const { customer, isLoading: customerLoading, openLoginModal } = useCustomer();
+  const { isLocationSelected, isHubReady, selectedSubHub, openPicker } = useHub();
   const { selectedCityArea } = useCityArea();
   const { data: liveProducts, isSuccess: liveProductsLoaded } = useProducts();
+  const cartStorageKey = customer?.id && isLocationSelected && selectedSubHub?.id
+    ? `ftw-cart-v1:${customer.id}:${selectedSubHub.id}`
+    : null;
+
+  useEffect(() => {
+    if (customerLoading || !isHubReady) return;
+    if (!cartStorageKey) {
+      setItems([]);
+      setCartHydratedForKey(null);
+      return;
+    }
+
+    try {
+      const saved = sessionStorage.getItem(cartStorageKey);
+      const parsed: unknown = saved ? JSON.parse(saved) : [];
+      const restored = Array.isArray(parsed)
+        ? parsed.filter((item: any) =>
+            item &&
+            typeof item === "object" &&
+            (typeof item.id === "string" || typeof item.id === "number") &&
+            Number.isInteger(Number(item.quantity)) &&
+            Number(item.quantity) > 0 &&
+            item.isPreviewOnly !== true,
+          ) as CartItem[]
+        : [];
+      setItems(restored);
+    } catch {
+      setItems([]);
+    }
+    setCartHydratedForKey(cartStorageKey);
+  }, [customerLoading, isHubReady, cartStorageKey]);
+
+  useEffect(() => {
+    if (!cartStorageKey || cartHydratedForKey !== cartStorageKey) return;
+    try {
+      sessionStorage.setItem(
+        cartStorageKey,
+        JSON.stringify(items.filter((item) => !item.isPreviewOnly)),
+      );
+    } catch {
+      // Storage can be unavailable in private browsing; the in-memory cart remains usable.
+    }
+  }, [items, cartStorageKey, cartHydratedForKey]);
   const liveStockByProductId = useMemo(
     () => new Map((liveProducts ?? []).map((product) => [String(product.id), product.availableQty])),
     [liveProducts],
@@ -225,6 +272,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: Product | CartItem, quantity = 1, openCart = false) => {
     const isPreviewOnly = import.meta.env.DEV && (product as CartItem).isPreviewOnly === true;
+    if (!isPreviewOnly && cartStorageKey && cartHydratedForKey !== cartStorageKey) {
+      toast({ title: "Loading your cart", description: "Please try again in a moment." });
+      return;
+    }
     if (!isPreviewOnly && !customer) {
       openLoginModal();
       return;
@@ -245,7 +296,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     ).filter((method) => availableCuttingMethods.includes(method));
     const cartProduct = {
       ...product,
-      id: getCartLineId(cartBaseId, selectedCuttingMethods),
+      id: getCartLineId(cartBaseId, selectedCuttingMethods, {
+        pieces: product.pieces,
+        serves: product.serves,
+      }),
       cartBaseId,
       availableCuttingMethods,
       cuttingMethods: selectedCuttingMethods,
@@ -385,7 +439,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         (item.availableCuttingMethods ?? []).includes(method),
       );
       const cartBaseId = item.cartBaseId ?? String(item.id).split("::cutting::")[0];
-      const nextId = getCartLineId(cartBaseId, selected);
+      const nextId = getCartLineId(cartBaseId, selected, {
+        pieces: item.pieces,
+        serves: item.serves,
+      });
       if (nextId === String(item.id)) return current;
 
       const duplicate = current.find(

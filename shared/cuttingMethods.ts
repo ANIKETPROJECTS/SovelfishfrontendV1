@@ -9,12 +9,23 @@ export function normalizeCuttingMethods(value: unknown): string[] {
   )];
 }
 
-export function getCartLineId(baseId: string | number, selectedMethods: unknown): string {
+export function getCartLineId(
+  baseId: string | number,
+  selectedMethods: unknown,
+  details?: { pieces?: unknown; serves?: unknown },
+): string {
   const methods = normalizeCuttingMethods(selectedMethods).sort((left, right) =>
     left.localeCompare(right),
   );
-  if (methods.length === 0) return String(baseId);
-  return `${String(baseId)}::cutting::${encodeURIComponent(JSON.stringify(methods))}`;
+  let lineId = methods.length === 0
+    ? String(baseId)
+    : `${String(baseId)}::cutting::${encodeURIComponent(JSON.stringify(methods))}`;
+  const pieces = typeof details?.pieces === "string" ? details.pieces.trim() : "";
+  const serves = typeof details?.serves === "string" ? details.serves.trim() : "";
+  if (pieces || serves) {
+    lineId += `::meal::${encodeURIComponent(JSON.stringify([pieces || null, serves || null]))}`;
+  }
+  return lineId;
 }
 
 export function isValidCuttingMethodSelection(

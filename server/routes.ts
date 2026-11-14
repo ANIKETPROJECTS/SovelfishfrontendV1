@@ -42,6 +42,8 @@ import {
   isValidCuttingMethodSelection,
   normalizeCuttingMethods,
 } from "../shared/cuttingMethods";
+import { getBulkOptionId } from "../shared/bulkOptionIdentity";
+import { resolveOrderItemOptionDetails } from "./productOptionDetails";
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
@@ -130,6 +132,21 @@ async function validateCuttingMethodsForHub(hub: any, items: any[]): Promise<str
   }
 
   return null;
+}
+
+async function resolveOrderItemDetailsForHub(hub: any, items: any[]) {
+  const ids = [...new Set(items
+    .map((item) => String(item.productId ?? "").trim())
+    .filter((id) => /^[a-f\d]{24}$/i.test(id)))];
+  const [products, combos] = ids.length
+    ? await Promise.all([
+        hub.Product.find({ _id: { $in: ids } })
+          .select("_id name fishInventoryMode wholeFishInventory pieces serves batches bulkPortionOptions bulkPortionWeightsKg")
+          .lean() as Promise<any[]>,
+        hub.Combo.find({ _id: { $in: ids } }).select("_id serves").lean() as Promise<any[]>,
+      ])
+    : [[], []];
+  return resolveOrderItemOptionDetails(items, products, combos);
 }
 
 function parseTimeslotStartMinutes(timeslot: any): number | null {
@@ -672,6 +689,7 @@ export async function registerRoutes(
         hasWeightVariant: rawItem?.weightKgPerUnit != null,
         minWeightKgPerUnit,
         maxWeightKgPerUnit,
+        bulkOptionId: rawItem?.bulkOptionId == null ? null : String(rawItem.bulkOptionId).trim(),
         fishBatchId: rawItem?.fishBatchId == null ? null : String(rawItem.fishBatchId).trim(),
         fishWeightKg,
         price: rawItem?.basePrice != null
@@ -771,7 +789,8 @@ export async function registerRoutes(
         Array.isArray(product?.bulkPortionOptions) && product.bulkPortionOptions.length > 0
           ? product.bulkPortionOptions
           : (product?.bulkPortionWeightsKg ?? []).map((weightKg: unknown) => ({ weightKg }));
-      const matchingOption = configuredOptions.find((option: any) => {
+      const matchingOption = configuredOptions.find((option: any, index: number) => {
+        if (item.bulkOptionId && getBulkOptionId(option, index) !== item.bulkOptionId) return false;
         const minWeightKg = option?.minWeightKg == null ? null : Number(option.minWeightKg);
         const maxWeightKg = option?.maxWeightKg == null ? null : Number(option.maxWeightKg);
         const hasRange = minWeightKg != null && maxWeightKg != null &&
@@ -936,7 +955,7 @@ export async function registerRoutes(
         : (doc.bulkPortionWeightsKg ?? []).map((weightKg: unknown) => ({ weightKg }));
     const bulkSaleOptions = isBulkPortions && Number.isFinite(pricePerKg) && pricePerKg > 0
       ? configuredBulkOptions
-          .map((option: any) => {
+          .map((option: any, index: number) => {
             const minWeightKg = option?.minWeightKg == null ? null : Number(option.minWeightKg);
             const maxWeightKg = option?.maxWeightKg == null ? null : Number(option.maxWeightKg);
             const rawWeightKg = option?.weightKg == null
@@ -962,13 +981,17 @@ export async function registerRoutes(
               ? `${formatWeightKg(minWeightKg)}–${formatWeightKg(maxWeightKg)}`
               : formatWeightKg(weightKg);
             return {
+              optionId: getBulkOptionId(option, index),
               weightKg,
               label,
+              weightLabel: label,
               price: Math.round(pricePerKg * weightKg),
               minWeightKg: hasRange ? minWeightKg : null,
               maxWeightKg: hasRange ? maxWeightKg : null,
               averageWeightLabel,
               availableQuantity: Math.max(0, Math.floor((availableQty + 1e-9) / weightKg)),
+              pieces: typeof option?.pieces === "string" && option.pieces.trim() ? option.pieces.trim() : null,
+              serves: typeof option?.serves === "string" && option.serves.trim() ? option.serves.trim() : null,
             };
           })
           .filter((option: any) => option && Number.isFinite(option.price) && option.price >= 0)
@@ -996,10 +1019,13 @@ export async function registerRoutes(
             ) return null;
             return {
               batchId: String(batch._id ?? batch.batchId),
+              batchNumber: batch.batchNumber == null ? null : String(batch.batchNumber),
               weightKg,
               price: Math.round(rawPrice),
               quantity,
               expiryDate: batch.expiryDate ? new Date(batch.expiryDate).toISOString() : null,
+              pieces: typeof batch.pieces === "string" && batch.pieces.trim() ? batch.pieces.trim() : null,
+              serves: typeof batch.serves === "string" && batch.serves.trim() ? batch.serves.trim() : null,
             };
           })
           .filter((batch: any) => batch != null)
@@ -1010,8 +1036,11 @@ export async function registerRoutes(
           label: formatWeightKg(batch.weightKg),
           price: batch.price,
           batchId: batch.batchId,
+          batchNumber: batch.batchNumber,
           availableQuantity: batch.quantity,
           saleType: "whole_fish" as const,
+          pieces: batch.pieces,
+          serves: batch.serves,
         }))
       : bulkSaleOptions
           .filter((option: any) => option.availableQuantity > 0)
@@ -1454,6 +1483,11 @@ export async function registerRoutes(
         if (cuttingMethodsError) {
           return res.status(400).json({ message: cuttingMethodsError });
         }
+        const itemDetails = await resolveOrderItemDetailsForHub(hub, orderPayload.items ?? []);
+        if (itemDetails.error) {
+          return res.status(400).json({ message: itemDetails.error });
+        }
+        orderPayload = { ...orderPayload, items: itemDetails.items };
         let stockResult;
         try {
           stockResult = await validateCheckoutStock(hub, orderPayload.items);
@@ -1671,6 +1705,11 @@ export async function registerRoutes(
       if (cuttingMethodsError) {
         return res.status(400).json({ message: cuttingMethodsError });
       }
+      const itemDetails = await resolveOrderItemDetailsForHub(hub, orderPayload.items ?? []);
+      if (itemDetails.error) {
+        return res.status(400).json({ message: itemDetails.error });
+      }
+      orderPayload = { ...orderPayload, items: itemDetails.items };
       if ((orderPayload.deliveryType ?? "delivery") === "delivery") {
         orderPayload = await priceDeliveryOrderForCityArea(orderPayload, hub);
       }
@@ -3021,6 +3060,12 @@ export async function registerRoutes(
     req.headers["x-freshstockxchange-payment-finalizer"] === "1" && isLocalRequest;
       const isInternalPhonePeFinalizer =
         req.headers["x-freshstockxchange-phonepe-finalizer"] === "1" && isInternalPaymentFinalizer;
+      const isPaidWebhookRecovery =
+    req.headers["x-freshstockxchange-paid-recovery"] === "1" &&
+        isInternalPaymentFinalizer;
+      const isPendingRazorpayCreation =
+    req.headers["x-freshstockxchange-pending-payment"] === "1" &&
+        isInternalPaymentFinalizer;
       // Payment initiation already stored the authoritative delivery date.
       // Trusted finalizers reuse it rather than recalculating after callbacks
       // or retries cross 5 PM or midnight in India.
@@ -3038,9 +3083,16 @@ export async function registerRoutes(
           if (cuttingMethodsError) {
             return res.status(400).json({ message: cuttingMethodsError });
           }
+          if (!isInternalPaymentFinalizer) {
+            const itemDetails = await resolveOrderItemDetailsForHub(cuttingHub, input.items as any[]);
+            if (itemDetails.error) {
+              return res.status(400).json({ message: itemDetails.error });
+            }
+            input = { ...input, items: itemDetails.items };
+          }
         } catch (cuttingValidationError) {
-          console.error("[Cutting methods] Validation failed.");
-          return res.status(503).json({ message: "Could not verify cutting choices. Please try again." });
+          console.error("[Order item details] Catalog validation failed.");
+          return res.status(503).json({ message: "Could not verify product options. Please try again." });
         }
       }
       if (!isInternalPaymentFinalizer && (input.deliveryType ?? "delivery") === "delivery") {
@@ -3067,12 +3119,6 @@ export async function registerRoutes(
           total,
         };
       }
-      const isPaidWebhookRecovery =
-    req.headers["x-freshstockxchange-paid-recovery"] === "1" &&
-        isInternalPaymentFinalizer;
-      const isPendingRazorpayCreation =
-    req.headers["x-freshstockxchange-pending-payment"] === "1" &&
-        isInternalPaymentFinalizer;
       const requestUpiReference =
         (input.payments ?? []).find((payment: any) => payment.mode === "upi" && payment.reference)?.reference ?? null;
       const phonepeOrderId = input.phonepeOrderId ? String(input.phonepeOrderId) : null;
@@ -3497,6 +3543,11 @@ export async function registerRoutes(
         weightMaxKgPerUnit,
         fishBatchId,
         fishWeightKg,
+        bulkOptionId,
+        inventoryBatchId,
+        batchNumber,
+        pieces,
+        serves,
         imageUrl,
         cuttingMethods,
       }) => ({
@@ -3513,6 +3564,11 @@ export async function registerRoutes(
         weightMaxKgPerUnit: weightMaxKgPerUnit ?? null,
         fishBatchId: fishBatchId ?? null,
         fishWeightKg: fishWeightKg ?? null,
+        bulkOptionId: bulkOptionId ?? null,
+        ...(inventoryBatchId ? { inventoryBatchId } : {}),
+        ...(batchNumber ? { batchNumber } : {}),
+        pieces: pieces ?? null,
+        serves: serves ?? null,
         imageUrl: imageUrl ?? null,
         cuttingMethods: Array.isArray(cuttingMethods) ? cuttingMethods : [],
       }));

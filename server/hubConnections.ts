@@ -28,6 +28,8 @@ const externalFishBatchSchema = new mongoose.Schema(
     fishWeightKg: { type: Number, default: null },
     fishPrice: { type: Number, default: null },
     fishPricePerKg: { type: Number, default: null },
+    pieces: { type: String, default: null },
+    serves: { type: String, default: null },
     expiryDate: { type: Date, default: null },
   },
   { strict: false }
@@ -38,6 +40,8 @@ const bulkPortionOptionSchema = new mongoose.Schema(
     weightKg: { type: Number, default: null },
     minWeightKg: { type: Number, default: null },
     maxWeightKg: { type: Number, default: null },
+    pieces: { type: String, default: null },
+    serves: { type: String, default: null },
   },
   { _id: false, strict: false }
 );

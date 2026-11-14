@@ -24,6 +24,10 @@ test("keeps cart lines with different cutting selections separate", () => {
     getCartLineId("fish-1", ["Cleaned", "Fillet"]),
   );
   assert.equal(getCartLineId("fish-1", []), "fish-1");
+  assert.notEqual(
+    getCartLineId("fish-1", [], { pieces: "4 pieces", serves: "Serves 2" }),
+    getCartLineId("fish-1", [], { pieces: "8 pieces", serves: "Serves 4" }),
+  );
 });
 
 test("accepts no selection and exact configured methods only", () => {
@@ -50,12 +54,22 @@ test("keeps cutting selections when parsing checkout items", () => {
       name: "Surmai",
       price: 900,
       cuttingMethods: ["Cleaned and slices"],
+      fishBatchId: "batch-1",
+      inventoryBatchId: "batch-1",
+      batchNumber: "LOT-1",
+      pieces: "4 pieces",
+      serves: "Serves 2",
     }],
   });
 
   assert.equal(result.success, true);
   if (result.success) {
     assert.deepEqual(result.data.items[0].cuttingMethods, ["Cleaned and slices"]);
+    assert.equal(result.data.items[0].fishBatchId, "batch-1");
+    assert.equal(result.data.items[0].inventoryBatchId, "batch-1");
+    assert.equal(result.data.items[0].batchNumber, "LOT-1");
+    assert.equal(result.data.items[0].pieces, "4 pieces");
+    assert.equal(result.data.items[0].serves, "Serves 2");
   }
 
   const multiple = insertOrderRequestSchema.safeParse({
