@@ -8,6 +8,7 @@ import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { ProductCard } from "@/components/storefront/ProductCard";
+import { CuttingMethodSelector } from "@/components/storefront/CuttingMethodSelector";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +29,7 @@ import {
   formatStorePrice,
   getProductVariantKey,
 } from "@/lib/productVariants";
+import { getCartLineId } from "@shared/cuttingMethods";
 
 import weighScaleIcon from "@assets/weight-scale_1774801344716.png";
 import piecesIcon from "@assets/cutlery_1774801395283.png";
@@ -45,6 +47,8 @@ import { SeoHead } from "@/components/SeoHead";
 function getFallbackImage(_category: string) {
   return noImageImg;
 }
+
+const EMPTY_CUTTING_METHODS: string[] = [];
 
 function CouponCard({ code, description }: { code: string; description: string; color?: string; onApply?: () => void; isApplied?: boolean }) {
   return (
@@ -150,6 +154,7 @@ export default function ProductDetail() {
   const { customer, openLoginModal } = useCustomer();
   const [qty, setQty] = useState(1);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const [selectedCuttingMethods, setSelectedCuttingMethods] = useState<string[]>([]);
   const recipeScrollRef = useRef<HTMLDivElement>(null);
   const similarScrollRef = useRef<HTMLDivElement>(null);
 
@@ -161,6 +166,7 @@ export default function ProductDetail() {
   const cartProduct = product && selectedVariant
     ? asVariantCartProduct(product, selectedVariant)
     : product;
+  const availableCuttingMethods = product?.cuttingMethods ?? EMPTY_CUTTING_METHODS;
   const isUnavailable = product?.status === "unavailable";
 
   // Auto-redirect to home when the product disappears from the list (went out of stock
@@ -177,7 +183,10 @@ export default function ProductDetail() {
   }, [isLoading, products, product, productId, setLocation, toast]);
 
   // Inventory cap — same logic as home screen and ComboDetail
-  const cartItem = cartItems.find(i => String(i.id) === String(cartProduct?.id));
+  const cartLineId = cartProduct
+    ? getCartLineId(cartProduct.id, selectedCuttingMethods)
+    : null;
+  const cartItem = cartItems.find(i => String(i.id) === cartLineId);
   const currentCartQty = cartItem?.quantity ?? 0;
   const stockCandidate = cartItem ?? (cartProduct ? { ...cartProduct, quantity: 0 } as any : null);
   const totalMax = stockCandidate ? computeMaxQty(stockCandidate) : 0;
@@ -187,7 +196,14 @@ export default function ProductDetail() {
   useEffect(() => {
     setQty(1);
     setSelectedVariantIndex(0);
+    setSelectedCuttingMethods([]);
   }, [productId]);
+
+  useEffect(() => {
+    setSelectedCuttingMethods((current) =>
+      current.filter((method) => availableCuttingMethods.includes(method)),
+    );
+  }, [availableCuttingMethods, selectedVariantIndex]);
 
   useEffect(() => {
     if (!requestedSaleOption || variants.length === 0) return;
@@ -487,6 +503,12 @@ export default function ProductDetail() {
               </div>
             )}
 
+            <CuttingMethodSelector
+              methods={availableCuttingMethods}
+              selectedMethods={selectedCuttingMethods}
+              onChange={setSelectedCuttingMethods}
+            />
+
             {/* Price */}
             <div className="bg-muted/30 border border-border/30 rounded-2xl px-5 py-4">
               <div className="flex items-end gap-3 mb-1">
@@ -544,6 +566,7 @@ export default function ProductDetail() {
                          addToCart(
                             {
                               ...cartProduct!,
+                             selectedCuttingMethods,
                              isPreorderCheckout:
                                new URLSearchParams(search).get("preorder") === "1" ||
                                product.preorderMode === "preorder_only",

@@ -38,6 +38,7 @@ import {
   getMarketMovement,
   getYesterdayAndTodayHistory,
 } from "./marketPricing";
+import { isValidCuttingMethodSelection } from "../shared/cuttingMethods";
 import Razorpay from "razorpay";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getPhonePeClient } from "./phonepe";
@@ -85,6 +86,38 @@ function isRazorpayCancelTokenValid(token: unknown, storedHash: unknown): boolea
   const suppliedHash = Buffer.from(hashRazorpayCancelToken(token), "hex");
   const expectedHash = Buffer.from(storedHash, "hex");
   return suppliedHash.length === expectedHash.length && timingSafeEqual(suppliedHash, expectedHash);
+}
+
+async function validateCuttingMethodsForHub(hub: any, items: any[]): Promise<string | null> {
+  const selectedItems = items.filter(
+    (item) => Array.isArray(item.cuttingMethods) && item.cuttingMethods.length > 0,
+  );
+  if (selectedItems.length === 0) return null;
+
+  const invalidId = selectedItems.some(
+    (item) => !/^[a-f\d]{24}$/i.test(String(item.productId ?? "")),
+  );
+  if (invalidId) {
+    return "We couldn’t verify the cutting choices for one of your items. Please update your cart.";
+  }
+
+  const productIds = [...new Set(selectedItems.map((item) => String(item.productId)))];
+  const products = await hub.Product.find({ _id: { $in: productIds } })
+    .select("_id name cuttingMethods")
+    .lean() as any[];
+  const productsById = new Map(products.map((product) => [String(product._id), product]));
+
+  for (const item of selectedItems) {
+    const product = productsById.get(String(item.productId));
+    if (
+      !product ||
+      !isValidCuttingMethodSelection(item.cuttingMethods, product.cuttingMethods)
+    ) {
+      return `The cutting choices for "${item.name}" have changed. Please update your cart and try again.`;
+    }
+  }
+
+  return null;
 }
 
 function parseTimeslotStartMinutes(timeslot: any): number | null {
@@ -994,6 +1027,9 @@ export async function registerRoutes(
       fishInventoryMode,
       wholeFishInventory: isWholeFish,
       fishPricePerKg: Number.isFinite(pricePerKg) && pricePerKg > 0 ? pricePerKg : null,
+      cuttingMethods: Array.isArray(doc.cuttingMethods)
+        ? doc.cuttingMethods.filter((method: unknown) => typeof method === "string")
+        : [],
       bulkSaleOptions,
       fishBatches,
       imageUrl: doc.imageUrl ?? null,
@@ -1402,6 +1438,10 @@ export async function registerRoutes(
         if (!hub) {
           return res.status(400).json({ message: "Please select a valid delivery hub." });
         }
+        const cuttingMethodsError = await validateCuttingMethodsForHub(hub, orderPayload.items ?? []);
+        if (cuttingMethodsError) {
+          return res.status(400).json({ message: cuttingMethodsError });
+        }
         let stockResult;
         try {
           stockResult = await validateCheckoutStock(hub, orderPayload.items);
@@ -1614,6 +1654,10 @@ export async function registerRoutes(
       const hub = await getCheckoutHubModels(orderPayload.hubDbName);
       if (!hub) {
         return res.status(400).json({ message: "Please select a valid delivery hub." });
+      }
+      const cuttingMethodsError = await validateCuttingMethodsForHub(hub, orderPayload.items ?? []);
+      if (cuttingMethodsError) {
+        return res.status(400).json({ message: cuttingMethodsError });
       }
       if ((orderPayload.deliveryType ?? "delivery") === "delivery") {
         orderPayload = await priceDeliveryOrderForCityArea(orderPayload, hub);
@@ -2971,6 +3015,27 @@ export async function registerRoutes(
       let input = isInternalPaymentFinalizer
         ? parsedInput
         : applyAutomaticNextDayDelivery(parsedInput);
+      const shouldValidateCuttingMethods = !isInternalPaymentFinalizer || isPendingRazorpayCreation;
+      if (shouldValidateCuttingMethods) {
+        try {
+          const selectedCuttingItems = (input.items as any[]).filter(
+            (item) => Array.isArray(item.cuttingMethods) && item.cuttingMethods.length > 0,
+          );
+          if (selectedCuttingItems.length > 0) {
+            const cuttingHub = await getCheckoutHubModels(input.hubDbName);
+            if (!cuttingHub) {
+              return res.status(400).json({ message: "Please select a valid delivery location to verify cutting choices." });
+            }
+            const cuttingMethodsError = await validateCuttingMethodsForHub(cuttingHub, input.items as any[]);
+            if (cuttingMethodsError) {
+              return res.status(400).json({ message: cuttingMethodsError });
+            }
+          }
+        } catch (cuttingValidationError) {
+          console.error("[Cutting methods] Validation failed.");
+          return res.status(503).json({ message: "Could not verify cutting choices. Please try again." });
+        }
+      }
       if (!isInternalPaymentFinalizer && (input.deliveryType ?? "delivery") === "delivery") {
         const hub = await getCheckoutHubModels(input.hubDbName);
         if (!hub) {
@@ -3426,6 +3491,7 @@ export async function registerRoutes(
         fishBatchId,
         fishWeightKg,
         imageUrl,
+        cuttingMethods,
       }) => ({
         productId,
         name,
@@ -3441,6 +3507,7 @@ export async function registerRoutes(
         fishBatchId: fishBatchId ?? null,
         fishWeightKg: fishWeightKg ?? null,
         imageUrl: imageUrl ?? null,
+        cuttingMethods: Array.isArray(cuttingMethods) ? cuttingMethods : [],
       }));
 
       // Fetch customer email from DB if not provided in payload

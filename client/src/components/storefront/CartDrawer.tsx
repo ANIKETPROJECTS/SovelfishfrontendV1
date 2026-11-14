@@ -16,6 +16,7 @@ import emptyCartBagAnim from "@/assets/lottie/empty-cart-bag.json";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
 import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
+import { CuttingMethodSelector } from "@/components/storefront/CuttingMethodSelector";
 import iconWalletImg from "@assets/wallet_1776953301704.png";
 import headerCartImg from "@assets/shopping-bag_1774706595493.png";
 import iconBinImg from "@assets/bin_1776927610776.png";
@@ -295,7 +296,7 @@ function areStockWarningsEqual(
 }
 
 export function CartDrawer() {
-  const { isCartOpen, setIsCartOpen, items, updateQuantity, updateInstruction, removeFromCart, totalPrice, clearCart, appliedCoupon, setAppliedCoupon, discountAmount, computeMaxQty } = useCart();
+  const { isCartOpen, setIsCartOpen, items, updateQuantity, updateInstruction, updateCuttingMethods, removeFromCart, totalPrice, clearCart, appliedCoupon, setAppliedCoupon, discountAmount, computeMaxQty } = useCart();
   const { mutate: createOrder, isPending } = useCreateOrder();
   const { customer } = useCustomer();
   const { selectedSubHub, isHubReady } = useHub();
@@ -1015,6 +1016,7 @@ export function CartDrawer() {
       fishBatchId: i.fishBatchId ?? null,
       fishWeightKg: i.fishWeightKg ?? null,
       imageUrl: i.imageUrl ?? null,
+      cuttingMethods: i.cuttingMethods ?? [],
     }));
     const slotCharge = 0;
     const subtotal = totalPrice;
@@ -1921,6 +1923,25 @@ export function CartDrawer() {
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-foreground text-sm truncate">{item.name}</h4>
                               <p className="text-xs text-muted-foreground">{item.unit}</p>
+                              {item.cuttingMethods?.length ? (
+                                <p className="mt-1 text-[11px] leading-snug text-[#7B3A14]">
+                                  Cutting: {item.cuttingMethods.join(", ")}
+                                </p>
+                              ) : null}
+                              {!item.isCombo && item.availableCuttingMethods?.length ? (
+                                <div className="mt-2">
+                                  <p className="mb-1 text-[11px] font-semibold text-muted-foreground">
+                                    Cutting options (optional)
+                                  </p>
+                                  <CuttingMethodSelector
+                                    compact
+                                    methods={item.availableCuttingMethods}
+                                    selectedMethods={item.cuttingMethods ?? []}
+                                    onChange={(methods) => updateCuttingMethods(item.id, methods)}
+                                    title="Edit cutting method"
+                                  />
+                                </div>
+                              ) : null}
                               {cartStockWarnings[item.id] && (
                                 <p
                                   className="mt-1 text-[11px] font-semibold text-destructive"
@@ -2211,7 +2232,14 @@ export function CartDrawer() {
                       <h3 className="font-semibold text-foreground text-sm mb-3">Bill Details</h3>
                       {items.map(item => (
                         <div key={item.id} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground truncate mr-2">{item.name} × {item.quantity}</span>
+                          <span className="text-muted-foreground min-w-0 truncate mr-2">
+                            {item.name} × {item.quantity}
+                            {item.cuttingMethods?.length ? (
+                              <span className="block truncate text-[11px] text-[#7B3A14]">
+                                Cutting: {item.cuttingMethods.join(", ")}
+                              </span>
+                            ) : null}
+                          </span>
                           <span className="font-medium flex-shrink-0">₹{item.price * item.quantity}</span>
                         </div>
                       ))}

@@ -50,6 +50,7 @@ const productSchema = new mongoose.Schema({
   limitedStockNote: { type: String, default: null },
   price: { type: Number, default: null },
   fishPricePerKg: { type: Number, default: null },
+  cuttingMethods: { type: [String], default: [] },
   fishInventoryMode: { type: String, default: "standard" },
   wholeFishInventory: { type: Boolean, default: false },
   variantGroupId: { type: mongoose.Schema.Types.Mixed, default: null },

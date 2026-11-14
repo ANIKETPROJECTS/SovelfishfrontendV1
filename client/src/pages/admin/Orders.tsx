@@ -94,6 +94,11 @@ export default function Orders() {
                         return (
                           <div key={`${item.productId ?? item.name}-${index}`} className="mb-1 last:mb-0">
                             <div>{item.quantity}× {item.name} · ₹{unitPrice} each</div>
+                            {Array.isArray(item.cuttingMethods) && item.cuttingMethods.length > 0 && (
+                              <div className="text-xs font-medium text-[#7B3A14]">
+                                Cutting: {item.cuttingMethods.join(", ")}
+                              </div>
+                            )}
                             {itemAreaCharge > 0 && basePrice != null && (
                               <div className="text-xs text-muted-foreground">
                                 Base ₹{basePrice} + ₹{itemAreaCharge} area

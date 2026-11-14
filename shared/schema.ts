@@ -68,6 +68,7 @@ export type Product = {
   fishInventoryMode?: "standard" | "whole_fish" | "bulk_portions" | string;
   wholeFishInventory?: boolean;
   fishPricePerKg?: number | null;
+  cuttingMethods?: string[];
   bulkSaleOptions?: Array<{
     weightKg: number;
     label: string;
@@ -177,6 +178,7 @@ export type OrderItem = {
   fishBatchId?: string | null;
   fishWeightKg?: number | null;
   imageUrl?: string | null;
+  cuttingMethods?: string[];
 };
 
 export type TimeslotActiveDay = {
@@ -418,6 +420,7 @@ export const insertOrderRequestSchema = z.object({
     fishBatchId: z.string().nullable().optional(),
     fishWeightKg: z.number().positive().nullable().optional(),
     imageUrl: z.string().nullable().optional(),
+    cuttingMethods: z.array(z.string().trim().min(1)).optional(),
   })).min(1, "At least one item is required"),
   subtotal: z.number().nullable().optional(),
   discount: z.number().nullable().optional(),

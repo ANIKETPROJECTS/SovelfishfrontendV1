@@ -20,3 +20,4 @@
 - [Homepage visual direction](homepage-visual-direction.md) — Use warm golden wood on the homepage, pure white header/cards, and brown wood for the footer.
 - [Address map privacy](address-map-privacy.md) — Geocoder queries must use a separate public-place search, never customer or apartment details.
 - [City-area delivery pricing](city-area-pricing.md) — only active areas from the selected subhub are valid; apply charges per cart unit and recheck before payment; pincodes remain for serviceability only.
+- [Product cutting choices](cutting-methods.md) — use each hub product's saved `cuttingMethods`; validate and persist the selected array on the order item rather than creating a second catalog.

@@ -5,6 +5,7 @@ import { useCustomer } from "@/context/CustomerContext";
 import { useProducts } from "@/hooks/use-products";
 import { useHub } from "@/context/HubContext";
 import { useCityArea } from "@/context/CityAreaContext";
+import { getCartLineId, normalizeCuttingMethods } from "@shared/cuttingMethods";
 
 export interface ComboInclude {
   productId: string;
@@ -34,6 +35,8 @@ export interface CartItem extends Omit<Product, 'id'> {
   basePrice?: number | null;
   cityArea?: string | null;
   cityAreaCharge?: number | null;
+  cartBaseId?: string;
+  availableCuttingMethods?: string[];
 }
 
 interface CartContextType {
@@ -42,6 +45,7 @@ interface CartContextType {
   removeFromCart: (productId: string | number) => void;
   updateQuantity: (productId: string | number, quantity: number) => void;
   updateInstruction: (productId: string | number, instruction: string) => void;
+  updateCuttingMethods: (productId: string | number, methods: string[]) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -86,7 +90,7 @@ function sameCartItem(left: CartItem, right: CartItem): boolean {
 }
 
 function getCartProductId(item: CartItem): string {
-  return item.originalId ?? String(item.id);
+  return item.originalId ?? item.cartBaseId ?? String(item.id).split("::cutting::")[0];
 }
 
 function calcMaxQty(
@@ -232,6 +236,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     let acceptedQuantity = 0;
     let modeSwitchMessage = "";
+    const cartBaseId = String((product as CartItem).cartBaseId ?? product.id);
+    const availableCuttingMethods = normalizeCuttingMethods(
+      (product as CartItem).availableCuttingMethods ?? product.cuttingMethods,
+    );
+    const selectedCuttingMethods = normalizeCuttingMethods(
+      (product as CartItem).selectedCuttingMethods,
+    ).filter((method) => availableCuttingMethods.includes(method));
+    const cartProduct = {
+      ...product,
+      id: getCartLineId(cartBaseId, selectedCuttingMethods),
+      cartBaseId,
+      availableCuttingMethods,
+      cuttingMethods: selectedCuttingMethods,
+    } as CartItem;
 
     setItems((current) => {
       const isPreorderProduct =
@@ -254,9 +272,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           : "Preorder products were removed because normal items use the regular delivery flow.";
       }
 
-      const existing = modeItems.find((i) => String(i.id) === String(product.id));
+      const existing = modeItems.find((i) => String(i.id) === String(cartProduct.id));
       const candidate = {
-        ...product,
+        ...cartProduct,
         quantity: existing?.quantity ?? 0,
       } as CartItem;
       const maxTotal = calcMaxQty(
@@ -279,7 +297,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (existing) {
         return modeItems.map((i) =>
-          String(i.id) === String(product.id)
+          String(i.id) === String(cartProduct.id)
             ? {
                 ...i,
                 quantity: i.quantity + acceptedQuantity,
@@ -296,7 +314,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [
         ...modeItems,
         {
-          ...product,
+        ...cartProduct,
           quantity: acceptedQuantity,
           isPreorderCheckout:
             isPreorderProduct,
@@ -356,6 +374,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((current) =>
       current.map((i) => (String(i.id) === String(productId) ? { ...i, instruction } : i))
     );
+  };
+
+  const updateCuttingMethods = (productId: string | number, methods: string[]) => {
+    setItems((current) => {
+      const item = current.find((candidate) => String(candidate.id) === String(productId));
+      if (!item) return current;
+
+      const selected = normalizeCuttingMethods(methods).filter((method) =>
+        (item.availableCuttingMethods ?? []).includes(method),
+      );
+      const cartBaseId = item.cartBaseId ?? String(item.id).split("::cutting::")[0];
+      const nextId = getCartLineId(cartBaseId, selected);
+      if (nextId === String(item.id)) return current;
+
+      const duplicate = current.find(
+        (candidate) => String(candidate.id) === nextId && String(candidate.id) !== String(item.id),
+      );
+      if (duplicate) {
+        return current
+          .filter((candidate) => String(candidate.id) !== String(item.id))
+          .map((candidate) =>
+            String(candidate.id) === nextId
+              ? { ...candidate, quantity: candidate.quantity + item.quantity }
+              : candidate,
+          );
+      }
+
+      return current.map((candidate) =>
+        String(candidate.id) === String(item.id)
+          ? { ...candidate, id: nextId, cartBaseId, cuttingMethods: selected }
+          : candidate,
+      );
+    });
   };
 
   const clearCart = () => {
@@ -448,6 +499,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         updateQuantity,
         updateInstruction,
+        updateCuttingMethods,
         clearCart,
         totalItems,
         totalPrice,
