@@ -30,6 +30,10 @@ test("accepts only complete, finite, in-range coordinate pairs", () => {
 
 test("customer address creation allows no pin or a valid pin pair", () => {
   assert.equal(insertCustomerAddressSchema.safeParse(addressFields).success, true);
+  assert.equal(insertCustomerAddressSchema.safeParse({ ...addressFields, pincode: "" }).success, true);
+  assert.equal(insertCustomerAddressSchema.safeParse({ ...addressFields, pincode: "PIN-UNKNOWN" }).success, true);
+  const { pincode: _pincode, ...addressWithoutPincode } = addressFields;
+  assert.equal(insertCustomerAddressSchema.safeParse(addressWithoutPincode).success, true);
   assert.equal(
     insertCustomerAddressSchema.safeParse({
       ...addressFields,
@@ -46,6 +50,7 @@ test("customer address creation allows no pin or a valid pin pair", () => {
 
 test("address updates preserve omitted pins and clear or set both coordinates together", () => {
   assert.equal(updateCustomerAddressSchema.safeParse({ area: "Thane" }).success, true);
+  assert.equal(updateCustomerAddressSchema.safeParse({ pincode: "ANY-VALUE" }).success, true);
   assert.equal(
     updateCustomerAddressSchema.safeParse({ latitude: 19.2183, longitude: 72.9781 }).success,
     true,

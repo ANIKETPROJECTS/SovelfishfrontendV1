@@ -109,7 +109,7 @@ function GoogleMapPicker({ onConfirm, onClose }: {
                 <MapPin className="w-7 h-7 text-amber-500" />
               </div>
               <p className="text-sm font-semibold text-slate-700">Map unavailable</p>
-              <p className="text-xs text-slate-400 leading-relaxed">Google Maps billing is not active on your account. Please type your area and pincode manually in the fields below.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">Google Maps billing is not active on your account. Please type your area manually; pincode is optional.</p>
             </div>
           </div>
         ) : !mapsReady ? (
@@ -209,7 +209,7 @@ export default function AddAddress() {
   };
 
   const save = () => {
-    if (!form.name || !form.phone || !form.building || !form.area || !form.pincode) {
+    if (!form.name || !form.phone || !form.building || !form.area) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
@@ -220,10 +220,6 @@ export default function AddAddress() {
         description: cityAreasError ?? "Select an area from the available list.",
         variant: "destructive",
       });
-      return;
-    }
-    if (!/^\d{6}$/.test(form.pincode)) {
-      toast({ title: "Please enter a valid 6-digit pincode", variant: "destructive" });
       return;
     }
     const label =
@@ -372,8 +368,8 @@ export default function AddAddress() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode *</Label>
-              <Input value={form.pincode} onChange={e => setForm(f => ({ ...f, pincode: e.target.value }))} placeholder="400001" type="tel" maxLength={6} className="rounded-xl h-12 border-border/60 text-base" />
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode (optional)</Label>
+              <Input value={form.pincode} onChange={e => setForm(f => ({ ...f, pincode: e.target.value }))} placeholder="400001" type="text" className="rounded-xl h-12 border-border/60 text-base" />
             </div>
           </div>
 

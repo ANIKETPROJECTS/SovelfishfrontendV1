@@ -28,10 +28,8 @@ interface HubContextValue {
   selectedSuperHub: SuperHub | null;
   selectedSubHub: SubHub | null;
   isLocationSelected: boolean;
-  // True once the hub/pincode config has been loaded at least once (from cache or
-  // network) for the current session. Any code that needs to trust
-  // selectedSubHub.pincodes (e.g. checkout delivery-charge lookup) MUST wait for this
-  // to be true first — see explain.md for why this exists.
+  // True once the selected hub has been loaded from cache or network and is ready
+  // to supply its catalog and delivery-area configuration.
   isHubReady: boolean;
   setHub: (superHub: SuperHub, subHub: SubHub) => void;
   clearHub: () => void;
@@ -102,12 +100,11 @@ export function HubProvider({ children }: { children: ReactNode }) {
           setSelectedSubHub(subHub);
           setIsLocationSelected(true);
           setActiveHubDb(subHub.dbName);
-          // Cached pincode config is already usable, so checkout can trust it —
-          // do NOT wait for the background refresh below before flipping this on.
+          // The cached hub is immediately usable; refresh its configuration below.
           setIsHubReady(true);
 
-          // Always re-fetch fresh sub-hub data in the background so newly added
-          // pincodes, charges, or time delays are picked up without clearing cache
+          // Refresh sub-hub data in the background so updated hub configuration
+          // is picked up without clearing the browser cache.
           try {
             const subRes = await fetch(`/api/hubs/sub?superHubId=${superHub.id}`);
             if (subRes.ok) {
@@ -175,6 +172,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
       skipPicker: () => {
         setIsPickerOpen(false);
         setIsPickerRequired(false);
+        // Remember that this visitor has handled the first-visit location prompt,
+        // so a fresh browser session does not ask for it again.
+        localStorage.setItem(USER_PICKED_KEY, "1");
       },
     }}>
       {children}

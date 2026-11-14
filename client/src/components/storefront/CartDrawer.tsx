@@ -63,9 +63,6 @@ import {
 import { format } from "date-fns";
 
 import noImageImg from "@/assets/coming-soon.png";
-import scooterImg from "@assets/animation-original_(51)_1779950354153.png";
-import whatsappIcon from "@assets/logo_(16)_1779950540352.png";
-import callIcon from "@assets/call_(2)_1779950579819.png";
 
 const addressTypeColors: Record<string, string> = {
   house: "bg-blue-100 text-blue-700",
@@ -370,8 +367,6 @@ export function CartDrawer() {
   const onlineGateway = "phonepe" as const;
   const [phonePeEnabled, setPhonePeEnabled] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [showUnserviceablePopup, setShowUnserviceablePopup] = useState(false);
-  const [unserviceablePincode, setUnserviceablePincode] = useState("");
   const [expandedInstructions, setExpandedInstructions] = useState<Record<number, boolean>>({});
   const [useWallet, setUseWallet] = useState(false);
   useEffect(() => {
@@ -811,12 +806,6 @@ export function CartDrawer() {
 
   const activeAddressId = selectedAddressId ?? (savedAddresses[0]?.id || null);
 
-  // Helper: check if a pincode is unserviceable in the current hub
-  const checkPincodeServiceability = useCallback((pincode: string): boolean => {
-    if (pincode.length < 6 || !selectedSubHub?.pincodes?.length) return true;
-    return !!selectedSubHub.pincodes.find(p => p.pincode === pincode);
-  }, [selectedSubHub]);
-
   useEffect(() => {
     if (showAddForm) return;
     const selected = savedAddresses.find((address) => address.id === activeAddressId);
@@ -826,18 +815,6 @@ export function CartDrawer() {
     );
     setSelectedCityArea(matchingArea?.name ?? null);
   }, [activeAddressId, savedAddresses, cityAreas, showAddForm, setSelectedCityArea]);
-
-  // Show popup when switching between existing saved addresses with unserviceable pincodes
-  useEffect(() => {
-    const selected = savedAddresses.find(a => a.id === activeAddressId);
-    if (!selected?.pincode || selected.pincode.length < 6) return;
-    if (!selectedSubHub?.pincodes?.length) return;
-    const matched = selectedSubHub.pincodes.find(p => p.pincode === selected.pincode);
-    if (!matched) {
-      setUnserviceablePincode(selected.pincode);
-      setShowUnserviceablePopup(true);
-    }
-  }, [activeAddressId, selectedSubHub]);
 
   const getFallbackImage = (_category: string) => noImageImg;
 
@@ -938,11 +915,6 @@ export function CartDrawer() {
       toast({ title: "Select an available delivery Area/City", variant: "destructive" });
       return;
     }
-    if (addForm.pincode.length === 6 && !checkPincodeServiceability(addForm.pincode)) {
-      setUnserviceablePincode(addForm.pincode);
-      setShowUnserviceablePopup(true);
-      return;
-    }
     const label =
       addForm.type === "other" ? (addForm.label || "Other") :
       addForm.type === "house" ? "Home" : "Office";
@@ -1001,7 +973,12 @@ export function CartDrawer() {
   };
 
   const buildOrderPayload = (selected: CustomerAddress, razorpayPaymentId?: string) => {
-    const fullAddress = `${selected.building} · ${selected.street}, ${selected.area} · ${selected.pincode}`;
+    const fullAddress = [
+      selected.building,
+      selected.street,
+      selected.area,
+      selected.pincode,
+    ].filter(Boolean).join(", ");
     const selectedCoordinates = getValidAddressCoordinates(selected);
     const orderItems = items.map(i => ({
       productId: i.originalId ?? String(i.id),
@@ -1760,7 +1737,7 @@ export function CartDrawer() {
 
         // Payment confirmed server-side — mark as succeeded and place the order.
         // Same guard as placeOrder(): don't build the payload with a possibly-stale/
-        // unresolved delivery charge if the hub/pincode config isn't loaded (e.g. the
+        // unresolved area price if the hub configuration isn't loaded (e.g. the
         // app was fully reloaded while the user was away in the UPI app).
         if (!isHubReady) {
           console.warn("[checkout] UPI resume: hub config not ready yet, deferring order creation.");
@@ -2390,20 +2367,11 @@ export function CartDrawer() {
                             </Button>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Pincode</Label>
+                            <Label className="text-xs text-muted-foreground">Pincode (optional)</Label>
                             <input
-                              type="tel"
-                              inputMode="numeric"
-                              maxLength={6}
+                              type="text"
                               value={addForm.pincode}
-                              onChange={e => {
-                                const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                                setAddForm(f => ({ ...f, pincode: val }));
-                                if (val.length === 6 && !checkPincodeServiceability(val)) {
-                                  setUnserviceablePincode(val);
-                                  setShowUnserviceablePopup(true);
-                                }
-                              }}
+                              onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value }))}
                               placeholder="400601"
                               className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                               data-testid="input-address-pincode"
@@ -3081,7 +3049,7 @@ export function CartDrawer() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pincode (optional)</Label>
                 <Input
                   value={addForm.pincode}
                   onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value }))}
@@ -3111,63 +3079,6 @@ export function CartDrawer() {
         </DialogContent>
       </Dialog>
 
-      {/* Unserviceable pincode popup */}
-      <Dialog open={showUnserviceablePopup} onOpenChange={setShowUnserviceablePopup}>
-        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-0 shadow-2xl" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          <div className="flex flex-col items-center px-6 pt-6 pb-7 text-center gap-0">
-            <img src={scooterImg} alt="Delivery" className="w-36 h-auto object-contain mb-3" />
-
-            <p className="text-base font-semibold text-slate-800 mb-1" style={{ fontWeight: 600 }}>
-              We can still reach you! 🚚
-            </p>
-
-            <p className="text-sm text-slate-500 leading-relaxed mb-4" style={{ fontWeight: 400 }}>
-              Online ordering isn't available for{" "}
-              <span className="font-semibold text-slate-700">{unserviceablePincode}</span> yet, but we
-              deliver via <span className="font-semibold text-slate-700">Porter</span> right
-              to your doorstep.
-            </p>
-
-            <div className="w-full rounded-2xl px-4 py-3 mb-4 text-left" style={{ backgroundColor: "#EEF1FA" }}>
-              <p className="text-xs font-semibold mb-0.5" style={{ color: "#364F9F" }}>
-                📦 Outstation Delivery Available
-              </p>
-              <p className="text-xs text-slate-500 leading-relaxed" style={{ fontWeight: 400 }}>
-                We ship in insulated cold-store boxes so your seafood &amp; meat arrives
-                perfectly fresh, no matter the distance.
-              </p>
-            </div>
-
-            <div className="w-full flex flex-col gap-2.5 mb-4">
-              <a
-                href={`https://wa.me/919619590694?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
-                style={{ backgroundColor: "#25D366" }}
-              >
-                <img src={whatsappIcon} alt="WhatsApp" className="w-7 h-7 rounded-lg flex-shrink-0" />
-                <div className="text-left">
-                  <p className="text-white text-xs font-semibold leading-none mb-0.5">Chat on WhatsApp</p>
-                  <p className="text-white/90 text-xs font-normal">+91 9619590694</p>
-                </div>
-              </a>
-              <a
-                href="tel:+919619590694"
-                className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
-                style={{ backgroundColor: "#2196F3" }}
-              >
-                <img src={callIcon} alt="Call" className="w-7 h-7 rounded-full flex-shrink-0" />
-                <div className="text-left">
-                  <p className="text-white text-xs font-semibold leading-none mb-0.5">Call Us</p>
-                  <p className="text-white/90 text-xs font-normal">+91 9619590694</p>
-                </div>
-              </a>
-            </div>
-
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

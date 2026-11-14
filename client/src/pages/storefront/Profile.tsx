@@ -18,10 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import scooterImg from "@assets/animation-original_(51)_1779950354153.png";
-import whatsappIcon from "@assets/logo_(16)_1779950540352.png";
-import callIcon from "@assets/call_(2)_1779950579819.png";
 import logoutAnim from "@/assets/lottie/logout.json";
 import walletIconImg from "@assets/wallet-filled-money-tool_1779874392752.png";
 import logoutPopupAnim from "@/assets/lottie/logout-fish.json";
@@ -49,7 +45,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomer } from "@/context/CustomerContext";
-import { useHub } from "@/context/HubContext";
 import { useCityArea } from "@/context/CityAreaContext";
 import { findCityAreaOption } from "@shared/cityAreaPricing";
 import { OtpModal } from "@/components/storefront/OtpModal";
@@ -877,7 +872,6 @@ export default function Profile() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { customer, isLoading: customerLoading, refetch, logout } = useCustomer();
-  const { selectedSubHub } = useHub();
   const {
     cityAreas,
     setSelectedCityArea,
@@ -904,13 +898,6 @@ export default function Profile() {
   const [addressForm, setAddressForm] = useState<EmptyAddress>(emptyAddress);
   const [mapPinCleared, setMapPinCleared] = useState(false);
   const [useAccountDetails, setUseAccountDetails] = useState(false);
-  const [showUnserviceablePopup, setShowUnserviceablePopup] = useState(false);
-  const [unserviceablePincode, setUnserviceablePincode] = useState("");
-
-  const checkPincodeServiceability = (pincode: string): boolean => {
-    if (pincode.length < 6 || !selectedSubHub?.pincodes?.length) return true;
-    return !!selectedSubHub.pincodes.find(p => p.pincode === pincode);
-  };
 
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [filters, setFilters] = useState<OrderFilters>(emptyFilters);
@@ -1059,16 +1046,12 @@ export default function Profile() {
   };
 
   const saveAddress = () => {
-    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area || !addressForm.pincode) {
+    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
     if (!/^[6-9]\d{9}$/.test(addressForm.phone.trim())) {
       toast({ title: "Enter a valid 10-digit mobile number", variant: "destructive" });
-      return;
-    }
-    if (!/^\d{6}$/.test(addressForm.pincode)) {
-      toast({ title: "Please enter a valid 6-digit pincode", variant: "destructive" });
       return;
     }
     if (
@@ -1081,11 +1064,6 @@ export default function Profile() {
         description: cityAreasError ?? "Select an area from the available list.",
         variant: "destructive",
       });
-      return;
-    }
-    if (!checkPincodeServiceability(addressForm.pincode)) {
-      setUnserviceablePincode(addressForm.pincode);
-      setShowUnserviceablePopup(true);
       return;
     }
     const label = addressForm.type === "other"
@@ -1352,20 +1330,11 @@ export default function Profile() {
                     </Button>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Pincode *</Label>
+                    <Label className="text-xs text-muted-foreground">Pincode (optional)</Label>
                     <input
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={6}
+                      type="text"
                       value={addressForm.pincode}
-                      onChange={e => {
-                        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                        setAddressForm(f => ({ ...f, pincode: val }));
-                        if (val.length === 6 && !checkPincodeServiceability(val)) {
-                          setUnserviceablePincode(val);
-                          setShowUnserviceablePopup(true);
-                        }
-                      }}
+                      onChange={e => setAddressForm(f => ({ ...f, pincode: e.target.value }))}
                       placeholder="400601"
                       className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
                       data-testid="input-address-pincode"
@@ -1720,57 +1689,6 @@ export default function Profile() {
 
       <CartDrawer />
 
-      {/* Unserviceable pincode popup — same logic as cart drawer */}
-      <Dialog open={showUnserviceablePopup} onOpenChange={setShowUnserviceablePopup}>
-        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-0 shadow-2xl" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          <div className="flex flex-col items-center px-6 pt-6 pb-7 text-center gap-0">
-            <img src={scooterImg} alt="Delivery" className="w-36 h-auto object-contain mb-3" />
-            <p className="text-base font-semibold text-slate-800 mb-1" style={{ fontWeight: 600 }}>
-              We can still reach you! 🚚
-            </p>
-            <p className="text-sm text-slate-500 leading-relaxed mb-4" style={{ fontWeight: 400 }}>
-              Online ordering isn't available for{" "}
-              <span className="font-semibold text-slate-700">{unserviceablePincode}</span> yet, but we
-              deliver via <span className="font-semibold text-slate-700">Porter</span> right to your doorstep.
-            </p>
-            <div className="w-full rounded-2xl px-4 py-3 mb-4 text-left" style={{ backgroundColor: "#EEF1FA" }}>
-              <p className="text-xs font-semibold mb-0.5" style={{ color: "#364F9F" }}>
-                📦 Outstation Delivery Available
-              </p>
-              <p className="text-xs text-slate-500 leading-relaxed" style={{ fontWeight: 400 }}>
-                We ship in insulated cold-store boxes so your seafood &amp; meat arrives
-                perfectly fresh, no matter the distance.
-              </p>
-            </div>
-            <div className="w-full flex flex-col gap-2.5 mb-4">
-              <a
-                href={`https://wa.me/919619590694?text=${encodeURIComponent("Hi Fresh Stock Xchange! I'd like to place an order for outstation delivery.")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
-                style={{ backgroundColor: "#25D366" }}
-              >
-                <img src={whatsappIcon} alt="WhatsApp" className="w-7 h-7 rounded-lg flex-shrink-0" />
-                <div className="text-left">
-                  <p className="text-white text-xs font-semibold leading-none mb-0.5">Chat on WhatsApp</p>
-                  <p className="text-white/90 text-xs font-normal">+91 9619590694</p>
-                </div>
-              </a>
-              <a
-                href="tel:+919619590694"
-                className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 transition-opacity hover:opacity-90 active:opacity-75"
-                style={{ backgroundColor: "#2196F3" }}
-              >
-                <img src={callIcon} alt="Call" className="w-7 h-7 rounded-full flex-shrink-0" />
-                <div className="text-left">
-                  <p className="text-white text-xs font-semibold leading-none mb-0.5">Call Us</p>
-                  <p className="text-white/90 text-xs font-normal">+91 9619590694</p>
-                </div>
-              </a>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

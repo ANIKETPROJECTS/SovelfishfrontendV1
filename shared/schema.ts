@@ -579,7 +579,9 @@ const customerAddressFieldsSchema = z.object({
   area: z.string().min(1, "Area is required"),
   cityArea: z.string().nullable().optional(),
   city: z.string().nullable().optional(),
-  pincode: z.string().regex(/^\d{6}$/, "A valid 6-digit pincode is required"),
+  // Retain any address pincode for delivery notes, but it is optional and does
+  // not determine whether the customer can place an order.
+  pincode: z.string().optional().default(""),
   type: z.enum(["house", "office", "other"]).optional().default("house"),
   label: z.string().optional().default("Home"),
   instructions: z.string().optional().default(""),
