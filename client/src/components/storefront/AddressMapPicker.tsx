@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Loader2, MapPin, Search } from "lucide-react";
+import { Crosshair, Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +34,7 @@ type PhotonFeature = {
 };
 
 type SearchStatus = "idle" | "loading" | "results" | "empty" | "error";
+type LocationStatus = "idle" | "loading" | "error";
 
 const DEFAULT_MAP_CENTER: L.LatLngExpression = [19.2183, 72.9781];
 const MIN_SEARCH_LENGTH = 3;
@@ -84,6 +85,8 @@ export function AddressMapPicker({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PhotonFeature[]>([]);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
+  const [locationError, setLocationError] = useState("");
   const [mapElement, setMapElement] = useState<HTMLDivElement | null>(null);
   const [mapError, setMapError] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
@@ -111,6 +114,43 @@ export function AddressMapPicker({
     map.setView(position, Math.max(map.getZoom(), 15), { animate: true });
   }, []);
 
+  const useCurrentLocation = () => {
+    setLocationError("");
+    if (!navigator.geolocation) {
+      setLocationStatus("error");
+      setLocationError("Your browser does not support device location.");
+      return;
+    }
+
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const next = getValidAddressCoordinates({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        if (!next) {
+          setLocationStatus("error");
+          setLocationError("The device returned an invalid location. Please try again.");
+          return;
+        }
+        placePin(next);
+        setLocationStatus("idle");
+      },
+      (error) => {
+        setLocationStatus("error");
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError("Location access was blocked. Allow location access in your browser and try again.");
+        } else if (error.code === error.TIMEOUT) {
+          setLocationError("Your location could not be found in time. Please try again.");
+        } else {
+          setLocationError("Unable to get your location. Check your device settings and try again.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  };
+
   const openPicker = () => {
     const initialCoordinates = getValidAddressCoordinates(coordinates);
     initialCoordinatesRef.current = initialCoordinates;
@@ -118,6 +158,8 @@ export function AddressMapPicker({
     setSearchQuery("");
     setSearchResults([]);
     setSearchStatus("idle");
+    setLocationStatus("idle");
+    setLocationError("");
     setOpen(true);
   };
 
@@ -289,6 +331,30 @@ export function AddressMapPicker({
                 data-testid="input-address-map-search"
               />
             </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={useCurrentLocation}
+                disabled={locationStatus === "loading"}
+                className="h-9 rounded-xl border-border/70 px-3"
+                data-testid="button-use-current-location"
+              >
+                {locationStatus === "loading" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Crosshair className="mr-2 h-4 w-4" />
+                )}
+                Use current location
+              </Button>
+            </div>
+            {locationError && (
+              <p className="text-sm text-destructive" role="alert" data-testid="text-current-location-error">
+                {locationError}
+              </p>
+            )}
 
             {(searchStatus === "loading" ||
               searchStatus === "results" ||
