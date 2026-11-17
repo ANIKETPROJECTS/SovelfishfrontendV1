@@ -54,7 +54,7 @@ export function FreshCatchReels({ products }: FreshCatchReelsProps) {
   return (
     <section
       aria-labelledby="fresh-catch-reels-title"
-      className="relative mb-8 font-sans"
+      className="relative mb-5 font-sans"
     >
       <h2
         id="fresh-catch-reels-title"
@@ -70,7 +70,7 @@ export function FreshCatchReels({ products }: FreshCatchReelsProps) {
             type="button"
             onClick={() => setActiveReel(reel)}
             aria-label={reel.name ? `View ${reel.name} video` : "Open empty reel preview"}
-            className="group relative aspect-[9/16] min-w-0 overflow-hidden bg-[#d8c1a8] text-left transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a55e32] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            className="group relative aspect-[9/16] min-w-0 overflow-hidden rounded-2xl border-2 border-[#7B3A14] bg-[#d8c1a8] text-left transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a55e32] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
             {reel.imageUrl ? (
               <img
