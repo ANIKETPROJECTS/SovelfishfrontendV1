@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@shared/schema";
-import { formatStorePrice, getProductVariantKey } from "@/lib/productVariants";
+import { getProductVariantKey } from "@/lib/productVariants";
 import { ArrowRight, ChevronRight, X } from "lucide-react";
 
 import fishImg from "@assets/Gemini_Generated_Image_w6wqkkw6wqkkw6wq_(1)_1772713077919.png";
@@ -33,6 +33,14 @@ function getFallbackImage(category: string) {
   }
 }
 
+function getProductOptionCount(product: Product) {
+  return Math.max(product.weightVariants?.length ?? 0, 1);
+}
+
+function formatItemCount(count: number) {
+  return `${count} item${count === 1 ? "" : "s"}`;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -61,6 +69,17 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
   const activeProducts = activeCategoryName === "All"
     ? storefrontProducts
     : storefrontProducts.filter((product) => product.category === activeCategoryName);
+  const activeProductEntries = activeProducts.flatMap((product) => {
+    const variants = product.weightVariants ?? [];
+    if (variants.length === 0) {
+      return [{ product, variant: undefined, key: product.id }];
+    }
+    return variants.map((variant, index) => ({
+      product,
+      variant,
+      key: `${product.id}:${getProductVariantKey(variant)}:${index}`,
+    }));
+  });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -83,14 +102,21 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const handleProductClick = (product: Product) => {
+  const handleProductClick = (
+    product: Product,
+    variant?: NonNullable<Product["weightVariants"]>[number],
+  ) => {
     onClose();
-    const showOptions = product.weightVariants?.length ? "?showOptions=1" : "";
-    navigate(`/product/${product.id}${showOptions}`);
+    const search = new URLSearchParams();
+    if (variant) search.set("saleOption", getProductVariantKey(variant));
+    if (product.weightVariants?.length) search.set("showOptions", "1");
+    const query = search.toString();
+    navigate(`/product/${product.id}${query ? `?${query}` : ""}`);
   };
 
   const handleCategoryClick = (catName: string) => {
-    setActiveCategory(catName);
+    onClose();
+    navigate(`/category/${encodeURIComponent(catName)}`);
   };
 
   const handleViewAll = (catName: string) => {
@@ -152,14 +178,16 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
               />
               <span className="text-xs font-semibold sm:text-sm">All</span>
               <span className={`text-[10px] ${activeCategoryName === "All" ? "text-white/80" : "text-[#9D6B4A]"}`}>
-                {storefrontProducts.length} items
+                {formatItemCount(storefrontProducts.reduce((count, product) => count + getProductOptionCount(product), 0))}
               </span>
             </button>
 
             {visibleCategories.map((category) => {
               const isActive = category.name === activeCategoryName;
               const image = category.imageUrl || getFallbackImage(category.name);
-              const count = storefrontProducts.filter((product) => product.category === category.name).length;
+              const count = storefrontProducts
+                .filter((product) => product.category === category.name)
+                .reduce((total, product) => total + getProductOptionCount(product), 0);
               return (
                 <button
                   key={category.id}
@@ -183,7 +211,7 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
                   </span>
                   <span className="line-clamp-1 text-xs font-semibold sm:text-sm">{category.name}</span>
                   <span className={`text-[10px] ${isActive ? "text-white/80" : "text-[#9D6B4A]"}`}>
-                    {count} items
+                    {formatItemCount(count)}
                   </span>
                 </button>
               );
@@ -215,14 +243,14 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {activeProducts.map((product) => (
+                {activeProductEntries.map(({ product, variant, key }, index) => (
                   <button
-                    key={product.id}
+                    key={key}
                     type="button"
-                    onClick={() => handleProductClick(product)}
-                    aria-label={`View ${product.name} details`}
+                    onClick={() => handleProductClick(product, variant)}
+                    aria-label={`View ${product.name}${variant ? ` ${variant.label}` : ""} details`}
                     className="group flex min-h-[76px] items-center gap-3 rounded-lg border border-[#F0E3D5] bg-[#FFFAF4] p-2.5 text-left transition hover:border-[#C8651B] hover:bg-[#FFF3E5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C8651B]"
-                    data-testid={`menu-product-${product.id}`}
+                    data-testid={`menu-product-${product.id}-${index}`}
                   >
                     <img
                       src={product.imageUrl || getFallbackImage(product.category)}
@@ -235,7 +263,7 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
                         {product.name}
                       </span>
                       <span className="mt-1 block truncate text-xs font-medium text-[#8D6953]">
-                        View product details
+                        {variant ? variant.label : "View product details"}
                       </span>
                     </span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-[#C8651B] transition group-hover:translate-x-0.5" aria-hidden="true" />

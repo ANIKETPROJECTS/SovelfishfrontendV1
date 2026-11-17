@@ -76,6 +76,10 @@ export default function CategoryPage() {
           (p) => p.subCategory?.toLowerCase() === activeSub.toLowerCase()
         )
       : categoryProducts;
+  const displayItemCount = displayProducts.reduce(
+    (count, product) => count + Math.max(product.weightVariants?.length ?? 0, 1),
+    0,
+  );
 
   // Clear stale ?sub= when its product no longer exists
   useEffect(() => {
@@ -137,7 +141,7 @@ export default function CategoryPage() {
             </h1>
             {!isLoading && (
               <p className="text-sm text-muted-foreground" data-testid="text-category-count">
-                {displayProducts.length} item{displayProducts.length !== 1 ? "s" : ""} available
+                {displayItemCount} item{displayItemCount !== 1 ? "s" : ""} available
               </p>
             )}
           </div>
@@ -158,7 +162,7 @@ export default function CategoryPage() {
             <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
               {preorderProducts.map((product) => (
                 <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
-                  <ProductCard product={product} preorderContext variantDisplay="single-card" />
+                  <ProductCard product={product} preorderContext />
                 </div>
               ))}
             </DragScrollDiv>
@@ -248,7 +252,7 @@ export default function CategoryPage() {
               ))
             : displayProducts.length > 0
             ? displayProducts.map((product) => (
-                <ProductCard key={product.id} product={product} variantDisplay="single-card" />
+                <ProductCard key={product.id} product={product} />
               ))
             : (
                 <div className="col-span-full py-20 text-center text-muted-foreground">
