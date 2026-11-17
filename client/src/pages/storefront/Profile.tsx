@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import "./ProfileTheme.css";
 import { useLocation, useSearch } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProducts } from "@/hooks/use-products";
@@ -188,7 +189,7 @@ function TrackOrderModal({ order, onClose }: { order: OrderRequest; onClose: () 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md shadow-2xl overflow-hidden">
+      <div className="profile-dialog-card relative bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-slate-100">
           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden" />
@@ -1096,9 +1097,9 @@ export default function Profile() {
 
   if (customerLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 font-sans">
+      <div className="profile-theme min-h-screen font-sans">
         <Header />
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-5">
           <Skeleton className="h-10 w-48 rounded-2xl" />
           <Skeleton className="h-64 w-full rounded-2xl" />
         </main>
@@ -1108,19 +1109,19 @@ export default function Profile() {
 
   if (!customer) {
     return (
-      <div className="min-h-screen bg-slate-50 font-sans">
+      <div className="profile-theme min-h-screen font-sans">
         <Header />
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-16 flex flex-col items-center justify-center gap-6">
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-16 flex flex-col items-center justify-center gap-6">
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="w-10 h-10 text-primary" />
+            <User className="w-11 h-11 text-white" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Sign in to continue</h1>
-            <p className="text-muted-foreground text-sm">Login with your mobile number to view your profile and orders.</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Sign in to continue</h1>
+            <p className="text-muted-foreground text-base">Login with your mobile number to view your profile and orders.</p>
           </div>
           <Button
             onClick={() => setOtpModalOpen(true)}
-            className="rounded-xl bg-primary text-white px-8 font-semibold"
+            className="rounded-full bg-primary text-white px-8 py-3 font-semibold"
             data-testid="button-login"
           >
             Login / Sign up
@@ -1134,33 +1135,33 @@ export default function Profile() {
   const addresses = customer.addresses || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="profile-theme min-h-screen font-sans">
       <Header />
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {/* Back + Title (left) with Lottie animations (right) */}
-        <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate("/")}
-              className="rounded-full border border-border/50 bg-white shrink-0"
+              className="rounded-full border border-white/40 bg-white shrink-0 text-white"
               data-testid="button-profile-back"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl sm:text-2xl font-medium text-foreground tracking-tight truncate">My Profile</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight truncate">My Profile</h1>
           </div>
-          <div className="flex items-center gap-2 shrink-0 bg-white border border-blue-100 rounded-2xl px-3 py-2 shadow-sm">
+          <div className="self-start sm:self-auto flex items-center gap-3 shrink-0 bg-white border border-white/40 rounded-2xl px-4 py-3 shadow-sm">
             <img
               src={walletIconImg}
               alt="Wallet"
-              className="w-6 h-6 object-contain shrink-0"
+              className="w-7 h-7 object-contain shrink-0"
               style={{ filter: BRAND_BLUE_FILTER }}
             />
             <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground font-medium leading-none mb-0.5 whitespace-nowrap">Fresh Stock Xchange Wallet</p>
-              <p className="text-sm font-bold leading-none whitespace-nowrap" style={{ color: "#364F9F" }}>
+              <p className="text-xs text-muted-foreground font-semibold leading-none mb-1 whitespace-nowrap">Fresh Stock Xchange Wallet</p>
+              <p className="text-base font-bold leading-none whitespace-nowrap text-white">
                 ₹{(customer.walletBalance ?? 0).toLocaleString("en-IN")}
               </p>
             </div>
@@ -1168,15 +1169,15 @@ export default function Profile() {
         </div>
 
         {/* Tabs */}
-        <div className="flex mb-6 rounded-full p-1 border-2 border-black">
+        <div className="flex mb-7 rounded-full p-1.5 border border-white/40 bg-[#51240D]/70 shadow-lg">
           {TABS.map(tab => {
             const isActive = activeTab === tab;
             return (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                style={isActive ? { backgroundColor: "#F05B4E" } : {}}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-all ${isActive ? "text-white shadow-sm" : "text-slate-700 hover:text-black"}`}
+                style={isActive ? { backgroundColor: "#C8651B" } : {}}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-base font-semibold transition-all ${isActive ? "text-white shadow-md" : "text-white/85 hover:text-white"}`}
                 data-testid={`tab-${tab.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 {tab === "Profile & Addresses" && (
@@ -1194,11 +1195,11 @@ export default function Profile() {
         {/* ── Profile & Addresses Tab ── */}
         {activeTab === "Profile & Addresses" && (
           <div className="space-y-5">
-            <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-6">
+            <div className="bg-white rounded-3xl border border-white/35 shadow-xl p-5 sm:p-7">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <img src={headerUserImg} alt="" className="w-5 h-5 object-contain" />
-                  <h2 className="text-base font-medium text-foreground">Profile Details</h2>
+                  <h2 className="text-xl font-bold text-foreground">Profile Details</h2>
                 </div>
                 {!editingProfile && (
                   <Button
@@ -1228,7 +1229,7 @@ export default function Profile() {
                         value={draftProfile[field]}
                         onChange={e => setDraftProfile(p => ({ ...p, [field]: e.target.value }))}
                         placeholder={placeholder}
-                        className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                        className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
                         data-testid={`input-profile-${field}`}
                       />
                     </div>
@@ -1243,21 +1244,21 @@ export default function Profile() {
                         const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
                         if (typeof el.showPicker === "function") el.showPicker();
                       }}
-                      className="dob-input w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors cursor-pointer"
+                      className="dob-input w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors cursor-pointer"
                       data-testid="input-profile-dob"
                     />
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button
                       className="flex-1 rounded-xl text-white hover:opacity-90"
-                      style={{ backgroundColor: "#F05B4E" }}
+                      style={{ backgroundColor: "#8B3A0F" }}
                       onClick={() => setEditingProfile(false)}
                     >
                       Cancel
                     </Button>
                     <Button
                       className="flex-1 rounded-xl text-white hover:opacity-90"
-                      style={{ backgroundColor: "#364F9F" }}
+                      style={{ backgroundColor: "#C8651B" }}
                       disabled={updateProfileMutation.isPending}
                       onClick={() => {
                         if (draftProfile.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draftProfile.email.trim())) {
@@ -1306,18 +1307,18 @@ export default function Profile() {
             </div>
 
             {/* Addresses section */}
-            <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-6">
+            <div className="bg-white rounded-3xl border border-white/35 shadow-xl p-5 sm:p-7">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <img src={headerLocationImg} alt="" className="w-5 h-5 object-contain" />
-                  <h2 className="text-base font-medium text-foreground">Saved Addresses</h2>
+                  <h2 className="text-xl font-bold text-foreground">Saved Addresses</h2>
                 </div>
                 {!showAddressForm ? (
                   <Button
                     variant="ghost" size="sm"
                     onClick={openAddForm}
                     className="gap-1.5 rounded-xl text-xs hover:opacity-90"
-                    style={{ color: "#364F9F" }}
+                    style={{ color: "#FFFFFF" }}
                     data-testid="button-add-address"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Address
@@ -1344,7 +1345,7 @@ export default function Profile() {
                       value={addressForm.pincode}
                       onChange={e => setAddressForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                       placeholder="400601"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
                       data-testid="input-address-pincode"
                     />
                   </div>
@@ -1357,7 +1358,7 @@ export default function Profile() {
                       value={addressForm.phone}
                       onChange={e => setAddressForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
                       placeholder="10-digit mobile"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
                       data-testid="input-address-phone"
                     />
                   </div>
@@ -1367,7 +1368,7 @@ export default function Profile() {
                       value={addressForm.name}
                       onChange={e => setAddressForm(f => ({ ...f, name: e.target.value }))}
                       placeholder="Recipient name"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
                       data-testid="input-address-name"
                     />
                   </div>
@@ -1377,7 +1378,7 @@ export default function Profile() {
                       value={addressForm.building}
                       onChange={e => setAddressForm(f => ({ ...f, building: e.target.value }))}
                       placeholder="Wing A, Flat 302, Building Name"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
                       data-testid="input-address-building"
                     />
                   </div>
@@ -1387,7 +1388,7 @@ export default function Profile() {
                       value={addressForm.street}
                       onChange={e => setAddressForm(f => ({ ...f, street: e.target.value }))}
                       placeholder="Street name or society"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
                       data-testid="input-address-street"
                     />
                   </div>
@@ -1458,7 +1459,7 @@ export default function Profile() {
                               ...f, type: opt.value,
                               label: opt.value === "house" ? "Home" : opt.value === "office" ? "Office" : f.label,
                             }))}
-                            style={{ backgroundColor: selected ? "#364F9F" : "#F05B4E", borderColor: selected ? "#364F9F" : "#F05B4E" }}
+                            style={{ backgroundColor: selected ? "#C8651B" : "#8B3A0F", borderColor: selected ? "#C8651B" : "#8B3A0F" }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border text-white transition-all hover:opacity-90"
                             data-testid={`button-address-type-${opt.value}`}
                           >
@@ -1475,7 +1476,7 @@ export default function Profile() {
                         value={addressForm.label}
                         onChange={e => setAddressForm(f => ({ ...f, label: e.target.value }))}
                         placeholder='Custom label (e.g. "Parents Home")'
-                        className="rounded-xl border-border/60 text-sm"
+                        className="rounded-xl border-border/60 text-base"
                         data-testid="input-address-custom-label"
                       />
                     )}
@@ -1484,7 +1485,7 @@ export default function Profile() {
                     <Button
                       onClick={cancelForm}
                       className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
-                      style={{ backgroundColor: "#F05B4E" }}
+                      style={{ backgroundColor: "#8B3A0F" }}
                       data-testid="button-cancel-address"
                     >
                       Cancel
@@ -1493,7 +1494,7 @@ export default function Profile() {
                       onClick={saveAddress}
                       disabled={addAddressMutation.isPending || updateAddressMutation.isPending}
                       className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
-                      style={{ backgroundColor: "#364F9F" }}
+                      style={{ backgroundColor: "#C8651B" }}
                       data-testid="button-save-address"
                     >
                       {(addAddressMutation.isPending || updateAddressMutation.isPending) ? "Saving..." : editingAddress ? "Update Address" : "Save Address"}
@@ -1574,8 +1575,8 @@ export default function Profile() {
             {/* Logout button — bottom of Profile & Addresses tab */}
             <button
               onClick={() => setLogoutConfirmOpen(true)}
-              style={{ backgroundColor: "#F05B4E" }}
-              className="w-full rounded-xl shadow-sm px-5 py-2.5 flex items-center justify-center gap-2 hover:opacity-90 transition-all"
+              style={{ backgroundColor: "#8B3A0F" }}
+              className="w-full rounded-full shadow-lg px-5 py-3 flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-white/35"
               data-testid="button-logout"
             >
               <Lottie
@@ -1584,7 +1585,7 @@ export default function Profile() {
                 className="w-6 h-6 shrink-0"
                 style={{ filter: "brightness(0) invert(1)" }}
               />
-              <span className="text-sm font-medium text-white">Logout</span>
+              <span className="text-base font-semibold text-white">Logout</span>
             </button>
           </div>
         )}
@@ -1593,7 +1594,7 @@ export default function Profile() {
         {activeTab === "My Orders" && (
           <div className="space-y-3">
             {/* Active / Previous sub-tabs */}
-            <div className="flex rounded-full p-1 border-2 border-black">
+            <div className="flex rounded-full p-1.5 border border-white/40 bg-[#51240D]/70 shadow-lg">
               {(["current", "previous"] as OrdersSubTab[]).map(sub => {
                 const isActive = ordersSubTab === sub;
                 const count = sub === "current" ? currentOrders.length : previousOrders.length;
@@ -1601,8 +1602,8 @@ export default function Profile() {
                   <button
                     key={sub}
                     onClick={() => setOrdersSubTab(sub)}
-                    style={isActive ? { backgroundColor: "#364F9F" } : {}}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-all ${isActive ? "text-white shadow-sm" : "text-slate-700 hover:text-black"}`}
+                    style={isActive ? { backgroundColor: "#C8651B" } : {}}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-base font-semibold transition-all ${isActive ? "text-white shadow-md" : "text-white/85 hover:text-white"}`}
                     data-testid={`tab-orders-${sub}`}
                   >
                     {sub === "current" ? "Active" : "Previous"}
@@ -1610,8 +1611,8 @@ export default function Profile() {
                       <span
                         className="text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"
                         style={isActive
-                          ? { backgroundColor: "white", color: "#364F9F" }
-                          : { backgroundColor: "#364F9F", color: "white" }}
+                          ? { backgroundColor: "white", color: "#7B3A14" }
+                          : { backgroundColor: "#8B3A0F", color: "white" }}
                       >
                         {count}
                       </span>
@@ -1629,7 +1630,7 @@ export default function Profile() {
                 value={filters.search}
                 onChange={e => updateFilter("search", e.target.value)}
                 placeholder="Search by order ID or item name…"
-                className="w-full pl-10 pr-10 h-10 rounded-full bg-white border border-slate-200 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10 text-sm transition-all"
+                className="w-full pl-10 pr-10 h-12 rounded-full bg-white border border-white/40 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10 text-base transition-all"
                 data-testid="input-filter-search"
               />
               {filters.search && (
@@ -1649,9 +1650,9 @@ export default function Profile() {
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 w-full rounded-2xl" />)}
               </div>
             ) : filteredOrders.length === 0 ? (
-              <div className="flex flex-col items-center py-12 gap-3 bg-white rounded-2xl border border-border/50 shadow-sm">
-                <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">
+              <div className="flex flex-col items-center py-14 gap-4 bg-white rounded-3xl border border-white/35 shadow-xl">
+                <ShoppingBag className="w-12 h-12 text-white" />
+                <p className="text-base font-semibold text-muted-foreground">
                   {filters.search ? "No orders match your search" : ordersSubTab === "current" ? "No active orders" : "No previous orders"}
                 </p>
               </div>
@@ -1668,12 +1669,12 @@ export default function Profile() {
 
       {/* Logout confirmation dialog */}
       <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
-        <AlertDialogContent className="rounded-3xl max-w-sm">
+        <AlertDialogContent className="profile-dialog-card rounded-3xl max-w-sm">
           <div className="flex justify-center -mt-2 mb-5">
             <Lottie animationData={logoutPopupAnim} loop className="w-28 h-28" />
           </div>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-center text-lg font-medium" style={{ color: "#364F9F" }}>
+            <AlertDialogTitle className="text-center text-xl font-bold text-white">
               Logout from Fresh Stock Xchange?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm">
@@ -1690,7 +1691,7 @@ export default function Profile() {
             <AlertDialogAction
               onClick={async () => { await logout(); navigate("/"); }}
               className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
-              style={{ backgroundColor: "#F05B4E" }}
+              style={{ backgroundColor: "#C8651B" }}
               data-testid="button-logout-confirm"
             >
               Yes, Logout

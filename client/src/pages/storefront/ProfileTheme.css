@@ -1,0 +1,152 @@
+.profile-theme {
+  --profile-brown: #7b3a14;
+  --profile-brown-deep: #51240d;
+  --profile-orange: #c8651b;
+  min-height: 100vh;
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  background-color: #d89b5c;
+  background-image: url("/brand/home-warm-wood.jpg");
+  background-position: center top;
+  background-repeat: repeat;
+  background-size: 1000px auto;
+}
+
+@media (min-width: 1024px) {
+  .profile-theme {
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+  }
+}
+
+.profile-theme main {
+  color: #fff;
+}
+
+.profile-theme main h1 {
+  color: #fff;
+  font-size: clamp(1.9rem, 3.2vw, 2.65rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.profile-theme main h2 {
+  color: #fff;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.profile-theme main .bg-white,
+.profile-theme .profile-dialog-card {
+  color: #fff !important;
+  background: linear-gradient(145deg, rgb(123 58 20 / 98%), rgb(81 36 13 / 98%)) !important;
+  border-color: rgb(255 255 255 / 34%) !important;
+  box-shadow: 0 14px 34px rgb(67 31 11 / 20%);
+}
+
+.profile-theme main .bg-slate-50,
+.profile-theme main .bg-slate-100,
+.profile-theme main .bg-slate-200,
+.profile-theme main .bg-primary\/10 {
+  color: #fff !important;
+  background-color: rgb(64 27 8 / 38%) !important;
+}
+
+.profile-theme main [class*="text-foreground"],
+.profile-theme main [class*="text-muted-foreground"],
+.profile-theme main [class*="text-slate-300"],
+.profile-theme main [class*="text-slate-600"],
+.profile-theme main [class*="text-slate-700"],
+.profile-theme main [class*="text-black"] {
+  color: rgb(255 255 255 / 90%) !important;
+}
+
+.profile-theme main [class*="border-border"],
+.profile-theme main [class*="border-slate-"],
+.profile-theme main .border-black {
+  border-color: rgb(255 255 255 / 34%) !important;
+}
+
+.profile-theme main input:not([type="checkbox"]):not([type="radio"]),
+.profile-theme main textarea,
+.profile-theme main [role="combobox"] {
+  color: #fff !important;
+  background-color: rgb(58 24 7 / 40%) !important;
+  border-color: rgb(255 255 255 / 56%) !important;
+  border-radius: 0.9rem;
+}
+
+.profile-theme main input::placeholder,
+.profile-theme main textarea::placeholder {
+  color: rgb(255 255 255 / 65%) !important;
+}
+
+.profile-theme main input:focus,
+.profile-theme main textarea:focus,
+.profile-theme main [role="combobox"]:focus-visible {
+  border-color: #f0a458 !important;
+  box-shadow: 0 0 0 3px rgb(240 164 88 / 24%);
+  outline: none;
+}
+
+.profile-theme main input[type="date"] {
+  color-scheme: dark;
+}
+
+.profile-theme main button[style*="background-color"],
+.profile-theme main button[class*="bg-primary"],
+.profile-theme main button[class*="bg-secondary"] {
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.profile-theme main img[alt=""],
+.profile-theme main img[alt="Wallet"],
+.profile-theme main img[alt="Search"],
+.profile-theme main img[alt="Edit"],
+.profile-theme main img[alt="Delete"] {
+  filter: brightness(0) invert(1) !important;
+}
+
+.profile-theme main [data-testid^="card-"] {
+  border-radius: 1.45rem;
+  border-color: rgb(255 255 255 / 36%) !important;
+}
+
+.profile-theme .profile-dialog-card {
+  border-radius: 1.5rem;
+}
+
+.profile-dialog-card,
+.profile-dialog-card [class*="text-foreground"],
+.profile-dialog-card [class*="text-muted-foreground"] {
+  color: #fff !important;
+}
+
+.profile-dialog-card [class*="border-"] {
+  border-color: rgb(255 255 255 / 30%) !important;
+}
+
+.profile-dialog-card .bg-slate-50,
+.profile-dialog-card .bg-slate-100,
+.profile-dialog-card .bg-slate-200 {
+  color: #fff !important;
+  background-color: rgb(64 27 8 / 42%) !important;
+}
+
+@media (max-width: 640px) {
+  .profile-theme main h1 {
+    font-size: 1.8rem;
+  }
+
+  .profile-theme main h2 {
+    font-size: 1.25rem;
+  }
+
+  .profile-theme main .bg-white {
+    border-radius: 1.25rem;
+  }
+}
