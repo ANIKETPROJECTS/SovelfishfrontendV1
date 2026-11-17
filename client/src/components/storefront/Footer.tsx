@@ -50,51 +50,49 @@ export function Footer() {
   return (
     <footer className="footer-wood-bg mt-10 overflow-hidden border-t-4 border-[#F0A458] text-white">
       <div className="mx-auto max-w-7xl px-5 pb-6 pt-8 sm:px-8 sm:pb-8 sm:pt-10">
-        <section className="grid gap-6 border-b border-white/20 pb-7 sm:pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-8">
-          <div className="min-w-0">
-            <div className="flex items-center gap-3 sm:gap-5">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white p-2 shadow-sm sm:h-16 sm:w-16 sm:p-2.5">
-                <FreshStockXchangeLogo className="h-full w-full" />
+        <div className="grid grid-cols-1 gap-x-6 gap-y-7 py-2 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-[1.2fr_0.85fr_1.25fr_1.4fr]">
+          <section aria-labelledby="footer-brand-heading" className="min-w-0">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm sm:h-16 sm:w-16 sm:p-1">
+                <FreshStockXchangeLogo className="h-full w-full scale-[1.14]" />
               </div>
-              <h2 className="font-display text-2xl font-extrabold leading-[0.98] tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+              <h2 id="footer-brand-heading" className="font-display text-xl font-extrabold leading-tight tracking-[-0.04em] text-white sm:text-2xl">
                 Fresh Stock Xchange
               </h2>
             </div>
-            <p className="mt-4 max-w-4xl font-display text-xl font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">
+            <p className="mt-4 font-display text-lg font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-xl">
               Fresh seafood, packed with care and delivered fresh.
             </p>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-white/85 sm:text-base">
+            <p className="mt-2 text-sm font-medium leading-relaxed text-white/85">
               Shop fresh fish, prawns, chicken, and mutton—cleaned, packed, and delivered to your doorstep.
             </p>
-          </div>
 
-          <div className="flex flex-wrap gap-2.5 lg:justify-end">
+            <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href="/category/Fish"
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#F0A458] px-5 py-2.5 text-sm font-bold text-[#54270F] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex min-h-10 items-center justify-center rounded-full bg-[#F0A458] px-3.5 py-2 text-xs font-bold text-[#54270F] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Shop fresh catch
             </Link>
             <a
               href="tel:+919619590694"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/50 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-[#F0A458] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0A458]"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white/50 px-3 py-2 text-xs font-semibold text-white transition hover:border-[#F0A458] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0A458]"
             >
-              <Phone aria-hidden className="h-4 w-4" />
+                <Phone aria-hidden className="h-3.5 w-3.5" />
               Call us
             </a>
             <a
               href="https://wa.me/919619590694"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/50 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-[#F0A458] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0A458]"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white/50 px-3 py-2 text-xs font-semibold text-white transition hover:border-[#F0A458] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0A458]"
             >
-              <MessageCircle aria-hidden className="h-4 w-4" />
+                <MessageCircle aria-hidden className="h-3.5 w-3.5" />
               WhatsApp
             </a>
           </div>
-        </section>
+          </section>
 
-        <div className="grid grid-cols-1 gap-x-6 gap-y-7 py-6 sm:grid-cols-2 sm:gap-x-8 sm:py-7 lg:grid-cols-[0.9fr_1.25fr_1.4fr]">
           <nav aria-label="Customer support" className="min-w-0">
             <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-white">
               Customer care
