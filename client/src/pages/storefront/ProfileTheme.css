@@ -32,6 +32,10 @@
   line-height: 1.1;
 }
 
+.profile-theme main h1.profile-heading {
+  color: #7b3a14 !important;
+}
+
 .profile-theme main h2 {
   color: #fff;
   font-size: clamp(1.2rem, 2vw, 1.55rem);
@@ -142,11 +146,25 @@
     font-size: 1.8rem;
   }
 
+  .profile-theme main h1.profile-heading {
+    color: #7b3a14 !important;
+  }
+
   .profile-theme main h2 {
     font-size: 1.25rem;
   }
 
   .profile-theme main .bg-white {
     border-radius: 1.25rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .profile-theme main h1.profile-heading {
+    font-size: 1.45rem;
+  }
+
+  .profile-theme main .profile-heading + * {
+    min-width: 0;
   }
 }

@@ -1139,8 +1139,8 @@ export default function Profile() {
       <Header />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {/* Back + Title (left) with Lottie animations (right) */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 mb-7">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Button
               variant="ghost"
               size="icon"
@@ -1150,18 +1150,18 @@ export default function Profile() {
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight truncate">My Profile</h1>
+            <h1 className="profile-heading text-3xl sm:text-4xl font-bold tracking-tight truncate">My Profile</h1>
           </div>
-          <div className="self-start sm:self-auto flex items-center gap-3 shrink-0 bg-white border border-white/40 rounded-2xl px-4 py-3 shadow-sm">
+          <div className="flex min-w-0 max-w-[46%] shrink bg-white border border-white/40 rounded-2xl items-center gap-2 sm:gap-3 px-2.5 py-2 sm:px-4 sm:py-3 shadow-sm">
             <img
               src={walletIconImg}
               alt="Wallet"
-              className="w-7 h-7 object-contain shrink-0"
+              className="w-6 h-6 sm:w-7 sm:h-7 object-contain shrink-0"
               style={{ filter: BRAND_BLUE_FILTER }}
             />
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground font-semibold leading-none mb-1 whitespace-nowrap">Fresh Stock Xchange Wallet</p>
-              <p className="text-base font-bold leading-none whitespace-nowrap text-white">
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-semibold leading-tight mb-1">Fresh Stock Xchange Wallet</p>
+              <p className="text-sm sm:text-base font-bold leading-none whitespace-nowrap text-white">
                 ₹{(customer.walletBalance ?? 0).toLocaleString("en-IN")}
               </p>
             </div>
