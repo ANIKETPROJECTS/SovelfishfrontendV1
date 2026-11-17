@@ -1427,12 +1427,16 @@ export default function Profile() {
                     <div className="flex flex-wrap items-center gap-3">
                       <AddressMapPicker
                         coordinates={getValidAddressCoordinates(addressForm)}
-                        onSavePin={(coordinates) => {
+                        onSavePin={(coordinates, pincode) => {
                           setAddressForm((form) => {
                             const next = { ...form };
                             delete next.latitude;
                             delete next.longitude;
-                            return coordinates ? { ...next, ...coordinates } : next;
+                            return {
+                              ...next,
+                              ...(coordinates ?? {}),
+                              ...(pincode ? { pincode } : {}),
+                            };
                           });
                           setMapPinCleared(coordinates === null);
                         }}

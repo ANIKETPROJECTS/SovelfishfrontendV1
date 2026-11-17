@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { SavedAddress } from "@/components/storefront/CartDrawer";
 import { ChevronLeft, Home, Briefcase, Tag, MapPin, X, Loader2 } from "lucide-react";
 import { useGoogleMaps } from "@/hooks/use-google-maps";
+import { getGoogleAddressParts, reverseGeocodeCoordinates } from "@/lib/googleMapsLocation";
 import { useCityArea } from "@/context/CityAreaContext";
 import { findCityAreaOption } from "@shared/cityAreaPricing";
 import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
@@ -38,7 +39,7 @@ function GoogleMapPicker({ onConfirm, onClose }: {
   const [pickedArea, setPickedArea] = useState("");
   const [pickedPincode, setPickedPincode] = useState("");
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const { ready: mapsReady, error: mapsError } = useGoogleMaps();
+  const { ready: mapsReady, error: mapsError, errorMessage: mapsErrorMessage } = useGoogleMaps();
 
   useEffect(() => {
     if (!mapsReady || !mapDivRef.current || mapRef.current) return;
@@ -64,30 +65,48 @@ function GoogleMapPicker({ onConfirm, onClose }: {
     });
     markerRef.current = marker;
 
-    const geocodePos = (pos: { lat: number; lng: number }) => {
+    let geocodeRequestId = 0;
+    const geocodePos = async (pos: { lat: number; lng: number }) => {
+      const requestId = ++geocodeRequestId;
       setIsGeocoding(true);
-      new window.google.maps.Geocoder().geocode({ location: pos }, (results: any, status: string) => {
-        setIsGeocoding(false);
-        if (status !== "OK" || !results?.[0]) return;
-        const comps = results[0].address_components;
-        const rawPostal = comps.find((c: any) => c.types.includes("postal_code"))?.long_name ?? "";
-        const digitsOnlyPostal = rawPostal.replace(/\D/g, "").slice(0, 6);
-        const postal = /^\d{6}$/.test(digitsOnlyPostal) ? digitsOnlyPostal : "";
-        const sub = comps.find((c: any) =>
-          c.types.includes("sublocality_level_1") || c.types.includes("sublocality")
-        )?.long_name;
-        const locality = comps.find((c: any) => c.types.includes("locality"))?.long_name;
-        setPickedArea(sub || locality || "");
-        setPickedPincode(postal);
-      });
+      try {
+        const result = await reverseGeocodeCoordinates({
+          latitude: pos.lat,
+          longitude: pos.lng,
+        });
+        if (requestId !== geocodeRequestId) return;
+        const address = getGoogleAddressParts(result?.addressComponents ?? []);
+        setPickedArea(address.area || address.city);
+        setPickedPincode(address.pincode);
+      } catch {
+        if (requestId !== geocodeRequestId) return;
+        setPickedArea("");
+        setPickedPincode("");
+      } finally {
+        if (requestId === geocodeRequestId) setIsGeocoding(false);
+      }
     };
 
     marker.addListener("dragend", () => {
       const pos = marker.getPosition();
-      geocodePos({ lat: pos.lat(), lng: pos.lng() });
+      if (pos) void geocodePos({ lat: pos.lat(), lng: pos.lng() });
     });
 
-    geocodePos(center);
+    const mapClickListener = map.addListener("click", (event: any) => {
+      if (!event.latLng) return;
+      marker.setPosition(event.latLng);
+      void geocodePos({ lat: event.latLng.lat(), lng: event.latLng.lng() });
+    });
+    void geocodePos(center);
+
+    return () => {
+      geocodeRequestId += 1;
+      mapClickListener.remove();
+      window.google.maps.event.clearInstanceListeners(map);
+      marker.setMap(null);
+      mapRef.current = null;
+      markerRef.current = null;
+    };
   }, [mapsReady]);
 
   return (
@@ -111,7 +130,7 @@ function GoogleMapPicker({ onConfirm, onClose }: {
                 <MapPin className="w-7 h-7 text-amber-500" />
               </div>
               <p className="text-sm font-semibold text-slate-700">Map unavailable</p>
-              <p className="text-xs text-slate-400 leading-relaxed">Google Maps billing is not active on your account. Please type your area and 6-digit pincode manually.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">{mapsErrorMessage || "Google Maps is unavailable. Please type your area and 6-digit pincode manually."}</p>
             </div>
           </div>
         ) : !mapsReady ? (

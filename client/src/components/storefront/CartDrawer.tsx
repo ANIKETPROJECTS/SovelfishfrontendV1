@@ -54,6 +54,16 @@ import {
 import type { CustomerAddress, Coupon } from "@shared/schema";
 import { getValidAddressCoordinates } from "@shared/addressCoordinates";
 import { findCityAreaOption } from "@shared/cityAreaPricing";
+import { useGoogleMaps } from "@/hooks/use-google-maps";
+import {
+  createPlacesSessionToken,
+  fetchPlaceSuggestions,
+  fetchSelectedPlace,
+  getGoogleAddressParts,
+  getPlaceSuggestionText,
+  reverseGeocodeCoordinates,
+} from "@/lib/googleMapsLocation";
+import type { GooglePlaceSuggestion } from "@/lib/googleMapsLocation";
 import { isPreorderDateAvailableForAll, normalizePreorderAvailability } from "@shared/preorderAvailability";
 import {
   applyAutomaticNextDayDelivery,
@@ -82,53 +92,6 @@ const emptyForm: Omit<CustomerAddress, "id"> = {
   pincode: "", type: "house" as "house" | "office" | "other",
   label: "", instructions: "",
 };
-
-interface PhotonFeature {
-  type: "Feature";
-  geometry: { type: "Point"; coordinates: [number, number] };
-  properties: {
-    osm_id?: number;
-    name?: string;
-    street?: string;
-    locality?: string;
-    district?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    postcode?: string;
-  };
-}
-
-async function photonSearch(query: string): Promise<PhotonFeature[]> {
-  try {
-    const res = await fetch(
-      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6&lang=en&bbox=68.7,8.4,97.3,37.1`,
-      { headers: { "Accept-Language": "en" } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.features ?? []).filter(
-      (f: PhotonFeature) => f.properties.country === "India" || !f.properties.country
-    );
-  } catch {
-    return [];
-  }
-}
-
-function photonTitle(f: PhotonFeature): string {
-  const p = f.properties;
-  return p.name || p.locality || p.district || p.city || "";
-}
-
-function photonSubtitle(f: PhotonFeature): string {
-  const p = f.properties;
-  const parts: string[] = [];
-  if (p.locality && p.locality !== photonTitle(f)) parts.push(p.locality);
-  if (p.district && p.district !== photonTitle(f)) parts.push(p.district);
-  if (p.city && p.city !== photonTitle(f)) parts.push(p.city);
-  if (p.state) parts.push(p.state);
-  return parts.slice(0, 3).join(", ");
-}
 
 function startOfTomorrow(): Date {
   const date = new Date();
@@ -748,13 +711,17 @@ export function CartDrawer() {
   const [geoFilling, setGeoFilling] = useState(false);
   const [geoFillStatus, setGeoFillStatus] = useState<"idle" | "success" | "error">("idle");
   const [geoFillMessage, setGeoFillMessage] = useState("");
+  const { ready: mapsReady, error: mapsLoadError, errorMessage: mapsErrorMessage } = useGoogleMaps(showAddForm);
 
   const [locSearch, setLocSearch] = useState("");
-  const [locResults, setLocResults] = useState<PhotonFeature[]>([]);
+  const [locResults, setLocResults] = useState<GooglePlaceSuggestion[]>([]);
   const [locSearching, setLocSearching] = useState(false);
+  const [locSearchFailed, setLocSearchFailed] = useState(false);
   const [showLocDropdown, setShowLocDropdown] = useState(false);
   const locTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const locInputRef = useRef<HTMLInputElement>(null);
+  const locPlacesSessionTokenRef = useRef<any>(null);
+  const locSearchRequestIdRef = useRef(0);
 
   useEffect(() => {
     if (locTimeoutRef.current) clearTimeout(locTimeoutRef.current);
@@ -762,45 +729,74 @@ export function CartDrawer() {
     if (q.length < 2) {
       setLocResults([]);
       setLocSearching(false);
+      setLocSearchFailed(false);
       setShowLocDropdown(q.length > 0);
+      if (!q) locPlacesSessionTokenRef.current = null;
       return;
     }
+    if (!mapsReady) {
+      setLocResults([]);
+      setLocSearching(!mapsLoadError);
+      setShowLocDropdown(true);
+      return;
+    }
+    const requestId = ++locSearchRequestIdRef.current;
     setLocSearching(true);
+    setLocSearchFailed(false);
     setShowLocDropdown(true);
     locTimeoutRef.current = setTimeout(async () => {
-      const results = await photonSearch(q);
-      setLocResults(results);
-      setLocSearching(false);
+      try {
+        if (!locPlacesSessionTokenRef.current) {
+          locPlacesSessionTokenRef.current = createPlacesSessionToken();
+        }
+        const results = await fetchPlaceSuggestions(q, locPlacesSessionTokenRef.current);
+        if (requestId !== locSearchRequestIdRef.current) return;
+        setLocResults(results);
+      } catch {
+        if (requestId !== locSearchRequestIdRef.current) return;
+        setLocResults([]);
+        setLocSearchFailed(true);
+      } finally {
+        if (requestId === locSearchRequestIdRef.current) setLocSearching(false);
+      }
     }, 350);
-    return () => { if (locTimeoutRef.current) clearTimeout(locTimeoutRef.current); };
-  }, [locSearch]);
+    return () => {
+      if (locTimeoutRef.current) clearTimeout(locTimeoutRef.current);
+      if (locSearchRequestIdRef.current === requestId) locSearchRequestIdRef.current += 1;
+    };
+  }, [locSearch, mapsLoadError, mapsReady]);
 
-  const handleLocResultSelect = useCallback((feature: PhotonFeature) => {
-    const p = feature.properties;
-
-    // area fields: locality → district → city (never use p.name here — that's the place name)
-    const area = p.locality || p.district || p.city || "";
-    const extractedPincode = p.postcode?.replace(/\D/g, "").slice(0, 6) || "";
-    const pincode = /^\d{6}$/.test(extractedPincode) ? extractedPincode : "";
-    const street = p.street || "";
-
-    // p.name is the specific named place (e.g. "Hubtown Greenwoods") → Building/Floor
-    // Only use it if it's different from the derived area (i.e. it's a POI / complex name, not just a locality)
-    const placeName = p.name && p.name !== area ? p.name : "";
-
-    setAddForm(f => ({
-      ...f,
-      building: placeName || f.building,
-      street: street || f.street,
-      area: area || f.area,
-      pincode: pincode || f.pincode,
-    }));
+  const handleLocResultSelect = useCallback(async (suggestion: GooglePlaceSuggestion) => {
+    locSearchRequestIdRef.current += 1;
+    setLocSearching(true);
+    try {
+      const place = await fetchSelectedPlace(suggestion.placePrediction);
+      const parts = getGoogleAddressParts(place.addressComponents ?? []);
+      const displayName = typeof place.displayName === "string"
+        ? place.displayName
+        : place.displayName?.text ?? "";
+      const placeName = displayName && displayName !== parts.area ? displayName : "";
+      setAddForm((form) => ({
+        ...form,
+        building: placeName || form.building,
+        street: parts.street || form.street,
+        area: parts.area || parts.city || form.area,
+        pincode: parts.pincode || form.pincode,
+      }));
+      setGeoFillStatus("success");
+      const summary = [placeName, parts.street, parts.area || parts.city, parts.pincode].filter(Boolean).join(", ");
+      setGeoFillMessage(`Auto-filled: ${summary || place.formattedAddress || "please verify the fields below"}`);
+    } catch {
+      setGeoFillStatus("error");
+      setGeoFillMessage("Place details could not be loaded. Please fill the address manually.");
+    } finally {
+      setLocSearching(false);
+    }
     setLocSearch("");
     setLocResults([]);
     setShowLocDropdown(false);
-    setGeoFillStatus("success");
-    const summary = [placeName, street, area, pincode].filter(Boolean).join(", ");
-    setGeoFillMessage(`Auto-filled: ${summary || "please verify the fields below"}`);
+    locPlacesSessionTokenRef.current = null;
+    setLocSearchFailed(false);
   }, []);
 
   const savedAddresses: CustomerAddress[] = customer?.addresses ?? [];
@@ -833,6 +829,8 @@ export function CartDrawer() {
     setLocSearch("");
     setLocResults([]);
     setShowLocDropdown(false);
+    locPlacesSessionTokenRef.current = null;
+    setLocSearchFailed(false);
     setShowAddForm(true);
     setTimeout(() => locInputRef.current?.focus(), 250);
   };
@@ -851,46 +849,23 @@ export function CartDrawer() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          // Same Nominatim URL as the header – no zoom/accept-language params which cause inconsistency
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-            { headers: { "Accept-Language": "en" } }
-          );
-          const data = await res.json();
-          const addr = data?.address ?? {};
-
-          const extractedPincode = addr.postcode?.replace(/\D/g, "").slice(0, 6) ?? "";
-          const pincode = /^\d{6}$/.test(extractedPincode) ? extractedPincode : "";
-
-          // Same priority chain the header uses for postcode, extended for area/street fields
-          const area =
-            addr.suburb ||
-            addr.neighbourhood ||
-            addr.quarter ||
-            addr.city_district ||
-            addr.residential ||
-            addr.hamlet ||
-            addr.city ||
-            addr.town ||
-            addr.village ||
-            "";
-
-          const street = [addr.house_number, addr.road].filter(Boolean).join(", ") || addr.pedestrian || "";
+          const result = await reverseGeocodeCoordinates({ latitude, longitude });
+          const address = getGoogleAddressParts(result?.addressComponents ?? []);
+          const area = address.area || address.city;
 
           setAddForm(f => ({
             ...f,
-            pincode: pincode || f.pincode,
+            pincode: address.pincode || f.pincode,
             area: area || f.area,
-            street: street || f.street,
+            street: address.street || f.street,
           }));
 
-          const filled = [area, pincode].filter(Boolean).join(", ");
-          const city = addr.city || addr.town || addr.state_district || "";
+          const filled = [area, address.pincode].filter(Boolean).join(", ");
           setGeoFillStatus("success");
-          setGeoFillMessage(`Location detected: ${filled || city || "Please verify the fields below"}`);
+          setGeoFillMessage(`Location detected: ${filled || "Please verify the fields below"}`);
         } catch {
           setGeoFillStatus("error");
-          setGeoFillMessage("Couldn't fetch location details. Please fill manually.");
+          setGeoFillMessage("Google could not find address details for this location. Please fill them manually.");
         } finally {
           setGeoFilling(false);
         }
@@ -2483,12 +2458,16 @@ export function CartDrawer() {
                             <div className="flex flex-wrap items-center gap-3">
                               <AddressMapPicker
                                 coordinates={getValidAddressCoordinates(addForm)}
-                                onSavePin={(coordinates) => {
+                                onSavePin={(coordinates, pincode) => {
                                   setAddForm((form) => {
                                     const next = { ...form };
                                     delete next.latitude;
                                     delete next.longitude;
-                                    return coordinates ? { ...next, ...coordinates } : next;
+                                    return {
+                                      ...next,
+                                      ...(coordinates ?? {}),
+                                      ...(pincode ? { pincode } : {}),
+                                    };
                                   });
                                 }}
                               />
@@ -2890,34 +2869,34 @@ export function CartDrawer() {
                       </div>
                     </button>
 
-                    {locSearching ? (
+                    {mapsLoadError ? (
+                      <div className="px-4 py-3 text-sm text-destructive">{mapsErrorMessage}</div>
+                    ) : locSearching ? (
                       <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Finding locations...</span>
+                        <span>{mapsReady ? "Finding locations..." : "Loading Google Maps..."}</span>
+                      </div>
+                    ) : locSearchFailed ? (
+                      <div className="px-4 py-3 text-sm text-destructive">
+                        Google Places search is unavailable. Check that Places API (New) is enabled for this key.
                       </div>
                     ) : locResults.length === 0 && locSearch.trim().length >= 2 ? (
                       <div className="px-4 py-3 text-sm text-muted-foreground">No results found. Try a different search term.</div>
                     ) : (
                       <div className="max-h-[220px] overflow-y-auto">
-                        {locResults.map((feature, i) => {
-                          const title = photonTitle(feature);
-                          const subtitle = photonSubtitle(feature);
-                          const postcode = feature.properties.postcode;
+                        {locResults.map((suggestion, i) => {
+                          const title = getPlaceSuggestionText(suggestion);
                           return (
                             <button
-                              key={`${feature.properties.osm_id ?? i}`}
-                              onClick={() => handleLocResultSelect(feature)}
+                              key={`${suggestion.placePrediction?.placeId ?? title}-${i}`}
+                              onClick={() => void handleLocResultSelect(suggestion)}
                               className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-muted/40 transition-colors border-b border-border/10 last:border-0"
                             >
                               <div className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center shrink-0 mt-0.5">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-foreground truncate">{title}</p>
-                                <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>
-                                {postcode && (
-                                  <p className="text-[11px] text-primary/70 font-medium mt-0.5">Pincode: {postcode}</p>
-                                )}
+                                <p className="text-sm font-semibold text-foreground">{title}</p>
                               </div>
                             </button>
                           );
@@ -2932,22 +2911,32 @@ export function CartDrawer() {
               <button
                 type="button"
                 onClick={handleAutoFillLocation}
-                disabled={geoFilling}
+                disabled={geoFilling || !mapsReady}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 data-testid="button-use-current-location"
               >
-                {geoFilling ? (
+                {geoFilling || (!mapsReady && !mapsLoadError) ? (
                   <Loader2 className="w-5 h-5 text-primary animate-spin shrink-0" />
                 ) : (
                   <Navigation className="w-5 h-5 text-primary shrink-0" />
                 )}
                 <div className="text-left flex-1">
                   <p className="text-sm font-semibold text-primary leading-tight">
-                    {geoFilling ? "Detecting location..." : "Use current location"}
+                    {geoFilling
+                      ? "Detecting location..."
+                      : !mapsReady && !mapsLoadError
+                        ? "Loading Google Maps..."
+                        : "Use current location"}
                   </p>
                   <p className="text-xs text-muted-foreground">Auto-fill area & pincode</p>
                 </div>
               </button>
+              {mapsLoadError && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{mapsErrorMessage}</span>
+                </div>
+              )}
 
               {geoFillStatus === "success" && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 border border-green-200 text-green-700 text-xs">

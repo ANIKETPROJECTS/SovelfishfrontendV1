@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { Crosshair, Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,63 +12,33 @@ import {
   getValidAddressCoordinates,
   type AddressCoordinates,
 } from "@shared/addressCoordinates";
-
-type PhotonFeature = {
-  type: "Feature";
-  geometry: {
-    type: "Point";
-    coordinates: [number, number];
-  };
-  properties: {
-    osm_id?: number;
-    name?: string;
-    street?: string;
-    locality?: string;
-    district?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-  };
-};
+import { useGoogleMaps } from "@/hooks/use-google-maps";
+import {
+  createPlacesSessionToken,
+  fetchPlaceSuggestions,
+  fetchSelectedPlace,
+  getIndianPostalCode,
+  getPlaceSuggestionText,
+  reverseGeocodeCoordinates,
+} from "@/lib/googleMapsLocation";
 
 type SearchStatus = "idle" | "loading" | "results" | "empty" | "error";
 type LocationStatus = "idle" | "loading" | "error";
 
-const DEFAULT_MAP_CENTER: L.LatLngExpression = [19.2183, 72.9781];
+const DEFAULT_MAP_CENTER: AddressCoordinates = { latitude: 19.2183, longitude: 72.9781 };
 const MIN_SEARCH_LENGTH = 3;
 
-const selectedPinIcon = L.divIcon({
-  className: "",
-  html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#E8883A;border:2px solid #7B3A14;box-shadow:0 2px 8px rgba(0,0,0,.28);transform:rotate(-45deg)"></span>`,
-  iconSize: [22, 22],
-  iconAnchor: [11, 22],
-});
-
-function getResultTitle(feature: PhotonFeature): string {
-  const properties = feature.properties;
-  return (
-    properties.name ||
-    properties.street ||
-    properties.locality ||
-    properties.district ||
-    properties.city ||
-    "Nearby place"
-  );
-}
-
-function getResultDetails(feature: PhotonFeature): string {
-  const properties = feature.properties;
-  const title = getResultTitle(feature);
-  return [
-    properties.street,
-    properties.locality,
-    properties.district,
-    properties.city,
-    properties.state,
-    properties.country,
-  ]
-    .filter((part, index, parts): part is string => Boolean(part) && parts.indexOf(part) === index && part !== title)
-    .join(", ");
+function createDeliveryPinIcon() {
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
+    '<path d="M16 39S2 22.7 2 15.2a14 14 0 1 1 28 0C30 22.7 16 39 16 39Z" fill="#C8651B" stroke="#7B3A14" stroke-width="2"/>' +
+    '<circle cx="16" cy="15" r="5" fill="#fff"/>' +
+    "</svg>";
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new window.google.maps.Size(32, 40),
+    anchor: new window.google.maps.Point(16, 40),
+  };
 }
 
 export function AddressMapPicker({
@@ -78,40 +46,76 @@ export function AddressMapPicker({
   onSavePin,
 }: {
   coordinates?: AddressCoordinates | null;
-  onSavePin: (coordinates: AddressCoordinates | null) => void;
+  onSavePin: (coordinates: AddressCoordinates | null, pincode?: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [draftCoordinates, setDraftCoordinates] = useState<AddressCoordinates | null>(null);
+  const [draftPincode, setDraftPincode] = useState<string | null>(null);
+  const [isLookingUpPincode, setIsLookingUpPincode] = useState(false);
+  const [pincodeLookupFailed, setPincodeLookupFailed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<PhotonFeature[]>([]);
+  const [searchResults, setSearchResults] = useState<GooglePlaceSuggestion[]>([]);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [locationError, setLocationError] = useState("");
   const [mapElement, setMapElement] = useState<HTMLDivElement | null>(null);
-  const [mapError, setMapError] = useState(false);
-  const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
+  const [mapError, setMapError] = useState("");
+  const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
   const initialCoordinatesRef = useRef<AddressCoordinates | null>(null);
+  const placesSessionTokenRef = useRef<any>(null);
+  const searchRequestIdRef = useRef(0);
+  const reverseGeocodeRequestIdRef = useRef(0);
+  const { ready: mapsReady, error: mapsLoadError, errorMessage: mapsErrorMessage } = useGoogleMaps(open);
   const mapElementRef = useCallback((element: HTMLDivElement | null) => {
     setMapElement(element);
   }, []);
 
   const placePin = useCallback((next: AddressCoordinates) => {
     setDraftCoordinates(next);
+    setDraftPincode(null);
+    setPincodeLookupFailed(false);
+    setIsLookingUpPincode(true);
+    const requestId = ++reverseGeocodeRequestIdRef.current;
     const map = mapRef.current;
-    if (!map) return;
-
-    const position: L.LatLngExpression = [next.latitude, next.longitude];
-    if (markerRef.current) {
-      markerRef.current.setLatLng(position);
-    } else {
-      markerRef.current = L.marker(position, {
-        icon: selectedPinIcon,
-        title: "Selected delivery pin",
-        keyboard: true,
-      }).addTo(map);
+    const position = { lat: next.latitude, lng: next.longitude };
+    if (map) {
+      if (markerRef.current) {
+        markerRef.current.setPosition(position);
+      } else {
+        markerRef.current = new window.google.maps.Marker({
+          map,
+          position,
+          title: "Selected delivery pin",
+          draggable: true,
+          icon: createDeliveryPinIcon(),
+        });
+        markerRef.current.addListener("dragend", () => {
+          const draggedPosition = markerRef.current?.getPosition();
+          if (draggedPosition) {
+            placePin({ latitude: draggedPosition.lat(), longitude: draggedPosition.lng() });
+          }
+        });
+      }
+      map.setCenter(position);
+      map.setZoom(Math.max(map.getZoom() || 11, 15));
     }
-    map.setView(position, Math.max(map.getZoom(), 15), { animate: true });
+
+    void reverseGeocodeCoordinates(next)
+      .then((result) => {
+        if (requestId !== reverseGeocodeRequestIdRef.current) return;
+        const pincode = getIndianPostalCode(result?.addressComponents);
+        setDraftPincode(pincode);
+        setPincodeLookupFailed(!pincode);
+      })
+      .catch(() => {
+        if (requestId !== reverseGeocodeRequestIdRef.current) return;
+        setDraftPincode(null);
+        setPincodeLookupFailed(true);
+      })
+      .finally(() => {
+        if (requestId === reverseGeocodeRequestIdRef.current) setIsLookingUpPincode(false);
+      });
   }, []);
 
   const useCurrentLocation = () => {
@@ -158,128 +162,147 @@ export function AddressMapPicker({
     setSearchQuery("");
     setSearchResults([]);
     setSearchStatus("idle");
+    setDraftPincode(null);
+    setIsLookingUpPincode(false);
+    setPincodeLookupFailed(false);
+    setMapError("");
     setLocationStatus("idle");
     setLocationError("");
+    placesSessionTokenRef.current = null;
     setOpen(true);
   };
 
   const clearPin = () => {
+    reverseGeocodeRequestIdRef.current += 1;
     setDraftCoordinates(null);
-    markerRef.current?.remove();
+    setDraftPincode(null);
+    setIsLookingUpPincode(false);
+    setPincodeLookupFailed(false);
+    markerRef.current?.setMap(null);
     markerRef.current = null;
   };
 
-  const handleResultSelect = (feature: PhotonFeature) => {
-    const [longitude, latitude] = feature.geometry.coordinates;
-    const next = getValidAddressCoordinates({ latitude, longitude });
-    if (!next) return;
-    placePin(next);
+  const handleResultSelect = async (suggestion: GooglePlaceSuggestion) => {
+    searchRequestIdRef.current += 1;
+    setSearchStatus("loading");
+    try {
+      const place = await fetchSelectedPlace(suggestion.placePrediction);
+      const latitude = typeof place.location?.lat === "function" ? place.location.lat() : place.location?.lat;
+      const longitude = typeof place.location?.lng === "function" ? place.location.lng() : place.location?.lng;
+      const next = getValidAddressCoordinates({ latitude, longitude });
+      if (!next) throw new Error("The selected place does not have a usable map location.");
+      placePin(next);
+    } catch {
+      setSearchStatus("error");
+      return;
+    }
     setSearchQuery("");
     setSearchResults([]);
     setSearchStatus("idle");
+    placesSessionTokenRef.current = null;
   };
 
   useEffect(() => {
-    if (!open || !mapElement) return;
+    if (!open || !mapElement || !mapsReady) return;
 
     const initialCoordinates = initialCoordinatesRef.current;
-    const initialPosition: L.LatLngExpression = initialCoordinates
-      ? [initialCoordinates.latitude, initialCoordinates.longitude]
-      : DEFAULT_MAP_CENTER;
-    let map: L.Map | null = null;
-    setMapError(false);
+    const initialPosition = initialCoordinates
+      ? { lat: initialCoordinates.latitude, lng: initialCoordinates.longitude }
+      : { lat: DEFAULT_MAP_CENTER.latitude, lng: DEFAULT_MAP_CENTER.longitude };
+    let map: any = null;
+    setMapError("");
     try {
-      map = L.map(mapElement, {
+      map = new window.google.maps.Map(mapElement, {
         center: initialPosition,
         zoom: initialCoordinates ? 15 : 11,
-        scrollWheelZoom: true,
-        touchZoom: true,
+        gestureHandling: "greedy",
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
       mapRef.current = map;
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-      }).addTo(map);
-
       if (initialCoordinates) {
-        markerRef.current = L.marker(initialPosition, {
-          icon: selectedPinIcon,
+        markerRef.current = new window.google.maps.Marker({
+          map,
+          position: initialPosition,
           title: "Saved delivery pin",
-          keyboard: true,
-        }).addTo(map);
+          draggable: true,
+          icon: createDeliveryPinIcon(),
+        });
+        markerRef.current.addListener("dragend", () => {
+          const draggedPosition = markerRef.current?.getPosition();
+          if (draggedPosition) {
+            placePin({ latitude: draggedPosition.lat(), longitude: draggedPosition.lng() });
+          }
+        });
       }
     } catch (error) {
-      console.error("[AddressMapPicker] Failed to initialize Leaflet map:", error);
-      map?.remove();
+      console.error("[AddressMapPicker] Failed to initialize Google Map:", error);
+      if (map) window.google?.maps?.event?.clearInstanceListeners(map);
       mapRef.current = null;
       markerRef.current = null;
-      setMapError(true);
+      setMapError("Google Maps could not start. Check the API key, billing, and enabled services.");
       return;
     }
 
-    map.on("click", (event: L.LeafletMouseEvent) => {
-      placePin({ latitude: event.latlng.lat, longitude: event.latlng.lng });
+    const mapClickListener = map.addListener("click", (event: any) => {
+      const location = event.latLng;
+      if (location) placePin({ latitude: location.lat(), longitude: location.lng() });
     });
 
     const activeMap = map;
-    const resizeFrame = window.requestAnimationFrame(() => activeMap.invalidateSize());
-    const resizeTimer = window.setTimeout(() => activeMap.invalidateSize(), 250);
+    const resizeFrame = window.requestAnimationFrame(() => {
+      window.google.maps.event.trigger(activeMap, "resize");
+      activeMap.setCenter(initialPosition);
+    });
     return () => {
       window.cancelAnimationFrame(resizeFrame);
-      window.clearTimeout(resizeTimer);
-      activeMap.remove();
+      mapClickListener.remove();
+      window.google.maps.event.clearInstanceListeners(activeMap);
+      markerRef.current?.setMap(null);
       if (mapRef.current === activeMap) mapRef.current = null;
       markerRef.current = null;
     };
-  }, [mapElement, open, placePin]);
+  }, [mapElement, mapsReady, open, placePin]);
 
   useEffect(() => {
     if (!open) return;
     const query = searchQuery.trim();
     if (query.length < MIN_SEARCH_LENGTH) {
       setSearchResults([]);
-      setSearchStatus("idle");
+      setSearchStatus(mapsLoadError ? "error" : "idle");
+      if (!query) placesSessionTokenRef.current = null;
       return;
     }
-
-    const controller = new AbortController();
+    if (!mapsReady) {
+      setSearchResults([]);
+      setSearchStatus(mapsLoadError ? "error" : "loading");
+      return;
+    }
+    const requestId = ++searchRequestIdRef.current;
     const searchTimer = window.setTimeout(async () => {
       setSearchStatus("loading");
       try {
-        const url =
-          `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}` +
-          "&limit=6&lang=en&bbox=68.7,8.4,97.3,37.1";
-        const response = await fetch(url, {
-          signal: controller.signal,
-          headers: { "Accept-Language": "en" },
-        });
-        if (!response.ok) throw new Error("Place search failed");
-        const data = await response.json();
-        const features = Array.isArray(data.features)
-          ? (data.features as PhotonFeature[]).filter((feature) => {
-              const country = feature.properties?.country;
-              const [longitude, latitude] = feature.geometry?.coordinates ?? [];
-              return (
-                (country === "India" || !country) &&
-                getValidAddressCoordinates({ latitude, longitude }) !== null
-              );
-            })
-          : [];
-        setSearchResults(features);
-        setSearchStatus(features.length > 0 ? "results" : "empty");
+        if (!placesSessionTokenRef.current) {
+          placesSessionTokenRef.current = createPlacesSessionToken();
+        }
+        const suggestions = await fetchPlaceSuggestions(query, placesSessionTokenRef.current);
+        if (requestId !== searchRequestIdRef.current) return;
+        setSearchResults(suggestions);
+        setSearchStatus(suggestions.length > 0 ? "results" : "empty");
       } catch {
-        if (controller.signal.aborted) return;
+        if (requestId !== searchRequestIdRef.current) return;
         setSearchResults([]);
         setSearchStatus("error");
       }
-    }, 450);
+    }, 350);
 
     return () => {
       window.clearTimeout(searchTimer);
-      controller.abort();
+      if (searchRequestIdRef.current === requestId) searchRequestIdRef.current += 1;
     };
-  }, [open, searchQuery]);
+  }, [mapsLoadError, mapsReady, open, searchQuery]);
 
   return (
     <>
@@ -338,16 +361,18 @@ export function AddressMapPicker({
                 variant="outline"
                 size="sm"
                 onClick={useCurrentLocation}
-                disabled={locationStatus === "loading"}
+                disabled={locationStatus === "loading" || !mapsReady}
                 className="h-9 rounded-xl border-border/70 px-3"
                 data-testid="button-use-current-location"
               >
-                {locationStatus === "loading" ? (
+                {locationStatus === "loading" || (!mapsReady && !mapsLoadError) ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Crosshair className="mr-2 h-4 w-4" />
                 )}
-                Use current location
+                {locationStatus === "loading" || (!mapsReady && !mapsLoadError)
+                  ? "Getting map ready…"
+                  : "Use current location"}
               </Button>
             </div>
             {locationError && (
@@ -379,29 +404,30 @@ export function AddressMapPicker({
                 )}
                 {searchStatus === "error" && (
                   <p className="px-3 py-2 text-sm text-destructive">
-                    Place search is unavailable. You can still tap the map to place a pin.
+                    {mapsLoadError
+                      ? mapsErrorMessage
+                      : "Google Places search or place details are unavailable. Check that Places API (New) is enabled for this key. You can still tap the map."}
                   </p>
                 )}
                 {searchStatus === "results" &&
-                  searchResults.map((feature, index) => (
+                  searchResults.map((suggestion, index) => {
+                    const placePrediction = suggestion.placePrediction;
+                    const title = getPlaceSuggestionText(suggestion);
+                    return (
                     <button
-                      key={`${feature.properties.osm_id ?? "place"}-${index}`}
+                      key={`${placePrediction?.placeId ?? title}-${index}`}
                       type="button"
                       role="option"
                       aria-selected={false}
-                      onClick={() => handleResultSelect(feature)}
+                      onClick={() => void handleResultSelect(suggestion)}
                       className="block w-full border-b border-border/40 px-3 py-2 text-left last:border-b-0 hover:bg-muted/50"
                     >
                       <span className="block text-sm font-medium text-foreground">
-                        {getResultTitle(feature)}
+                        {title || "Nearby place"}
                       </span>
-                      {getResultDetails(feature) && (
-                        <span className="block text-xs text-muted-foreground">
-                          {getResultDetails(feature)}
-                        </span>
-                      )}
                     </button>
-                  ))}
+                    );
+                  })}
               </div>
             )}
           </div>
@@ -412,9 +438,15 @@ export function AddressMapPicker({
               className="h-full w-full"
               aria-label="Map for selecting a delivery pin"
             />
-            {mapError && (
+            {(mapError || mapsLoadError) && (
               <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-muted/95 px-6 text-center text-sm text-muted-foreground">
-                The map could not start. Try searching for a place or close and reopen the map.
+                {mapError || mapsErrorMessage}
+              </div>
+            )}
+            {!mapsReady && !mapsLoadError && !mapError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading Google Maps…
               </div>
             )}
           </div>
@@ -423,6 +455,11 @@ export function AddressMapPicker({
               {draftCoordinates
                 ? `Pin: ${draftCoordinates.latitude.toFixed(5)}, ${draftCoordinates.longitude.toFixed(5)}`
                 : "No pin selected. Pinning the map is optional."}
+              {isLookingUpPincode && <span className="ml-2">Checking pincode…</span>}
+              {!isLookingUpPincode && draftPincode && <span className="ml-2">Pincode found: {draftPincode}</span>}
+              {!isLookingUpPincode && pincodeLookupFailed && (
+                <span className="ml-2">No pincode found; you can enter it manually.</span>
+              )}
             </p>
             <div className="flex shrink-0 gap-2">
               <Button
@@ -447,9 +484,10 @@ export function AddressMapPicker({
               <Button
                 type="button"
                 onClick={() => {
-                  onSavePin(draftCoordinates);
+                  onSavePin(draftCoordinates, draftPincode);
                   setOpen(false);
                 }}
+                disabled={isLookingUpPincode}
                 className="rounded-xl"
                 data-testid="button-save-map-pin"
               >

@@ -1,95 +1,153 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+declare global {
+  interface Window {
+    google?: any;
+    gm_authFailure?: () => void;
+  }
+}
 
 const SCRIPT_ID = "google-maps-js";
+type MapsStatus = "loading" | "ready" | "error";
+type MapsState = { status: MapsStatus; error: string };
 
-type MapsState = "loading" | "ready" | "error";
+const INITIAL_STATE: MapsState = { status: "loading", error: "" };
+let state = INITIAL_STATE;
+let loadPromise: Promise<boolean> | null = null;
+const listeners = new Set<(next: MapsState) => void>();
 
-// Module-level state shared across all hook instances
-let _state: MapsState = "loading";
-const _listeners = new Set<(s: MapsState) => void>();
-
-function notify(s: MapsState) {
-  _state = s;
-  _listeners.forEach(fn => fn(s));
+function notify(next: MapsState) {
+  state = next;
+  listeners.forEach((listener) => listener(next));
 }
 
-// Google Maps calls this when billing/activation fails
 if (typeof window !== "undefined") {
-  (window as any).gm_authFailure = () => {
-    console.warn("[GoogleMaps] Auth failure — billing may not be active on your Google Cloud project.");
-    notify("error");
+  window.gm_authFailure = () => {
+    console.warn("[GoogleMaps] Authorization failed. Check API key restrictions, billing, and enabled APIs.");
+    notify({
+      status: "error",
+      error: "Google Maps authorization failed. Check the key’s website restrictions, billing, and enabled APIs.",
+    });
   };
 }
 
-function loadScript() {
-  if (document.getElementById(SCRIPT_ID)) return;
-  const key = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-  if (!key) {
-    console.error("[GoogleMaps] VITE_GOOGLE_MAPS_API_KEY is not set");
-    notify("error");
-    return;
+async function importRequiredLibraries(): Promise<boolean> {
+  try {
+    if (!window.google?.maps?.importLibrary) {
+      throw new Error("Google Maps did not initialize. Check that Maps JavaScript API is enabled for this key.");
+    }
+    await Promise.all([
+      window.google.maps.importLibrary("maps"),
+      window.google.maps.importLibrary("places"),
+      window.google.maps.importLibrary("geocoding"),
+    ]);
+    return true;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "A required Google Maps library could not load.";
+    notify({ status: "error", error: message });
+    return false;
   }
-  const script = document.createElement("script");
-  script.id = SCRIPT_ID;
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`;
-  script.async = true;
-  script.defer = true;
-  script.onload = () => {
-    // gm_authFailure fires right after onload if the key is invalid
-    // wait a tick so it has a chance to fire first
-    setTimeout(() => {
-      if (_state !== "error") notify("ready");
-    }, 300);
-  };
-  script.onerror = () => {
-    console.error("[GoogleMaps] Script failed to load");
-    notify("error");
-  };
-  document.head.appendChild(script);
 }
 
-export function waitForMapsReady(timeoutMs = 10000): Promise<boolean> {
-  if (_state === "ready") return Promise.resolve(true);
-  if (_state === "error") return Promise.resolve(false);
-  // Also kick off loading if no script tag yet
-  if (!document.getElementById(SCRIPT_ID)) loadScript();
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      _listeners.delete(listener);
-      resolve(false);
-    }, timeoutMs);
-    const listener = (s: MapsState) => {
-      if (s === "ready" || s === "error") {
-        clearTimeout(timer);
-        _listeners.delete(listener);
-        resolve(s === "ready");
+function loadMaps(): Promise<boolean> {
+  if (state.status === "ready") return Promise.resolve(true);
+  if (state.status === "error") return Promise.resolve(false);
+  if (loadPromise) return loadPromise;
+
+  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
+  if (!key) {
+    const error = "Google Maps is not configured. Add VITE_GOOGLE_MAPS_API_KEY to Replit Secrets.";
+    console.error("[GoogleMaps]", error);
+    notify({ status: "error", error });
+    return Promise.resolve(false);
+  }
+
+  loadPromise = new Promise<boolean>((resolve) => {
+    const finish = async (loaded: boolean) => {
+      if (!loaded) {
+        const error = "Google Maps could not load. Check the network, API restrictions, billing, and enabled services.";
+        notify({ status: "error", error });
+        resolve(false);
+        return;
       }
+      const imported = await importRequiredLibraries();
+      if (!imported) {
+        resolve(false);
+        return;
+      }
+      window.setTimeout(() => {
+        if (state.status === "error") {
+          resolve(false);
+          return;
+        }
+        notify({ status: "ready", error: "" });
+        resolve(true);
+      }, 300);
     };
-    _listeners.add(listener);
-  });
-}
 
-export function useGoogleMaps(): { ready: boolean; error: boolean } {
-  const [localState, setLocalState] = useState<MapsState>(() => {
-    if (typeof window !== "undefined" && window.google?.maps) return "ready";
-    return _state;
-  });
-
-  useEffect(() => {
-    // Sync with current module-level state
-    if (_state !== localState) setLocalState(_state);
-
-    const listener = (s: MapsState) => setLocalState(s);
-    _listeners.add(listener);
-
-    // Kick off loading if not already started
-    if (_state === "loading" && !document.getElementById(SCRIPT_ID)) {
-      loadScript();
+    if (window.google?.maps?.importLibrary) {
+      void finish(true);
+      return;
     }
 
-    return () => { _listeners.delete(listener); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const existingScript = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    const script = existingScript ?? document.createElement("script");
+    let settled = false;
+    const timeout = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      notify({
+        status: "error",
+        error: "Google Maps timed out while loading. Check network access, API restrictions, and enabled services.",
+      });
+      resolve(false);
+    }, 15000);
+    const finishScriptLoad = (loaded: boolean) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      void finish(loaded);
+    };
+    script.async = true;
+    script.defer = true;
+    script.id = SCRIPT_ID;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async`;
+    script.addEventListener("load", () => finishScriptLoad(true), { once: true });
+    script.addEventListener("error", () => finishScriptLoad(false), { once: true });
+    if (!existingScript) document.head.appendChild(script);
+  });
 
-  return { ready: localState === "ready", error: localState === "error" };
+  return loadPromise;
+}
+
+export function waitForMapsReady(timeoutMs = 15000): Promise<boolean> {
+  if (state.status === "ready") return Promise.resolve(true);
+  if (state.status === "error") return Promise.resolve(false);
+  return new Promise<boolean>((resolve) => {
+    const timeout = window.setTimeout(() => resolve(false), timeoutMs);
+    loadMaps().then((ready) => {
+      window.clearTimeout(timeout);
+      resolve(ready);
+    });
+  });
+}
+
+export function useGoogleMaps(enabled = true): { ready: boolean; error: boolean; errorMessage: string } {
+  const [localState, setLocalState] = useState<MapsState>(() => state);
+
+  useEffect(() => {
+    const listener = (next: MapsState) => setLocalState(next);
+    listeners.add(listener);
+    setLocalState(state);
+    if (enabled) void loadMaps();
+    return () => {
+      listeners.delete(listener);
+    };
+  }, [enabled]);
+
+  return {
+    ready: localState.status === "ready",
+    error: localState.status === "error",
+    errorMessage: localState.error,
+  };
 }
