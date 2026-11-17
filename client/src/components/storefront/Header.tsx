@@ -93,7 +93,7 @@ export function Header({
 
   return (
     <>
-    <header className="sticky top-0 z-50 border-b border-border/50 bg-white">
+    <header className="sticky top-0 z-50 border-b-2 border-[#7B3A14] bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
         {/* Left: Logo */}
         <div className="flex items-center shrink-0">

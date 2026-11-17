@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Fish, Play, Waves } from "lucide-react";
+import { Fish, Play } from "lucide-react";
 import type { Product } from "@shared/schema";
 import {
   Dialog,
@@ -68,28 +68,14 @@ export function FreshCatchReels({ products }: FreshCatchReelsProps) {
   return (
     <section
       aria-labelledby="fresh-catch-reels-title"
-      className="relative mb-8"
+      className="relative mb-8 font-sans"
     >
-      <header className="relative mb-5 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.19em] text-[#9b5b32]">
-            <Waves aria-hidden="true" className="h-3.5 w-3.5" />
-            A little market-side
-          </p>
-          <h2
-            id="fresh-catch-reels-title"
-            className="text-xl font-semibold tracking-[-0.04em] text-[#4f3021] sm:text-2xl"
-          >
-            Fresh catch, up close
-          </h2>
-          <p className="mt-1 max-w-xl text-sm leading-relaxed text-[#795f4d]">
-            Meet the seafood making its way from the morning market to your kitchen.
-          </p>
-        </div>
-        <span className="hidden shrink-0 text-[11px] font-medium text-[#80583e] sm:inline-flex">
-          Market moments
-        </span>
-      </header>
+      <h2
+        id="fresh-catch-reels-title"
+        className="mb-5 text-center font-display text-2xl font-bold tracking-[-0.03em] text-[#4f3021] sm:mb-6 sm:text-3xl"
+      >
+        Today&apos;s Fresh Catch from FSX
+      </h2>
 
       <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {reels.map((reel, index) => (
