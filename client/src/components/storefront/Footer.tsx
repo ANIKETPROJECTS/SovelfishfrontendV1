@@ -49,19 +49,21 @@ function LazyMap() {
 export function Footer() {
   return (
     <footer className="footer-wood-bg mt-10 overflow-hidden border-t-4 border-[#F0A458] text-white">
-      <div className="mx-auto max-w-7xl px-5 pb-6 pt-10 sm:px-8 sm:pb-8 sm:pt-14">
-        <section className="grid gap-7 border-b border-white/20 pb-8 sm:pb-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-10">
+      <div className="mx-auto max-w-7xl px-5 pb-6 pt-8 sm:px-8 sm:pb-8 sm:pt-10">
+        <section className="grid gap-6 border-b border-white/20 pb-7 sm:pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-8">
           <div className="min-w-0">
             <div className="flex items-center gap-3 sm:gap-5">
-              <FreshStockXchangeLogo className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
-              <h2 className="font-display text-3xl font-extrabold leading-[0.98] tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white p-2 shadow-sm sm:h-16 sm:w-16 sm:p-2.5">
+                <FreshStockXchangeLogo className="h-full w-full" />
+              </div>
+              <h2 className="font-display text-2xl font-extrabold leading-[0.98] tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
                 Fresh Stock Xchange
               </h2>
             </div>
-            <p className="mt-5 max-w-4xl font-display text-2xl font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-3xl lg:text-4xl">
+            <p className="mt-4 max-w-4xl font-display text-xl font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">
               Fresh seafood, packed with care and delivered fresh.
             </p>
-            <p className="mt-3 max-w-2xl text-base font-medium leading-relaxed text-white/85 sm:text-lg">
+            <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-white/85 sm:text-base">
               Shop fresh fish, prawns, chicken, and mutton—cleaned, packed, and delivered to your doorstep.
             </p>
           </div>
@@ -92,29 +94,7 @@ export function Footer() {
           </div>
         </section>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-7 py-7 sm:gap-x-8 sm:py-9 lg:grid-cols-[0.8fr_0.9fr_1.2fr_1.35fr]">
-          <nav aria-label="Explore" className="min-w-0">
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-white">
-              Explore
-            </h3>
-            <ul className="space-y-2">
-              {[
-                { label: "Home", href: "/" },
-                { label: "Shop Fish", href: "/category/Fish" },
-                { label: "Shop Prawns", href: "/category/Prawns" },
-                { label: "Shop Chicken", href: "/category/Chicken" },
-                { label: "Shop Mutton", href: "/category/Mutton" },
-                { label: "Combo Deals", href: "/combos" },
-              ].map(({ label, href }) => (
-                <li key={label}>
-                  <Link href={href} className="text-sm font-medium text-white/85 transition-colors hover:text-[#F0A458]">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
+        <div className="grid grid-cols-1 gap-x-6 gap-y-7 py-6 sm:grid-cols-2 sm:gap-x-8 sm:py-7 lg:grid-cols-[0.9fr_1.25fr_1.4fr]">
           <nav aria-label="Customer support" className="min-w-0">
             <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-white">
               Customer care
@@ -137,7 +117,7 @@ export function Footer() {
             </ul>
           </nav>
 
-          <section aria-labelledby="footer-contact-heading" className="col-span-2 min-w-0 sm:col-span-1">
+          <section aria-labelledby="footer-contact-heading" className="min-w-0">
             <h3 id="footer-contact-heading" className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-white">
               Get in touch
             </h3>
@@ -169,7 +149,7 @@ export function Footer() {
             </ul>
           </section>
 
-          <section aria-labelledby="footer-location-heading" className="col-span-2 flex min-w-0 flex-col sm:col-span-1">
+          <section aria-labelledby="footer-location-heading" className="flex min-w-0 flex-col">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 id="footer-location-heading" className="text-sm font-bold uppercase tracking-[0.16em] text-white">
                 Find us
