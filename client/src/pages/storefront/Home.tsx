@@ -509,9 +509,9 @@ export default function Home() {
         })}
         {unsectionedCatalogProducts.length > 0 && (
           <section className="home-content-section mb-7" data-testid="section-full-catalog">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="home-section-heading text-xl font-medium uppercase tracking-wide text-foreground sm:text-2xl">
-                Explore all products
+            <div className="mb-4 sm:mb-5">
+              <h2 className="text-center font-display text-2xl font-bold tracking-[-0.03em] text-[#7B3A14] sm:text-3xl">
+                Explore Fresh Catch
               </h2>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
