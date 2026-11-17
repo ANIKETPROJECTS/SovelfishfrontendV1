@@ -12,12 +12,12 @@ const categories = [
 ];
 
 const products = [
-  { name: "Rawa", detail: "Fresh catch · 500 g", price: "₹450" },
-  { name: "Pomfret", detail: "Large · 500 g", price: "₹1,350" },
-  { name: "Tiger Prawns", detail: "Medium · 500 g", price: "₹620" },
-  { name: "Chicken Curry Cut", detail: "Fresh · 500 g", price: "₹210" },
-  { name: "Mutton Keema", detail: "500 g", price: "₹480" },
-  { name: "Malvani Masala", detail: "100 g", price: "₹90" },
+  { name: "Rawa" },
+  { name: "Pomfret" },
+  { name: "Tiger Prawns" },
+  { name: "Chicken Curry Cut" },
+  { name: "Mutton Keema" },
+  { name: "Malvani Masala" },
 ];
 
 export function FsxRedesign() {
@@ -58,8 +58,8 @@ export function FsxRedesign() {
           <div className="mt-4 rounded-xl border border-[#ead3bb] bg-white p-3 sm:mt-5 sm:p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-[#b3784f]">Browse</p>
                 <h2 className="text-base font-bold text-[#7b3a14] sm:text-lg">{selected === "All" ? "Popular products" : selected}</h2>
+                <p className="mt-0.5 text-xs font-medium text-[#8d6953]">Open a product to view details and sizes.</p>
               </div>
               <button className="flex shrink-0 items-center gap-1 rounded-full bg-[#7b3a14] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#5c2a0e] sm:px-4">
                 View all <ArrowRight className="h-3.5 w-3.5" />
@@ -71,9 +71,9 @@ export function FsxRedesign() {
                 <button key={product.name} className="flex min-h-[66px] items-center justify-between gap-3 rounded-lg border border-[#f0e3d5] bg-[#fffaf4] px-3 py-3 text-left transition hover:border-[#c8651b] hover:bg-[#fff3e5]">
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-[#7b3a14]">{product.name}</span>
-                    <span className="mt-1 block truncate text-xs text-[#8d6953]">{product.detail}</span>
+                    <span className="mt-1 block truncate text-xs text-[#8d6953]">View product details</span>
                   </span>
-                  <span className="shrink-0 rounded-full bg-[#f3e0ca] px-2.5 py-1 text-xs font-bold text-[#7b3a14]">{product.price}</span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-[#c8651b]" />
                 </button>
               ))}
             </div>

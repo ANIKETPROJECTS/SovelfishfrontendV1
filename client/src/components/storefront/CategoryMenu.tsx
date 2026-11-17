@@ -38,14 +38,6 @@ interface Props {
   onClose: () => void;
 }
 
-type ProductMenuEntry = {
-  key: string;
-  product: Product;
-  saleOption: string | null;
-  variantLabel: string | null;
-  variantPrice: number | null;
-};
-
 export function CategoryMenuDropdown({ open, onClose }: Props) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [, navigate] = useLocation();
@@ -70,29 +62,6 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
     ? storefrontProducts
     : storefrontProducts.filter((product) => product.category === activeCategoryName);
 
-  const activeProductEntries: ProductMenuEntry[] = activeProducts.flatMap((product) => {
-    const variants = product.weightVariants ?? [];
-    if (variants.length === 0) {
-      return [{
-        key: `product-${product.id}`,
-        product,
-        saleOption: null,
-        variantLabel: null,
-        variantPrice: null,
-      }];
-    }
-
-    return variants.map((variant) => ({
-      key: `variant-${product.id}-${getProductVariantKey(variant)}`,
-      product,
-      saleOption: getProductVariantKey(variant),
-      variantLabel: variant.averageWeightLabel
-        ? `${variant.label} (avg. ${variant.averageWeightLabel})`
-        : variant.label,
-      variantPrice: variant.price,
-    }));
-  });
-
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -114,10 +83,9 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const handleProductClick = (product: Product, saleOption?: string | null) => {
+  const handleProductClick = (product: Product) => {
     onClose();
-    const query = saleOption ? `?saleOption=${encodeURIComponent(saleOption)}` : "";
-    navigate(`/product/${product.id}${query}`);
+    navigate(`/product/${product.id}`);
   };
 
   const handleCategoryClick = (catName: string) => {
@@ -224,10 +192,12 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
           <div className="mt-4 rounded-xl border border-[#EAD3BB] bg-white p-3 sm:mt-5 sm:p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-[#B3784F]">Browse</p>
                 <h3 className="truncate text-base font-bold text-[#7B3A14] sm:text-lg">
                   {activeCategoryName === "All" ? "Popular products" : activeCategoryName}
                 </h3>
+                <p className="mt-0.5 text-xs font-medium text-[#8D6953]">
+                  Open a product to view details and available sizes.
+                </p>
               </div>
               <button
                 type="button"
@@ -238,43 +208,36 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
               </button>
             </div>
 
-            {activeProductEntries.length === 0 ? (
+            {activeProducts.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#D8B99C] bg-[#FFFAF4] px-4 py-6 text-center text-sm font-medium text-[#7B3A14]">
                 No products available in this category yet.
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {activeProductEntries.map((entry, index) => (
+                {activeProducts.map((product) => (
                   <button
-                    key={entry.key}
+                    key={product.id}
                     type="button"
-                    onClick={() => handleProductClick(entry.product, entry.saleOption)}
-                    aria-label={entry.variantLabel
-                      ? `${entry.product.name}, ${entry.variantLabel}, ₹${formatStorePrice(entry.variantPrice)}`
-                      : entry.product.name}
-                    className="group flex min-h-[66px] items-center justify-between gap-3 rounded-lg border border-[#F0E3D5] bg-[#FFFAF4] px-3 py-3 text-left transition hover:border-[#C8651B] hover:bg-[#FFF3E5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C8651B]"
-                    data-testid={`menu-product-${entry.product.id}${entry.variantLabel ? `-${index}` : ""}`}
+                    onClick={() => handleProductClick(product)}
+                    aria-label={`View ${product.name} details`}
+                    className="group flex min-h-[76px] items-center gap-3 rounded-lg border border-[#F0E3D5] bg-[#FFFAF4] p-2.5 text-left transition hover:border-[#C8651B] hover:bg-[#FFF3E5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C8651B]"
+                    data-testid={`menu-product-${product.id}`}
                   >
-                    <span className="min-w-0">
+                    <img
+                      src={product.imageUrl || getFallbackImage(product.category)}
+                      alt=""
+                      loading="lazy"
+                      className="h-14 w-14 shrink-0 rounded-md bg-[#F3E0CA] object-cover"
+                    />
+                    <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-[#7B3A14]">
-                        {entry.product.name}
+                        {product.name}
                       </span>
-                      {entry.variantLabel && (
-                        <span className="mt-1 block truncate text-xs font-medium text-[#8D6953]">
-                          {entry.variantLabel}
-                        </span>
-                      )}
+                      <span className="mt-1 block truncate text-xs font-medium text-[#8D6953]">
+                        View product details
+                      </span>
                     </span>
-                    {entry.variantPrice != null ? (
-                      <span className="flex shrink-0 items-center gap-1.5">
-                        <span className="rounded-full bg-[#F3E0CA] px-2.5 py-1 text-xs font-bold text-[#7B3A14]">
-                          ₹{formatStorePrice(entry.variantPrice)}
-                        </span>
-                        <ChevronRight className="h-4 w-4 text-[#C8651B] transition group-hover:translate-x-0.5" aria-hidden="true" />
-                      </span>
-                    ) : (
-                      <ChevronRight className="h-4 w-4 shrink-0 text-[#C8651B] transition group-hover:translate-x-0.5" aria-hidden="true" />
-                    )}
+                    <ChevronRight className="h-4 w-4 shrink-0 text-[#C8651B] transition group-hover:translate-x-0.5" aria-hidden="true" />
                   </button>
                 ))}
               </div>

@@ -158,7 +158,7 @@ export default function CategoryPage() {
             <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
               {preorderProducts.map((product) => (
                 <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
-                  <ProductCard product={product} preorderContext />
+                  <ProductCard product={product} preorderContext variantDisplay="single-card" />
                 </div>
               ))}
             </DragScrollDiv>
@@ -248,7 +248,7 @@ export default function CategoryPage() {
               ))
             : displayProducts.length > 0
             ? displayProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} variantDisplay="single-card" />
               ))
             : (
                 <div className="col-span-full py-20 text-center text-muted-foreground">

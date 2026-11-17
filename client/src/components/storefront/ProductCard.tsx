@@ -20,6 +20,7 @@ type ProductCardProps = {
   onProductClick?: () => void;
   detailVariantKey?: string;
   brandText?: boolean;
+  variantDisplay?: "separate-cards" | "single-card";
 };
 
 const DUMMY_DETAILS: Record<string, { pieces: string; serves: string }> = {
@@ -33,6 +34,15 @@ const DUMMY_DETAILS: Record<string, { pieces: string; serves: string }> = {
 export function ProductCard(props: ProductCardProps) {
   const variants = props.product.weightVariants ?? [];
   if (variants.length === 0) return <SingleProductCard {...props} />;
+  if (props.variantDisplay === "single-card") {
+    return (
+      <SingleProductCard
+        {...props}
+        product={asVariantCartProduct(props.product, variants[0])}
+        detailVariantKey={undefined}
+      />
+    );
+  }
 
   return (
     <>
