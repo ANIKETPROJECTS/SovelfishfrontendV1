@@ -126,6 +126,11 @@
   line-height: 1.2;
 }
 
+.profile-theme main .profile-section-intro h2,
+.profile-theme main .profile-section-intro p {
+  color: #7b3a14 !important;
+}
+
 .profile-theme main .bg-white,
 .profile-theme .profile-dialog-card {
   color: #fff !important;

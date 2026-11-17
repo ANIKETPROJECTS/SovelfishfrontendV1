@@ -1611,9 +1611,9 @@ export default function Profile() {
 
         {activeSection === "orders" && (
           <section className="space-y-3" aria-label="My orders">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-white">My orders</h2>
-              <p className="mt-1 text-sm font-medium text-white/80">
+            <div className="profile-section-intro mb-4">
+              <h2 className="text-xl font-bold">My orders</h2>
+              <p className="mt-1 text-sm font-medium">
                 Track current deliveries or browse past orders.
               </p>
             </div>
