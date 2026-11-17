@@ -249,10 +249,10 @@ export default function Home() {
                         <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden">
                                   <ComboImages images={comboImages} imageUrl={combo.imageUrl} />
                           <div className="absolute top-0 left-0 z-10">
-                            <div className="relative bg-accent text-white pl-3 pr-5 py-2 shadow-md rounded-tl-xl">
+                       <div className="relative bg-white text-[#7B3A14] pl-3 pr-5 py-2 shadow-md rounded-tl-xl">
                               <div className="text-[11px] font-bold leading-tight uppercase tracking-wide">Combo</div>
                               <div className="text-[11px] font-bold leading-tight uppercase tracking-wide">Saver</div>
-                              <div className="absolute top-0 right-0 h-full w-3" style={{ background: "hsl(var(--accent))", clipPath: "polygon(0 0, 100% 50%, 0 100%)", transform: "translateX(100%)" }} />
+                             <div className="absolute top-0 right-0 h-full w-3" style={{ background: "#fff", clipPath: "polygon(0 0, 100% 50%, 0 100%)", transform: "translateX(100%)" }} />
                             </div>
                           </div>
                         </div>
@@ -371,12 +371,12 @@ export default function Home() {
                                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted/30">
                           <ComboImages images={comboImages} imageUrl={combo.imageUrl} />
                                   <div className="absolute top-0 left-0 z-10">
-                                    <div className="relative bg-accent text-white pl-3 pr-5 py-2 shadow-md rounded-tl-xl">
+                                    <div className="relative bg-white text-[#7B3A14] pl-3 pr-5 py-2 shadow-md rounded-tl-xl">
                                       <div className="text-[11px] sm:text-xs font-bold leading-tight uppercase tracking-wide">Combo</div>
                                       <div className="text-[11px] sm:text-xs font-bold leading-tight uppercase tracking-wide">Saver</div>
                                       <div
                                         className="absolute top-0 right-0 h-full w-3"
-                                        style={{ background: "hsl(var(--accent))", clipPath: "polygon(0 0, 100% 50%, 0 100%)", transform: "translateX(100%)" }}
+                                        style={{ background: "#fff", clipPath: "polygon(0 0, 100% 50%, 0 100%)", transform: "translateX(100%)" }}
                                       />
                                     </div>
                                   </div>
