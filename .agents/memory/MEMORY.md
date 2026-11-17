@@ -19,6 +19,7 @@
 - [Market price comparisons](market-price-comparisons.md) — Always show Mongo catalog rates; movements, ranges, and sparklines must use saved price history only.
 - [Homepage visual direction](homepage-visual-direction.md) — Use warm golden wood on the homepage, pure white header/cards, and brown wood for the footer.
 - [Address map privacy](address-map-privacy.md) — Geocoder queries must use a separate public-place search, never customer or apartment details.
+- [Google Maps async loading](google-maps-loader.md) — wait for the Maps API callback before importing libraries; a script download event alone may be too early.
 - [City-area delivery pricing](city-area-pricing.md) — each address requires a six-digit pincode; active areas set pricing, and pincodes never determine serviceability.
 - [Product cutting choices](cutting-methods.md) — use each hub product's saved `cuttingMethods`; validate and persist the selected array on the order item rather than creating a second catalog.
 - [Pieces and serves by option](pieces-serves-by-option.md) — use the selected variant, fish batch, or bulk pack as the source; snapshot server-verified values on the order item.
