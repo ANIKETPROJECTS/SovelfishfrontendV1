@@ -133,7 +133,12 @@ function SingleProductCard({
             </Badge>
           )}
           {product.status === "unavailable" && (
-            <Badge variant="outline" className="bg-red-500/90 backdrop-blur text-white border-none shadow-sm py-0.5 text-[10px] h-5">
+            <Badge
+              variant="outline"
+              className={brandText
+                ? "h-auto rounded-full border-none bg-white px-2.5 py-1 text-xs font-bold text-[#7B3A14] shadow-sm"
+                : "bg-red-500/90 backdrop-blur text-white border-none shadow-sm py-0.5 text-[10px] h-5"}
+            >
               Sold Out
             </Badge>
           )}
@@ -191,10 +196,15 @@ function SingleProductCard({
           {isUnavailable ? (
             <Button
               disabled
-              className="rounded-full w-9 h-9 p-0 text-white shadow-md flex items-center justify-center shrink-0 bg-muted"
-              size="icon"
+              aria-label={`${cartProduct.name} is out of stock`}
+              className={`rounded-full shadow-sm flex items-center justify-center shrink-0 ${
+                brandText
+                  ? "h-10 min-w-[72px] px-4 text-base font-bold bg-white text-[#7B3A14] disabled:opacity-100"
+                  : "w-9 h-9 p-0 text-white shadow-md bg-muted"
+              }`}
+              size={brandText ? "default" : "icon"}
             >
-              <span className="text-[10px]">Out</span>
+              <span className={brandText ? "" : "text-[10px]"}>Out</span>
             </Button>
           ) : qty === 0 ? (
             <Button
