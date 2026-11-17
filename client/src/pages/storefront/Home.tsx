@@ -18,7 +18,7 @@ import { SeoHead } from "@/components/SeoHead";
 import { isNormalStorefrontProduct, isPreorderStorefrontProduct } from "@shared/productVisibility";
 import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
 import { DemoCatalogPreview } from "@/components/storefront/DemoCatalogPreview";
-import { MarketBoard } from "@/components/storefront/MarketBoard";
+import { FreshCatchReels } from "@/components/storefront/FreshCatchReels";
 import { WhatsAppFloatingButton } from "@/components/storefront/WhatsAppFloatingButton";
 
 function getFallbackImage(_category: string): string {
@@ -320,7 +320,7 @@ export default function Home() {
           <DemoCatalogPreview />
         ) : (
           <>
-        <MarketBoard products={products ?? []} />
+        <FreshCatchReels products={products ?? []} />
 
         {/* Preserve the existing preorder placement for hubs that have not
             configured a ranked preorder section yet. */}
