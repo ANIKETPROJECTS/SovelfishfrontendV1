@@ -27,6 +27,7 @@ export function LocationPicker() {
   } = useCityArea();
   const [locationName, setLocationName] = useState("");
   const savedLocationHandledRef = useRef(false);
+  const hasUserChangedLocationRef = useRef(false);
   const savedAddressArea = useMemo(
     () => {
       for (const address of customer?.addresses ?? []) {
@@ -48,7 +49,11 @@ export function LocationPicker() {
         Boolean(savedAddressArea && selectedSuperHub && selectedSubHub)));
 
   useEffect(() => {
-    if (!isPickerOpen) return;
+    if (!isPickerOpen) {
+      hasUserChangedLocationRef.current = false;
+      return;
+    }
+    if (hasUserChangedLocationRef.current) return;
     const storedName =
       selectedCityArea?.name ??
       (selectedSubHub
@@ -120,9 +125,11 @@ export function LocationPicker() {
     Boolean(selectedSuperHub && selectedSubHub && isHubReady);
 
   const handleLocationChange = (value: string) => {
-    setLocationName(value);
     const option = findCityAreaOption(cityAreas, value);
-    setSelectedCityArea(option?.name ?? null);
+    if (!option) return;
+    hasUserChangedLocationRef.current = true;
+    setLocationName(option.name);
+    setSelectedCityArea(option.name);
   };
 
   const handleContinue = () => {
