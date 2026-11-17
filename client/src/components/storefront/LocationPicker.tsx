@@ -48,8 +48,14 @@ export function LocationPicker() {
         Boolean(savedAddressArea && selectedSuperHub && selectedSubHub)));
 
   useEffect(() => {
-    if (isPickerOpen) setLocationName(selectedCityArea?.name ?? "");
-  }, [isPickerOpen, selectedCityArea?.name]);
+    if (!isPickerOpen) return;
+    const storedName =
+      selectedCityArea?.name ??
+      (selectedSubHub
+        ? localStorage.getItem(`freshstock_city_area:${selectedSubHub.id}`)
+        : null);
+    setLocationName(findCityAreaOption(cityAreas, storedName)?.name ?? "");
+  }, [isPickerOpen, selectedCityArea?.name, selectedSubHub?.id, cityAreas]);
 
   useEffect(() => {
     if (!isPickerOpen || !isPickerRequired || savedLocationHandledRef.current) return;
@@ -112,6 +118,12 @@ export function LocationPicker() {
   const canContinue =
     Boolean(findCityAreaOption(cityAreas, locationName)) &&
     Boolean(selectedSuperHub && selectedSubHub && isHubReady);
+
+  const handleLocationChange = (value: string) => {
+    setLocationName(value);
+    const option = findCityAreaOption(cityAreas, value);
+    setSelectedCityArea(option?.name ?? null);
+  };
 
   const handleContinue = () => {
     const option = findCityAreaOption(cityAreas, locationName);
@@ -199,7 +211,7 @@ export function LocationPicker() {
               id="initial-location-select"
               value={locationName}
               options={cityAreas}
-              onValueChange={setLocationName}
+              onValueChange={handleLocationChange}
               placeholder="Choose your location"
               searchPlaceholder="Search locations..."
               className="h-11 rounded-xl"
