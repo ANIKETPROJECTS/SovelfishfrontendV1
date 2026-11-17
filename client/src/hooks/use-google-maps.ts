@@ -4,6 +4,7 @@ declare global {
   interface Window {
     google?: any;
     gm_authFailure?: () => void;
+    __freshStockGoogleMapsReady?: () => void;
   }
 }
 
@@ -108,11 +109,17 @@ function loadMaps(): Promise<boolean> {
       window.clearTimeout(timeout);
       void finish(loaded);
     };
+    window.__freshStockGoogleMapsReady = () => finishScriptLoad(true);
     script.async = true;
     script.defer = true;
     script.id = SCRIPT_ID;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async`;
-    script.addEventListener("load", () => finishScriptLoad(true), { once: true });
+    const params = new URLSearchParams({
+      key,
+      v: "weekly",
+      loading: "async",
+      callback: "__freshStockGoogleMapsReady",
+    });
+    script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
     script.addEventListener("error", () => finishScriptLoad(false), { once: true });
     if (!existingScript) document.head.appendChild(script);
   });
