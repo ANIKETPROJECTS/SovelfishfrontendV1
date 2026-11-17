@@ -34,6 +34,7 @@ function getSafeDiagnostics() {
     pageOrigin: window.location.origin,
     buildMode: import.meta.env.MODE,
     keyConfigured: Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim()),
+    keySource: import.meta.env.VITE_GOOGLE_MAPS_KEY_SOURCE || "unknown",
     scriptOrigin,
     scriptHasKey,
     googleMapsGlobalAvailable: Boolean(window.google?.maps),
