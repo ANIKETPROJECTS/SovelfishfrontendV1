@@ -212,6 +212,15 @@
     background-size: 1000px auto;
   }
 
+  @media (min-width: 1024px) {
+    .home-storefront-page {
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-attachment: fixed;
+    }
+  }
+
   .home-content-section {
     position: relative;
     margin-inline: -2rem;
