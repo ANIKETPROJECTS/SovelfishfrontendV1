@@ -130,9 +130,9 @@ interface OrderItem {
 }
 
 const PROFILE_SECTIONS = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "addresses", label: "Addresses", icon: MapPin },
-  { id: "orders", label: "My Orders", icon: ShoppingBag },
+  { id: "profile", label: "Account details", mobileLabel: "Profile", icon: User },
+  { id: "addresses", label: "Delivery addresses", mobileLabel: "Addresses", icon: MapPin },
+  { id: "orders", label: "My orders", mobileLabel: "Orders", icon: ShoppingBag },
 ] as const;
 type ProfileSection = typeof PROFILE_SECTIONS[number]["id"];
 type OrdersSubTab = "current" | "previous";
@@ -1178,7 +1178,7 @@ export default function Profile() {
               Your account
             </p>
             <nav aria-label="Profile sections" className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-              {PROFILE_SECTIONS.map(({ id, label, icon: Icon }) => {
+              {PROFILE_SECTIONS.map(({ id, label, mobileLabel, icon: Icon }) => {
                 const isActive = activeSection === id;
                 const testId = id === "profile"
                   ? "tab-profile-&-addresses"
@@ -1191,11 +1191,13 @@ export default function Profile() {
                     type="button"
                     onClick={() => setActiveSection(id)}
                     aria-current={isActive ? "page" : undefined}
+                    aria-label={label}
                     className={`profile-nav-item ${isActive ? "profile-nav-item-active" : ""}`}
                     data-testid={testId}
                   >
                     <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    <span>{label}</span>
+                    <span className="profile-nav-label-wide">{label}</span>
+                    <span className="profile-nav-label-short">{mobileLabel}</span>
                     {id === "orders" && customerVisibleOrders.length > 0 && (
                       <span className="profile-nav-count">{customerVisibleOrders.length}</span>
                     )}
@@ -1222,19 +1224,22 @@ export default function Profile() {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <img src={headerUserImg} alt="" className="w-5 h-5 object-contain" />
-                  <h2 className="text-xl font-bold text-foreground">Profile Details</h2>
+                  <h2 className="text-xl font-bold text-foreground">Account details</h2>
                 </div>
                 {!editingProfile && (
                   <Button
-                    variant="ghost" size="icon"
+                    variant="ghost" size="sm"
                     onClick={() => {
                       setDraftProfile({ name: customer.name || "", email: customer.email || "", dateOfBirth: customer.dateOfBirth || "" });
                       setEditingProfile(true);
                     }}
-                    className="w-7 h-7 rounded-full hover:bg-slate-100"
+                    className="gap-2 rounded-full border border-white/35 px-3 text-sm font-semibold text-white hover:bg-white/10"
+                    aria-label="Edit account details"
+                    title="Edit account details"
                     data-testid="button-edit-profile"
                   >
-                    <img src={iconEditImg} alt="Edit" className="w-4 h-4 object-contain" style={{ filter: "brightness(0)" }} />
+                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                    <span>Edit details</span>
                   </Button>
                 )}
               </div>
@@ -1338,14 +1343,14 @@ export default function Profile() {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <img src={headerLocationImg} alt="" className="w-5 h-5 object-contain" />
-                  <h2 className="text-xl font-bold text-foreground">Saved Addresses</h2>
+                  <h2 className="text-xl font-bold text-foreground">Delivery addresses</h2>
                 </div>
                 {!showAddressForm ? (
                   <Button
                     variant="ghost" size="sm"
                     onClick={openAddForm}
-                    className="gap-1.5 rounded-xl text-xs hover:opacity-90"
-                    style={{ color: "#FFFFFF" }}
+                    className="gap-2 rounded-full bg-[#C8651B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#8B3A0F]"
+                    aria-label="Add a delivery address"
                     data-testid="button-add-address"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Address
@@ -1579,7 +1584,7 @@ export default function Profile() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-full hover:bg-slate-100" onClick={() => openEditForm(addr)} data-testid={`button-edit-address-${addr.id}`}>
+                          <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-white/10" onClick={() => openEditForm(addr)} aria-label={`Edit address for ${addr.name}`} title="Edit address" data-testid={`button-edit-address-${addr.id}`}>
                             <img src={iconEditImg} alt="Edit" className="w-4 h-4 object-contain" style={{ filter: "brightness(0)" }} />
                           </Button>
                           <Button
@@ -1587,6 +1592,8 @@ export default function Profile() {
                             className="w-7 h-7 rounded-full hover:bg-slate-100"
                             disabled={deleteAddressMutation.isPending}
                             onClick={() => deleteAddressMutation.mutate(addr.id)}
+                            aria-label={`Delete address for ${addr.name}`}
+                            title="Delete address"
                             data-testid={`button-delete-address-${addr.id}`}
                           >
                             <img src={iconBinImg} alt="Delete" className="w-4 h-4 object-contain" style={{ filter: "brightness(0)" }} />
@@ -1604,6 +1611,12 @@ export default function Profile() {
 
         {activeSection === "orders" && (
           <section className="space-y-3" aria-label="My orders">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-white">My orders</h2>
+              <p className="mt-1 text-sm font-medium text-white/80">
+                Track current deliveries or browse past orders.
+              </p>
+            </div>
             {/* Active / Previous sub-tabs */}
             <div className="flex rounded-full p-1.5 border border-white/40 bg-[#51240D]/70 shadow-lg">
               {(["current", "previous"] as OrdersSubTab[]).map(sub => {
@@ -1617,7 +1630,7 @@ export default function Profile() {
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-base font-semibold transition-all ${isActive ? "text-white shadow-md" : "text-white/85 hover:text-white"}`}
                     data-testid={`tab-orders-${sub}`}
                   >
-                    {sub === "current" ? "Active" : "Previous"}
+                    {sub === "current" ? "Active orders" : "Past orders"}
                     {count > 0 && (
                       <span
                         className="text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"

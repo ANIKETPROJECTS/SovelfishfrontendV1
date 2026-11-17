@@ -71,6 +71,10 @@
   flex: 1;
 }
 
+.profile-nav-label-short {
+  display: none;
+}
+
 .profile-nav-count {
   display: inline-flex;
   min-width: 1.45rem;
@@ -269,6 +273,16 @@
 
   .profile-theme main .bg-white {
     border-radius: 1.25rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .profile-nav-label-wide {
+    display: none;
+  }
+
+  .profile-nav-label-short {
+    display: inline;
   }
 }
 
