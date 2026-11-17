@@ -55,7 +55,6 @@ const HubContext = createContext<HubContextValue>({
 });
 
 const STORAGE_KEY = "fishtokri_hub";
-const USER_PICKED_KEY = "fishtokri_user_picked";
 
 const DEFAULT_SUPER_HUB_NAME = "Mumbai";
 const DEFAULT_SUB_HUB_NAME = "Thane";
@@ -92,8 +91,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        const userPicked = localStorage.getItem(USER_PICKED_KEY);
-        if (saved && userPicked) {
+        if (saved) {
           const { superHub, subHub } = JSON.parse(saved);
           // Load cached data immediately so the app renders fast
           setSelectedSuperHub(superHub);
@@ -103,21 +101,29 @@ export function HubProvider({ children }: { children: ReactNode }) {
           // The cached hub is immediately usable; refresh its configuration below.
           setIsHubReady(true);
 
-          // Refresh sub-hub data in the background so updated hub configuration
-          // is picked up without clearing the browser cache.
-          try {
-            const subRes = await fetch(`/api/hubs/sub?superHubId=${superHub.id}`);
-            if (subRes.ok) {
-              const freshSubHubs: SubHub[] = await subRes.json();
-              const freshSubHub = freshSubHubs.find((h) => h.id === subHub.id) ?? null;
-              if (freshSubHub) {
-                setSelectedSubHub(freshSubHub);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify({ superHub, subHub: freshSubHub }));
+          // Refresh cached configuration without delaying the mandatory picker.
+          void (async () => {
+            try {
+              const subRes = await fetch(`/api/hubs/sub?superHubId=${superHub.id}`);
+              if (subRes.ok) {
+                const freshSubHubs: SubHub[] = await subRes.json();
+                const freshSubHub = freshSubHubs.find((h) => h.id === subHub.id) ?? null;
+                if (freshSubHub) {
+                  setSelectedSubHub(freshSubHub);
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify({ superHub, subHub: freshSubHub }));
+                }
               }
-            }
-          } catch {}
+            } catch {}
+          })();
 
-          return; // returning user has already picked — skip forced picker
+          const savedArea = localStorage.getItem(`freshstock_city_area:${subHub.id}`);
+          if (savedArea?.trim()) return;
+
+          // A cached hub alone is not enough: first-time visitors must select
+          // an active delivery area before browsing without the location prompt.
+          setIsPickerOpen(true);
+          setIsPickerRequired(true);
+          return;
         }
       } catch {}
 
@@ -146,7 +152,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setActiveHubDb(subHub.dbName);
     setIsHubReady(true);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ superHub, subHub }));
-    localStorage.setItem(USER_PICKED_KEY, "1"); // mark user as having explicitly picked
     queryClient.invalidateQueries();
     setIsPickerOpen(false);
     setIsPickerRequired(false);
@@ -159,7 +164,6 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setActiveHubDb(null);
     setIsHubReady(false);
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(USER_PICKED_KEY);
     queryClient.invalidateQueries();
   }, []);
 
@@ -170,11 +174,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
       openPicker: () => setIsPickerOpen(true),
       closePicker: () => { if (!isPickerRequired) setIsPickerOpen(false); },
       skipPicker: () => {
+        if (isPickerRequired) return;
         setIsPickerOpen(false);
-        setIsPickerRequired(false);
-        // Remember that this visitor has handled the first-visit location prompt,
-        // so a fresh browser session does not ask for it again.
-        localStorage.setItem(USER_PICKED_KEY, "1");
       },
     }}>
       {children}

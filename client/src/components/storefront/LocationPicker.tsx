@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, MapPin, X } from "lucide-react";
 import { useHub } from "@/context/HubContext";
 import { useCityArea } from "@/context/CityAreaContext";
+import { useCustomer } from "@/context/CustomerContext";
 import { findCityAreaOption } from "@shared/cityAreaPricing";
 import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
 
@@ -15,6 +16,7 @@ export function LocationPicker() {
     setHub,
     skipPicker,
   } = useHub();
+  const { customer, isLoading: isCustomerLoading } = useCustomer();
   const {
     cityAreas,
     selectedCityArea,
@@ -24,10 +26,53 @@ export function LocationPicker() {
     reloadCityAreas,
   } = useCityArea();
   const [locationName, setLocationName] = useState("");
+  const savedLocationHandledRef = useRef(false);
+  const savedAddressArea = useMemo(
+    () => {
+      for (const address of customer?.addresses ?? []) {
+        for (const name of [address.cityArea, address.area, address.city]) {
+          const option = findCityAreaOption(cityAreas, name);
+          if (option) return option;
+        }
+      }
+      return null;
+    },
+    [customer?.addresses, cityAreas],
+  );
+  const isCheckingSavedLocation =
+    isPickerOpen &&
+    isPickerRequired &&
+    (isCustomerLoading ||
+      (isHubReady && isCityAreasLoading) ||
+      (!cityAreasError &&
+        Boolean(savedAddressArea && selectedSuperHub && selectedSubHub)));
 
   useEffect(() => {
     if (isPickerOpen) setLocationName(selectedCityArea?.name ?? "");
   }, [isPickerOpen, selectedCityArea?.name]);
+
+  useEffect(() => {
+    if (!isPickerOpen || !isPickerRequired || savedLocationHandledRef.current) return;
+    if (isCustomerLoading || !isHubReady || isCityAreasLoading) return;
+
+    if (!cityAreasError && savedAddressArea && selectedSuperHub && selectedSubHub) {
+      savedLocationHandledRef.current = true;
+      setSelectedCityArea(savedAddressArea.name);
+      setHub(selectedSuperHub, selectedSubHub);
+    }
+  }, [
+    isPickerOpen,
+    isPickerRequired,
+    isCustomerLoading,
+    isHubReady,
+    isCityAreasLoading,
+    cityAreasError,
+    savedAddressArea,
+    selectedSuperHub,
+    selectedSubHub,
+    setSelectedCityArea,
+    setHub,
+  ]);
 
   useEffect(() => {
     if (!isPickerOpen) return;
@@ -48,6 +93,21 @@ export function LocationPicker() {
   }, [isPickerOpen]);
 
   if (!isPickerOpen) return null;
+
+  if (isCheckingSavedLocation && isPickerRequired) {
+    return (
+      <div
+        className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm text-slate-700 shadow-2xl">
+          <Loader2 className="h-5 w-5 animate-spin text-[#C8651B]" />
+          Checking your saved delivery location…
+        </div>
+      </div>
+    );
+  }
 
   const canContinue =
     Boolean(findCityAreaOption(cityAreas, locationName)) &&
@@ -78,15 +138,17 @@ export function LocationPicker() {
         aria-labelledby="location-picker-title"
         className="relative w-full max-w-sm overflow-visible rounded-3xl bg-white p-6 shadow-2xl"
       >
-        <button
-          type="button"
-          onClick={handleClose}
-          aria-label="Continue browsing without selecting a location"
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
-          data-testid="button-skip-location"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {!isPickerRequired && (
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close location picker"
+            className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+            data-testid="button-skip-location"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
 
         <div className="mb-4 flex justify-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF1E4]">
