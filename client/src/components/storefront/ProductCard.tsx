@@ -65,6 +65,7 @@ function SingleProductCard({
   onProductClick,
   detailVariantKey,
   brandText = false,
+  variantDisplay = "separate-cards",
 }: ProductCardProps) {
   const { addToCart, removeFromCart, updateQuantity, items, computeMaxQty } = useCart();
   const { selectedCityArea } = useCityArea();
@@ -95,6 +96,9 @@ function SingleProductCard({
     const query = new URLSearchParams();
     if (preorderContext) query.set("preorder", "1");
     if (detailVariantKey) query.set("saleOption", detailVariantKey);
+    if (variantDisplay === "single-card" && product.weightVariants?.length) {
+      query.set("showOptions", "1");
+    }
     const search = query.toString();
     return `/product/${originalProductId}${search ? `?${search}` : ""}`;
   };

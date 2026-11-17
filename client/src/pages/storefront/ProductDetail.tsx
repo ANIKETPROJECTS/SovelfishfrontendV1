@@ -162,6 +162,8 @@ export default function ProductDetail() {
 
   const productId = params?.id;
   const requestedSaleOption = new URLSearchParams(search).get("saleOption");
+  const showOptions = new URLSearchParams(search).get("showOptions") === "1";
+  const variantOptionsRef = useRef<HTMLDivElement>(null);
   const product = products?.find((p) => p.id === productId && !p.batchExpired && isStorefrontProductVisible(p));
   const variants = product?.weightVariants ?? [];
   const selectedVariant = variants[selectedVariantIndex] ?? variants[0];
@@ -235,6 +237,14 @@ export default function ProductDetail() {
     );
     if (index >= 0) setSelectedVariantIndex(index);
   }, [productId, requestedSaleOption, variants]);
+
+  useEffect(() => {
+    if (!showOptions || isLoading || variants.length === 0) return;
+    const timer = window.setTimeout(() => {
+      variantOptionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [productId, showOptions, isLoading, variants.length]);
 
   useEffect(() => {
     if (!cartItem) {
@@ -502,8 +512,8 @@ export default function ProductDetail() {
             )}
 
             {variants.length > 0 && (
-              <div>
-                <p className="mb-2 text-sm font-semibold text-foreground">Choose weight</p>
+              <div ref={variantOptionsRef} id="product-variants" className="scroll-mt-24">
+                <p className="mb-2 text-sm font-semibold text-foreground">Choose an option</p>
                 <div className="flex flex-wrap gap-2">
                   {variants.map((variant, index) => (
                     <button

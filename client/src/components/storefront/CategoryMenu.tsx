@@ -85,7 +85,8 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
 
   const handleProductClick = (product: Product) => {
     onClose();
-    navigate(`/product/${product.id}`);
+    const showOptions = product.weightVariants?.length ? "?showOptions=1" : "";
+    navigate(`/product/${product.id}${showOptions}`);
   };
 
   const handleCategoryClick = (catName: string) => {
