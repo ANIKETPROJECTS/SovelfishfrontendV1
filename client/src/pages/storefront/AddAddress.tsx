@@ -48,6 +48,7 @@ function GoogleMapPicker({ onConfirm, onClose }: {
     const map = new window.google.maps.Map(mapDivRef.current, {
       center,
       zoom: 13,
+      mapId: import.meta.env.VITE_GOOGLE_MAP_ID || undefined,
       gestureHandling: "greedy",
       disableDefaultUI: false,
       mapTypeControl: false,
@@ -56,13 +57,19 @@ function GoogleMapPicker({ onConfirm, onClose }: {
     });
     mapRef.current = map;
 
-    const marker = new window.google.maps.Marker({
+    const marker = new window.google.maps.marker.AdvancedMarkerElement({
       position: center,
       map,
-      draggable: true,
-      animation: window.google.maps.Animation.DROP,
+      gmpDraggable: true,
       title: "Drag to your delivery location",
     });
+    marker.append(
+      new window.google.maps.marker.PinElement({
+        background: "#C8651B",
+        borderColor: "#7B3A14",
+        glyphColor: "#FFFFFF",
+      }),
+    );
     markerRef.current = marker;
 
     let geocodeRequestId = 0;
@@ -87,14 +94,20 @@ function GoogleMapPicker({ onConfirm, onClose }: {
       }
     };
 
-    marker.addListener("dragend", () => {
-      const pos = marker.getPosition();
-      if (pos) void geocodePos({ lat: pos.lat(), lng: pos.lng() });
-    });
+    const handleMarkerDragEnd = () => {
+      const pos = marker.position;
+      if (pos) {
+        void geocodePos({
+          lat: typeof pos.lat === "function" ? pos.lat() : Number(pos.lat),
+          lng: typeof pos.lng === "function" ? pos.lng() : Number(pos.lng),
+        });
+      }
+    };
+    marker.addEventListener("gmp-dragend", handleMarkerDragEnd);
 
     const mapClickListener = map.addListener("click", (event: any) => {
       if (!event.latLng) return;
-      marker.setPosition(event.latLng);
+      marker.position = event.latLng;
       void geocodePos({ lat: event.latLng.lat(), lng: event.latLng.lng() });
     });
     void geocodePos(center);
@@ -102,8 +115,9 @@ function GoogleMapPicker({ onConfirm, onClose }: {
     return () => {
       geocodeRequestId += 1;
       mapClickListener.remove();
+      marker.removeEventListener("gmp-dragend", handleMarkerDragEnd);
       window.google.maps.event.clearInstanceListeners(map);
-      marker.setMap(null);
+      marker.map = null;
       mapRef.current = null;
       markerRef.current = null;
     };

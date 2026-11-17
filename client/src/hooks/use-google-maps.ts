@@ -17,40 +17,6 @@ let state = INITIAL_STATE;
 let loadPromise: Promise<boolean> | null = null;
 const listeners = new Set<(next: MapsState) => void>();
 
-function getSafeDiagnostics() {
-  const script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
-  let scriptOrigin: string | null = null;
-  let scriptHasKey = false;
-  if (script?.src) {
-    try {
-      const scriptUrl = new URL(script.src);
-      scriptOrigin = scriptUrl.origin;
-      scriptHasKey = scriptUrl.searchParams.has("key");
-    } catch {
-      // Do not include the raw script URL; it can contain the public API key.
-    }
-  }
-  return {
-    pageOrigin: window.location.origin,
-    buildMode: import.meta.env.MODE,
-    keyConfigured: Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim()),
-    keySource: import.meta.env.VITE_GOOGLE_MAPS_KEY_SOURCE || "unknown",
-    scriptOrigin,
-    scriptHasKey,
-    googleMapsGlobalAvailable: Boolean(window.google?.maps),
-    importLibraryAvailable: typeof window.google?.maps?.importLibrary === "function",
-  };
-}
-
-function logDiagnostics(message: string, details: Record<string, unknown> = {}) {
-  console.info(
-    `[GoogleMaps diagnostics] ${message} ${JSON.stringify({
-      ...getSafeDiagnostics(),
-      ...details,
-    })}`,
-  );
-}
-
 function getSafeErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return message.replace(/([?&]key=)[^&\s]+/gi, "$1[redacted]");
@@ -63,7 +29,7 @@ function notify(next: MapsState) {
 
 if (typeof window !== "undefined") {
   window.gm_authFailure = () => {
-    console.error(`[GoogleMaps diagnostics] Google invoked gm_authFailure. Check the Google Maps API error immediately above this log; this diagnostic intentionally does not print the API key. ${JSON.stringify(getSafeDiagnostics())}`);
+    console.error("[GoogleMaps] Authorization failed. See the Google Maps JavaScript API error above.");
     notify({
       status: "error",
       error: "Google Maps authorization failed. Check the key’s website restrictions, billing, and enabled APIs.",
@@ -76,34 +42,22 @@ async function importRequiredLibraries(): Promise<boolean> {
     if (!window.google?.maps?.importLibrary) {
       throw new Error("Google Maps initialized without exposing importLibrary.");
     }
-    const libraries = ["maps", "places", "geocoding"];
-    logDiagnostics("Importing required Google Maps libraries.", { libraries });
+    const libraries = ["maps", "places", "geocoding", "marker"];
     await Promise.all(
       libraries.map((library) =>
         window.google.maps
           .importLibrary(library)
-          .then(() => logDiagnostics("Google Maps library loaded.", { library }))
           .catch((error: unknown) => {
-            console.error(
-              `[GoogleMaps diagnostics] Library import failed. ${JSON.stringify({
-                ...getSafeDiagnostics(),
-                library,
-                error: getSafeErrorMessage(error),
-              })}`,
+            throw new Error(
+              `Google Maps "${library}" library failed: ${getSafeErrorMessage(error)}`,
             );
-            throw error;
           }),
       ),
     );
     return true;
   } catch (error) {
     const message = getSafeErrorMessage(error) || "A required Google Maps library could not load.";
-    console.error(
-      `[GoogleMaps diagnostics] Maps initialization failed. ${JSON.stringify({
-        ...getSafeDiagnostics(),
-        error: message,
-      })}`,
-    );
+    console.error("[GoogleMaps] Initialization failed:", message);
     notify({ status: "error", error: message });
     return false;
   }
@@ -117,31 +71,16 @@ function loadMaps(): Promise<boolean> {
   const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
   if (!key) {
     const error = "Google Maps is not configured. The frontend build is missing VITE_GOOGLE_MAPS_API_KEY.";
-    console.error(
-      `[GoogleMaps diagnostics] No API key is configured for this frontend build. ${JSON.stringify({
-        ...getSafeDiagnostics(),
-        expectedVariable: "VITE_GOOGLE_MAPS_API_KEY",
-      })}`,
-    );
+    console.error("[GoogleMaps]", error);
     notify({ status: "error", error });
     return Promise.resolve(false);
   }
 
   loadPromise = new Promise<boolean>((resolve) => {
-    logDiagnostics("Starting Google Maps JavaScript API request.", {
-      expectedVariable: "VITE_GOOGLE_MAPS_API_KEY",
-      requestedLibraries: ["maps", "places", "geocoding"],
-      apiKeyValueLogged: false,
-    });
     const finish = async (loaded: boolean) => {
       if (!loaded) {
         const error = "Google Maps could not load. Check the network, API restrictions, billing, and enabled services.";
-        console.error(
-          `[GoogleMaps diagnostics] Google Maps script request failed. ${JSON.stringify({
-            ...getSafeDiagnostics(),
-            error,
-          })}`,
-        );
+        console.error("[GoogleMaps]", error);
         notify({ status: "error", error });
         resolve(false);
         return;
@@ -172,9 +111,7 @@ function loadMaps(): Promise<boolean> {
     const timeout = window.setTimeout(() => {
       if (settled) return;
       settled = true;
-      console.error(
-        `[GoogleMaps diagnostics] Timed out waiting for the Google Maps ready callback. ${JSON.stringify(getSafeDiagnostics())}`,
-      );
+      console.error("[GoogleMaps] Timed out waiting for the API-ready callback.");
       notify({
         status: "error",
         error: "Google Maps timed out while loading. Check network access, API restrictions, and enabled services.",
@@ -187,10 +124,7 @@ function loadMaps(): Promise<boolean> {
       window.clearTimeout(timeout);
       void finish(loaded);
     };
-    window.__freshStockGoogleMapsReady = () => {
-      logDiagnostics("Google Maps ready callback fired.");
-      finishScriptLoad(true);
-    };
+    window.__freshStockGoogleMapsReady = () => finishScriptLoad(true);
     script.async = true;
     script.defer = true;
     script.id = SCRIPT_ID;
@@ -201,19 +135,7 @@ function loadMaps(): Promise<boolean> {
       callback: "__freshStockGoogleMapsReady",
     });
     script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
-    script.addEventListener(
-      "error",
-      (event) => {
-        console.error(
-          `[GoogleMaps diagnostics] Maps JavaScript script element emitted an error. ${JSON.stringify({
-            ...getSafeDiagnostics(),
-            eventType: event.type,
-          })}`,
-        );
-        finishScriptLoad(false);
-      },
-      { once: true },
-    );
+    script.addEventListener("error", () => finishScriptLoad(false), { once: true });
     if (!existingScript) document.head.appendChild(script);
   });
 

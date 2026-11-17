@@ -19,6 +19,13 @@ export default defineConfig({
         ]
       : []),
   ],
+  define: {
+    // Google Maps IDs are public client configuration, but the project uses
+    // the unprefixed GOOGLE_MAP_ID name in its environment and .env file.
+    "import.meta.env.VITE_GOOGLE_MAP_ID": JSON.stringify(
+      process.env.GOOGLE_MAP_ID?.trim() || "",
+    ),
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

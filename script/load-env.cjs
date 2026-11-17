@@ -4,22 +4,16 @@ const path = require("node:path");
 module.exports = function loadEnvFile(
   filePath = path.resolve(__dirname, "../.env"),
 ) {
-  const googleMapsKey = "VITE_GOOGLE_MAPS_API_KEY";
-  let googleMapsKeySource =
-    process.env[googleMapsKey] !== undefined ? "process environment" : "not configured";
-  if (!fs.existsSync(filePath)) {
-    process.env.VITE_GOOGLE_MAPS_KEY_SOURCE = googleMapsKeySource;
-    return { googleMapsKeySource };
-  }
+  if (!fs.existsSync(filePath)) return;
 
   const contents = fs.readFileSync(filePath, "utf8");
-  let envFileHasGoogleMapsKey = false;
 
   for (const line of contents.split(/\r?\n/)) {
     const match = line.match(/^\s*(?:export\s+)?([\w.-]+)\s*=\s*(.*?)\s*$/);
-    if (!match || match[1].startsWith("#")) {
+    if (!match || match[1].startsWith("#") || process.env[match[1]] !== undefined) {
       continue;
     }
+
     let value = match[2];
     if (
       (value.startsWith('"') && value.endsWith('"')) ||
@@ -33,29 +27,6 @@ module.exports = function loadEnvFile(
       value = value.replace(/\s+#.*$/, "").trimEnd();
     }
 
-    if (match[1] === googleMapsKey) {
-      envFileHasGoogleMapsKey = true;
-      if (process.env[googleMapsKey] !== undefined) {
-        googleMapsKeySource =
-          process.env[googleMapsKey] === value
-            ? "process environment (matches .env)"
-            : "process environment (overrides .env)";
-      }
-    }
-    if (process.env[match[1]] !== undefined) {
-      continue;
-    }
-
     process.env[match[1]] = value;
-    if (match[1] === googleMapsKey) googleMapsKeySource = ".env file";
   }
-  if (
-    process.env[googleMapsKey] !== undefined &&
-    !envFileHasGoogleMapsKey &&
-    googleMapsKeySource === "process environment"
-  ) {
-    googleMapsKeySource = "process environment (no .env value)";
-  }
-  process.env.VITE_GOOGLE_MAPS_KEY_SOURCE = googleMapsKeySource;
-  return { googleMapsKeySource };
 };

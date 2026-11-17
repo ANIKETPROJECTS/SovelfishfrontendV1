@@ -28,16 +28,52 @@ type LocationStatus = "idle" | "loading" | "error";
 const DEFAULT_MAP_CENTER: AddressCoordinates = { latitude: 19.2183, longitude: 72.9781 };
 const MIN_SEARCH_LENGTH = 3;
 
-function createDeliveryPinIcon() {
+function createDeliveryPinContent() {
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
     '<path d="M16 39S2 22.7 2 15.2a14 14 0 1 1 28 0C30 22.7 16 39 16 39Z" fill="#C8651B" stroke="#7B3A14" stroke-width="2"/>' +
     '<circle cx="16" cy="15" r="5" fill="#fff"/>' +
     "</svg>";
+  const image = document.createElement("img");
+  image.src = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  image.alt = "";
+  image.width = 32;
+  image.height = 40;
+  image.draggable = false;
+  image.style.display = "block";
+  return image;
+}
+
+function getAdvancedMarkerCoordinates(marker: any): AddressCoordinates | null {
+  const position = marker?.position;
+  if (!position) return null;
+  return getValidAddressCoordinates({
+    latitude: typeof position.lat === "function" ? position.lat() : Number(position.lat),
+    longitude: typeof position.lng === "function" ? position.lng() : Number(position.lng),
+  });
+}
+
+function createDeliveryPin(
+  map: any,
+  position: { lat: number; lng: number },
+  title: string,
+  onDragEnd: (coordinates: AddressCoordinates) => void,
+) {
+  const marker = new window.google.maps.marker.AdvancedMarkerElement({
+    map,
+    position,
+    title,
+    gmpDraggable: true,
+  });
+  marker.append(createDeliveryPinContent());
+  const handleDragEnd = () => {
+    const coordinates = getAdvancedMarkerCoordinates(marker);
+    if (coordinates) onDragEnd(coordinates);
+  };
+  marker.addEventListener("gmp-dragend", handleDragEnd);
   return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new window.google.maps.Size(32, 40),
-    anchor: new window.google.maps.Point(16, 40),
+    marker,
+    cleanup: () => marker.removeEventListener("gmp-dragend", handleDragEnd),
   };
 }
 
@@ -66,6 +102,7 @@ export function AddressMapPicker({
   const placesSessionTokenRef = useRef<any>(null);
   const searchRequestIdRef = useRef(0);
   const reverseGeocodeRequestIdRef = useRef(0);
+  const markerDragCleanupRef = useRef<(() => void) | null>(null);
   const { ready: mapsReady, error: mapsLoadError, errorMessage: mapsErrorMessage } = useGoogleMaps(open);
   const mapElementRef = useCallback((element: HTMLDivElement | null) => {
     setMapElement(element);
@@ -81,21 +118,11 @@ export function AddressMapPicker({
     const position = { lat: next.latitude, lng: next.longitude };
     if (map) {
       if (markerRef.current) {
-        markerRef.current.setPosition(position);
+        markerRef.current.position = position;
       } else {
-        markerRef.current = new window.google.maps.Marker({
-          map,
-          position,
-          title: "Selected delivery pin",
-          draggable: true,
-          icon: createDeliveryPinIcon(),
-        });
-        markerRef.current.addListener("dragend", () => {
-          const draggedPosition = markerRef.current?.getPosition();
-          if (draggedPosition) {
-            placePin({ latitude: draggedPosition.lat(), longitude: draggedPosition.lng() });
-          }
-        });
+        const pin = createDeliveryPin(map, position, "Selected delivery pin", placePin);
+        markerRef.current = pin.marker;
+        markerDragCleanupRef.current = pin.cleanup;
       }
       map.setCenter(position);
       map.setZoom(Math.max(map.getZoom() || 11, 15));
@@ -178,7 +205,9 @@ export function AddressMapPicker({
     setDraftPincode(null);
     setIsLookingUpPincode(false);
     setPincodeLookupFailed(false);
-    markerRef.current?.setMap(null);
+    markerDragCleanupRef.current?.();
+    markerDragCleanupRef.current = null;
+    if (markerRef.current) markerRef.current.map = null;
     markerRef.current = null;
   };
 
@@ -215,6 +244,7 @@ export function AddressMapPicker({
       map = new window.google.maps.Map(mapElement, {
         center: initialPosition,
         zoom: initialCoordinates ? 15 : 11,
+        mapId: import.meta.env.VITE_GOOGLE_MAP_ID || undefined,
         gestureHandling: "greedy",
         mapTypeControl: false,
         streetViewControl: false,
@@ -223,23 +253,16 @@ export function AddressMapPicker({
       mapRef.current = map;
 
       if (initialCoordinates) {
-        markerRef.current = new window.google.maps.Marker({
-          map,
-          position: initialPosition,
-          title: "Saved delivery pin",
-          draggable: true,
-          icon: createDeliveryPinIcon(),
-        });
-        markerRef.current.addListener("dragend", () => {
-          const draggedPosition = markerRef.current?.getPosition();
-          if (draggedPosition) {
-            placePin({ latitude: draggedPosition.lat(), longitude: draggedPosition.lng() });
-          }
-        });
+        const pin = createDeliveryPin(map, initialPosition, "Saved delivery pin", placePin);
+        markerRef.current = pin.marker;
+        markerDragCleanupRef.current = pin.cleanup;
       }
     } catch (error) {
       console.error("[AddressMapPicker] Failed to initialize Google Map:", error);
       if (map) window.google?.maps?.event?.clearInstanceListeners(map);
+      markerDragCleanupRef.current?.();
+      markerDragCleanupRef.current = null;
+      if (markerRef.current) markerRef.current.map = null;
       mapRef.current = null;
       markerRef.current = null;
       setMapError("Google Maps could not start. Check the API key, billing, and enabled services.");
@@ -260,7 +283,9 @@ export function AddressMapPicker({
       window.cancelAnimationFrame(resizeFrame);
       mapClickListener.remove();
       window.google.maps.event.clearInstanceListeners(activeMap);
-      markerRef.current?.setMap(null);
+      markerDragCleanupRef.current?.();
+      markerDragCleanupRef.current = null;
+      if (markerRef.current) markerRef.current.map = null;
       if (mapRef.current === activeMap) mapRef.current = null;
       markerRef.current = null;
     };
