@@ -17,6 +17,46 @@ let state = INITIAL_STATE;
 let loadPromise: Promise<boolean> | null = null;
 const listeners = new Set<(next: MapsState) => void>();
 
+function getSafeDiagnostics() {
+  const script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+  let scriptOrigin: string | null = null;
+  let scriptHasKey = false;
+  if (script?.src) {
+    try {
+      const scriptUrl = new URL(script.src);
+      scriptOrigin = scriptUrl.origin;
+      scriptHasKey = scriptUrl.searchParams.has("key");
+    } catch {
+      // Do not include the raw script URL; it can contain the public API key.
+    }
+  }
+  let referrerOrigin: string | null = null;
+  if (document.referrer) {
+    try {
+      referrerOrigin = new URL(document.referrer).origin;
+    } catch {
+      referrerOrigin = "unavailable";
+    }
+  }
+  return {
+    pageOrigin: window.location.origin,
+    referrerOrigin,
+    buildMode: import.meta.env.MODE,
+    keyConfigured: Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim()),
+    scriptOrigin,
+    scriptHasKey,
+    googleMapsGlobalAvailable: Boolean(window.google?.maps),
+    importLibraryAvailable: typeof window.google?.maps?.importLibrary === "function",
+  };
+}
+
+function logDiagnostics(message: string, details: Record<string, unknown> = {}) {
+  console.info("[GoogleMaps diagnostics]", message, {
+    ...getSafeDiagnostics(),
+    ...details,
+  });
+}
+
 function notify(next: MapsState) {
   state = next;
   listeners.forEach((listener) => listener(next));
@@ -24,7 +64,10 @@ function notify(next: MapsState) {
 
 if (typeof window !== "undefined") {
   window.gm_authFailure = () => {
-    console.warn("[GoogleMaps] Authorization failed. Check API key restrictions, billing, and enabled APIs.");
+    console.error(
+      "[GoogleMaps diagnostics] Google invoked gm_authFailure. Check the Google Maps API error immediately above this log; this diagnostic intentionally does not print the API key.",
+      getSafeDiagnostics(),
+    );
     notify({
       status: "error",
       error: "Google Maps authorization failed. Check the key’s website restrictions, billing, and enabled APIs.",
@@ -35,16 +78,32 @@ if (typeof window !== "undefined") {
 async function importRequiredLibraries(): Promise<boolean> {
   try {
     if (!window.google?.maps?.importLibrary) {
-      throw new Error("Google Maps did not initialize. Check that Maps JavaScript API is enabled for this key.");
+      throw new Error("Google Maps initialized without exposing importLibrary.");
     }
-    await Promise.all([
-      window.google.maps.importLibrary("maps"),
-      window.google.maps.importLibrary("places"),
-      window.google.maps.importLibrary("geocoding"),
-    ]);
+    const libraries = ["maps", "places", "geocoding"];
+    logDiagnostics("Importing required Google Maps libraries.", { libraries });
+    await Promise.all(
+      libraries.map((library) =>
+        window.google.maps
+          .importLibrary(library)
+          .then(() => logDiagnostics("Google Maps library loaded.", { library }))
+          .catch((error: unknown) => {
+            console.error("[GoogleMaps diagnostics] Library import failed.", {
+              ...getSafeDiagnostics(),
+              library,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            throw error;
+          }),
+      ),
+    );
     return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : "A required Google Maps library could not load.";
+    console.error("[GoogleMaps diagnostics] Maps initialization failed.", {
+      ...getSafeDiagnostics(),
+      error: message,
+    });
     notify({ status: "error", error: message });
     return false;
   }
@@ -58,15 +117,27 @@ function loadMaps(): Promise<boolean> {
   const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
   if (!key) {
     const error = "Google Maps is not configured. Add VITE_GOOGLE_MAPS_API_KEY to Replit Secrets.";
-    console.error("[GoogleMaps]", error);
+    console.error("[GoogleMaps diagnostics] No API key is configured for this frontend build.", {
+      ...getSafeDiagnostics(),
+      expectedVariable: "VITE_GOOGLE_MAPS_API_KEY",
+    });
     notify({ status: "error", error });
     return Promise.resolve(false);
   }
 
   loadPromise = new Promise<boolean>((resolve) => {
+    logDiagnostics("Starting Google Maps JavaScript API request.", {
+      expectedVariable: "VITE_GOOGLE_MAPS_API_KEY",
+      requestedLibraries: ["maps", "places", "geocoding"],
+      apiKeyValueLogged: false,
+    });
     const finish = async (loaded: boolean) => {
       if (!loaded) {
         const error = "Google Maps could not load. Check the network, API restrictions, billing, and enabled services.";
+        console.error("[GoogleMaps diagnostics] Google Maps script request failed.", {
+          ...getSafeDiagnostics(),
+          error,
+        });
         notify({ status: "error", error });
         resolve(false);
         return;
@@ -97,6 +168,9 @@ function loadMaps(): Promise<boolean> {
     const timeout = window.setTimeout(() => {
       if (settled) return;
       settled = true;
+      console.error("[GoogleMaps diagnostics] Timed out waiting for the Google Maps ready callback.", {
+        ...getSafeDiagnostics(),
+      });
       notify({
         status: "error",
         error: "Google Maps timed out while loading. Check network access, API restrictions, and enabled services.",
@@ -109,7 +183,10 @@ function loadMaps(): Promise<boolean> {
       window.clearTimeout(timeout);
       void finish(loaded);
     };
-    window.__freshStockGoogleMapsReady = () => finishScriptLoad(true);
+    window.__freshStockGoogleMapsReady = () => {
+      logDiagnostics("Google Maps ready callback fired.");
+      finishScriptLoad(true);
+    };
     script.async = true;
     script.defer = true;
     script.id = SCRIPT_ID;
@@ -120,7 +197,17 @@ function loadMaps(): Promise<boolean> {
       callback: "__freshStockGoogleMapsReady",
     });
     script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
-    script.addEventListener("error", () => finishScriptLoad(false), { once: true });
+    script.addEventListener(
+      "error",
+      (event) => {
+        console.error("[GoogleMaps diagnostics] Maps JavaScript script element emitted an error.", {
+          ...getSafeDiagnostics(),
+          eventType: event.type,
+        });
+        finishScriptLoad(false);
+      },
+      { once: true },
+    );
     if (!existingScript) document.head.appendChild(script);
   });
 
