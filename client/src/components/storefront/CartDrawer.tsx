@@ -803,15 +803,14 @@ export function CartDrawer() {
 
   const activeAddressId = selectedAddressId ?? (savedAddresses[0]?.id || null);
 
-  useEffect(() => {
-    if (showAddForm) return;
-    const selected = savedAddresses.find((address) => address.id === activeAddressId);
+  const handleSavedAddressSelect = (address: CustomerAddress) => {
+    setSelectedAddressId(address.id);
     const matchingArea = findCityAreaOption(
       cityAreas,
-      selected?.cityArea || selected?.area || selected?.city,
+      address.cityArea || address.area || address.city,
     );
-    setSelectedCityArea(matchingArea?.name ?? null);
-  }, [activeAddressId, savedAddresses, cityAreas, showAddForm, setSelectedCityArea]);
+    if (matchingArea) setSelectedCityArea(matchingArea.name);
+  };
 
   const getFallbackImage = (_category: string) => noImageImg;
 
@@ -2555,7 +2554,7 @@ export function CartDrawer() {
                             <button
                               key={addr.id || addr.pincode || addrIdx}
                               type="button"
-                              onClick={() => setSelectedAddressId(addr.id)}
+                              onClick={() => handleSavedAddressSelect(addr)}
                               className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all ${activeAddressId === addr.id ? "border-primary bg-primary/5" : "border-border/40 bg-white hover:border-primary/30"}`}
                               data-testid={`address-option-${addr.id}`}
                             >
