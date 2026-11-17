@@ -72,10 +72,10 @@
     display: none;
   }
   .header-theme-icon {
-    filter: brightness(0) saturate(100%) invert(22%) sepia(71%) saturate(1580%) hue-rotate(350deg) brightness(88%) contrast(92%);
+    filter: brightness(0) invert(1);
   }
   .header-search-icon {
-    filter: brightness(0) saturate(100%) invert(17%) sepia(39%) saturate(1120%) hue-rotate(342deg) brightness(76%) contrast(98%);
+    filter: brightness(0) invert(1);
   }
   @keyframes badge-blink {
     0%, 100% { opacity: 1; }

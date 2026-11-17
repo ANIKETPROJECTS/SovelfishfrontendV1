@@ -93,21 +93,25 @@ export function Header({
 
   return (
     <>
-    <header className="sticky top-0 z-50 border-b-2 border-[#7B3A14] bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+    <header className="footer-wood-bg sticky top-0 z-50 border-b-2 border-white text-white">
+      <div className="max-w-7xl mx-auto px-4 max-[380px]:px-2 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 max-[380px]:gap-1">
         {/* Left: Logo */}
         <div className="flex items-center shrink-0">
           {onLogoClick ? (
-            <button onClick={onLogoClick} className="flex items-center gap-1.5 group focus:outline-none">
-              <FreshStockXchangeLogo className="h-10 w-[52px] sm:h-14 sm:w-[80px] max-[380px]:h-9 max-[380px]:w-[48px]" />
-              <span className="whitespace-nowrap font-display text-base font-bold leading-none tracking-normal text-[#7B3A14] sm:text-xl md:text-2xl max-[380px]:text-sm">
+            <button onClick={onLogoClick} className="flex items-center gap-1.5 max-[380px]:gap-1 group focus:outline-none">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5 sm:h-16 sm:w-16 max-[380px]:h-10 max-[380px]:w-10">
+                <FreshStockXchangeLogo className="h-full w-full scale-[1.18]" />
+              </span>
+              <span className="whitespace-nowrap font-display text-lg font-bold leading-none tracking-normal text-white sm:text-2xl md:text-3xl max-[380px]:text-[15px]">
                 Fresh Stock Xchange
               </span>
             </button>
           ) : (
-            <Link href="/" className="flex items-center gap-1.5 group">
-              <FreshStockXchangeLogo className="h-10 w-[52px] sm:h-14 sm:w-[80px] max-[380px]:h-9 max-[380px]:w-[48px]" />
-              <span className="whitespace-nowrap font-display text-base font-bold leading-none tracking-normal text-[#7B3A14] sm:text-xl md:text-2xl max-[380px]:text-sm">
+            <Link href="/" className="flex items-center gap-1.5 max-[380px]:gap-1 group">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5 sm:h-16 sm:w-16 max-[380px]:h-10 max-[380px]:w-10">
+                <FreshStockXchangeLogo className="h-full w-full scale-[1.18]" />
+              </span>
+              <span className="whitespace-nowrap font-display text-lg font-bold leading-none tracking-normal text-white sm:text-2xl md:text-3xl max-[380px]:text-[15px]">
                 Fresh Stock Xchange
               </span>
             </Link>
@@ -117,26 +121,26 @@ export function Header({
         {/* Center: Search bar — desktop only */}
         {showSearchUI && (
           <form onSubmit={handleSubmit} className="flex-1 max-w-md relative hidden sm:block">
-            <img src={searchImg} alt="Search" className="header-theme-icon header-search-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
+            <img src={searchImg} alt="Search" className="header-theme-icon header-search-icon absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 object-contain z-10" />
             <input
               type="search"
               value={searchValue}
               placeholder="Search fresh seafood & more"
               autoFocus={!!initialSearchValue}
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#B99578] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm text-[#4B2E1E] placeholder:text-[#75543F] transition-colors"
+              className="w-full pl-12 pr-12 h-12 rounded-none bg-transparent border-0 border-b border-white focus:border-white focus:outline-none focus:ring-0 text-base text-white placeholder:text-white transition-colors"
               data-testid="input-search-desktop"
             />
             <button
               type="button"
               onClick={startVoiceSearch}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full transition-colors ${isListening ? "animate-pulse" : "hover:opacity-70"}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-1 rounded-full transition-colors ${isListening ? "animate-pulse" : "hover:opacity-70"}`}
               aria-label={isListening ? "Stop voice search" : "Start voice search"}
               data-testid="button-voice-search-desktop"
             >
               {isListening
-                ? <MicOff className="w-4 h-4 text-[#C8651B]" />
-                : <img src={micImg} alt="Voice search" className="header-theme-icon header-search-icon w-4 h-4 object-contain" />
+                ? <MicOff className="w-5 h-5 text-white" />
+                : <img src={micImg} alt="Voice search" className="header-theme-icon header-search-icon w-5 h-5 object-contain" />
               }
             </button>
           </form>
@@ -149,12 +153,12 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className={`sm:hidden text-foreground hover:bg-accent/10 rounded-full w-9 h-9 transition-colors ${mobileSearchOpen ? "bg-accent/10" : ""}`}
+              className={`sm:hidden text-white hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9 transition-colors ${mobileSearchOpen ? "bg-white/10" : ""}`}
               onClick={() => setMobileSearchOpen(v => !v)}
               aria-label={mobileSearchOpen ? "Close search" : "Open search"}
               data-testid="button-toggle-mobile-search"
             >
-              <img src={searchImg} alt="Search" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+              <img src={searchImg} alt="Search" className="header-theme-icon h-6 w-6 sm:h-7 sm:w-7 max-[380px]:h-5 max-[380px]:w-5 object-contain" />
             </Button>
           )}
 
@@ -162,35 +166,35 @@ export function Header({
           <Button
             variant="ghost"
             size="icon"
-            className={`text-foreground hover:bg-accent/10 rounded-full w-9 h-9 transition-colors ${categoryMenuOpen ? "bg-accent/10" : ""}`}
+            className={`text-white hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9 transition-colors ${categoryMenuOpen ? "bg-white/10" : ""}`}
             onClick={() => setCategoryMenuOpen(v => !v)}
             aria-label="Categories"
             data-testid="button-categories"
           >
-            <img src={menuIconImg} alt="Categories" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+            <img src={menuIconImg} alt="Categories" className="header-theme-icon h-6 w-6 sm:h-7 sm:w-7 max-[380px]:h-5 max-[380px]:w-5 object-contain" />
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
-            className="text-foreground hover:bg-accent/10 rounded-full w-9 h-9 relative"
+            className="text-white hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9 relative"
             onClick={handleProfileClick}
             aria-label={customer ? "My Profile" : "Login"}
             data-testid="button-profile"
           >
-            <img src={userImg} alt="Profile" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+            <img src={userImg} alt="Profile" className="header-theme-icon h-6 w-6 sm:h-7 sm:w-7 max-[380px]:h-5 max-[380px]:w-5 object-contain" />
           </Button>
 
           <Button
             onClick={() => setIsCartOpen(true)}
             variant="ghost"
             size="icon"
-            className="relative text-foreground hover:bg-accent/10 rounded-full w-9 h-9"
+            className="relative text-white hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9"
             data-testid="button-cart"
           >
-            <img src={cartImg} alt="Cart" className="header-theme-icon w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+            <img src={cartImg} alt="Cart" className="header-theme-icon h-6 w-6 sm:h-7 sm:w-7 max-[380px]:h-5 max-[380px]:w-5 object-contain" />
             {totalItems > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-[#C8651B] text-white text-[10px] font-bold flex items-center justify-center rounded-full shadow-md animate-in zoom-in">
+              <span className="absolute -top-0.5 -right-0.5 h-5 w-5 sm:h-6 sm:w-6 border border-white bg-transparent text-white text-xs font-bold flex items-center justify-center rounded-full animate-in zoom-in">
                 {totalItems}
               </span>
             )}
@@ -199,11 +203,11 @@ export function Header({
           {/* Location */}
           <button
             onClick={openPicker}
-            className="flex items-center pl-2 border-l border-[#E8C8AA] ml-0.5 hover:opacity-70 transition-opacity"
+            className="flex items-center pl-2 max-[380px]:pl-1.5 border-l border-white ml-0.5 hover:opacity-70 transition-opacity"
             data-testid="button-location-picker"
             aria-label="Check delivery area"
           >
-            <img src={locationImg} alt="Location" className="header-theme-icon w-5 h-5 sm:w-5 sm:h-5 object-contain flex-shrink-0" />
+            <img src={locationImg} alt="Location" className="header-theme-icon h-6 w-6 sm:h-7 sm:w-7 max-[380px]:h-5 max-[380px]:w-5 object-contain flex-shrink-0" />
           </button>
         </div>
       </div>
@@ -216,28 +220,28 @@ export function Header({
 
       {/* Mobile pill search — below header. In collapsible mode, only visible when toggled. */}
       {showSearchUI && (!collapsibleMobileSearch || mobileSearchOpen) && (
-        <div className="sm:hidden px-4 pb-2.5 pt-1 bg-white">
+        <div className="sm:hidden px-4 pb-3 pt-2 bg-transparent">
           <form onSubmit={handleSubmit} className="relative">
-            <img src={searchImg} alt="Search" className="header-theme-icon header-search-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
+            <img src={searchImg} alt="Search" className="header-theme-icon header-search-icon absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 object-contain z-10" />
             <input
               type="search"
               autoFocus={(collapsibleMobileSearch && mobileSearchOpen) || !!initialSearchValue}
               value={searchValue}
               placeholder="Search fresh seafood & more"
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#B99578] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm text-[#4B2E1E] placeholder:text-[#75543F] transition-colors"
+              className="w-full pl-12 pr-12 h-12 rounded-none bg-transparent border-0 border-b border-white focus:border-white focus:outline-none focus:ring-0 text-base text-white placeholder:text-white transition-colors"
               data-testid="input-search-mobile"
             />
             <button
               type="button"
               onClick={startVoiceSearch}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full transition-colors ${isListening ? "animate-pulse" : "hover:opacity-70"}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-1 rounded-full transition-colors ${isListening ? "animate-pulse" : "hover:opacity-70"}`}
               aria-label={isListening ? "Stop voice search" : "Start voice search"}
               data-testid="button-voice-search-mobile"
             >
               {isListening
-                ? <MicOff className="w-4 h-4 text-[#C8651B]" />
-                : <img src={micImg} alt="Voice search" className="header-theme-icon header-search-icon w-4 h-4 object-contain" />
+                ? <MicOff className="w-5 h-5 text-white" />
+                : <img src={micImg} alt="Voice search" className="header-theme-icon header-search-icon w-5 h-5 object-contain" />
               }
             </button>
           </form>
