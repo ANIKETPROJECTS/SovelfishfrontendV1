@@ -24,3 +24,4 @@
 - [City-area delivery pricing](city-area-pricing.md) — each address requires a six-digit pincode; active areas set pricing, and pincodes never determine serviceability.
 - [Product cutting choices](cutting-methods.md) — use each hub product's saved `cuttingMethods`; validate and persist the selected array on the order item rather than creating a second catalog.
 - [Pieces and serves by option](pieces-serves-by-option.md) — use the selected variant, fish batch, or bulk pack as the source; snapshot server-verified values on the order item.
+- [GitHub uploaded assets](github-uploaded-assets.md) — keep uploaded assets Git-trackable with LFS while excluding credential-bearing logs and `.env`.

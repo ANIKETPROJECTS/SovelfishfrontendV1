@@ -7,5 +7,8 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
-attached_assets/
+# Pasted console/server logs may contain API keys or credentials.
+!attached_assets/
+!attached_assets/**
+attached_assets/Pasted-*.txt
 /generated-artifacts/

@@ -1,0 +1,11 @@
+attached_assets/*.png filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.jpg filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.jpeg filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.webp filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.gif filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.mp4 filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.mov filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.pdf filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.docx filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.xlsx filter=lfs diff=lfs merge=lfs -text
+attached_assets/*.zip filter=lfs diff=lfs merge=lfs -text
