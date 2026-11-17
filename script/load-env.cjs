@@ -34,19 +34,12 @@ module.exports = function loadEnvFile(
     }
 
     if (match[1] === googleMapsKey) {
-      if (value.trim()) {
-        envFileHasGoogleMapsKey = true;
-      }
-      if (value.trim() && process.env[googleMapsKey] !== undefined) {
-        if (process.env[googleMapsKey] !== value) {
-          // The VPS deployment keeps this public frontend key in the project
-          // .env file. Prefer that explicit value over a stale shell/PM2 copy.
-          process.env[googleMapsKey] = value;
-          googleMapsKeySource = ".env file (overrode process environment)";
-          continue;
-        }
+      envFileHasGoogleMapsKey = true;
+      if (process.env[googleMapsKey] !== undefined) {
         googleMapsKeySource =
-          "process environment (matches .env)";
+          process.env[googleMapsKey] === value
+            ? "process environment (matches .env)"
+            : "process environment (overrides .env)";
       }
     }
     if (process.env[match[1]] !== undefined) {
