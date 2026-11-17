@@ -366,9 +366,9 @@ export default function Home() {
                         const showPct = combo.discount && combo.discount > 0 ? combo.discount : computedPct;
                         return (
                           <div key={combo.id} className="min-w-0">
-                            <div className="group relative bg-white flex flex-col h-full transition-all duration-300 cursor-pointer">
+                            <div className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-[#7B3A14] transition-all duration-300">
                               <Link href={`/combo/${combo.id}`}>
-                                <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden mb-3">
+                                <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted/30">
                           <ComboImages images={comboImages} imageUrl={combo.imageUrl} />
                                   <div className="absolute top-0 left-0 z-10">
                                     <div className="relative bg-accent text-white pl-3 pr-5 py-2 shadow-md rounded-tl-xl">
@@ -382,21 +382,21 @@ export default function Home() {
                                   </div>
                                 </div>
                               </Link>
-                              <div className="flex-1 flex flex-col p-3">
+                              <div className="flex-1 flex flex-col bg-[#7B3A14] px-3 pt-2 pb-3 sm:px-3 sm:pt-3">
                                 <Link href={`/combo/${combo.id}`}>
-                                  <h3 className="font-sans font-medium text-base sm:text-lg text-foreground leading-snug mb-1.5 line-clamp-2 hover:text-primary transition-colors">
+                                  <h3 className="font-sans text-lg font-bold leading-snug text-white mb-1 line-clamp-2 transition-colors hover:text-white/90 sm:text-xl">
                                     {combo.name}
                                   </h3>
                                 </Link>
-                                <p className="text-sm text-muted-foreground mb-2.5 font-normal line-clamp-2">{combo.description}</p>
+                                <p className="mb-2 line-clamp-2 text-sm font-semibold text-white/90">{combo.description}</p>
                                 <div className="flex items-center justify-between mt-auto pt-1">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-lg sm:text-xl font-semibold text-foreground">₹{combo.discountedPrice + cityAreaCharge}</span>
+                                    <span className="text-xl font-bold text-white sm:text-2xl">₹{combo.discountedPrice + cityAreaCharge}</span>
                                     {combo.originalPrice > combo.discountedPrice && (
-                                      <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice + cityAreaCharge}</span>
+                                      <span className="text-sm text-white/75 line-through">₹{combo.originalPrice + cityAreaCharge}</span>
                                     )}
                                     {showPct > 0 && (
-                                      <span className="text-sm font-semibold text-green-600" data-testid={`text-combo-discount-${combo.id}`}>{showPct}% off</span>
+                                      <span className="text-sm font-bold text-white" data-testid={`text-combo-discount-${combo.id}`}>{showPct}% off</span>
                                     )}
                                   </div>
                                   {(() => {
@@ -438,7 +438,7 @@ export default function Home() {
                                           onClick={(e) => { e.stopPropagation(); addToCart(buildComboPayload()); }}
                                           disabled={comboMaxQty <= 0}
                                           aria-label={`Buy ${combo.name}`}
-                                          className="h-9 min-w-[56px] rounded-full px-3 text-sm leading-none font-semibold text-white shadow-sm flex items-center justify-center shrink-0 cursor-pointer bg-primary transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
+                                          className="h-10 min-w-[72px] rounded-full bg-white px-4 text-base font-bold leading-none text-[#7B3A14] shadow-sm flex items-center justify-center shrink-0 cursor-pointer transition-all duration-200 hover:bg-white/90 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
                                           data-testid={`button-add-combo-${combo.id}`}
                                         >
                                           Buy

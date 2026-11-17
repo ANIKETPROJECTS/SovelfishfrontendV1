@@ -202,7 +202,11 @@ function SingleProductCard({
               disabled={maxQty <= 0}
               aria-label={`Choose options for ${cartProduct.name}`}
               data-testid={`button-add-product-${cartProduct.id}`}
-              className="h-9 min-w-[56px] rounded-full px-3 text-sm leading-none font-semibold text-white shadow-sm flex items-center justify-center shrink-0 cursor-pointer bg-primary transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
+              className={`rounded-full leading-none shadow-sm flex items-center justify-center shrink-0 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm ${
+                brandText
+                  ? "h-10 min-w-[72px] px-4 text-base font-bold bg-white text-[#7B3A14] hover:bg-white/90"
+                  : "h-9 min-w-[56px] px-3 text-sm font-semibold text-white bg-primary hover:brightness-110"
+              }`}
             >
               Buy
             </Button>

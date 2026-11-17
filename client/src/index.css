@@ -261,7 +261,7 @@
   @media (max-width: 640px) {
     .home-content-section {
       margin-inline: -1rem;
-      padding: 14px 1rem 8px;
+      padding: 14px 0.625rem 8px;
     }
 
     .home-section-heading {
