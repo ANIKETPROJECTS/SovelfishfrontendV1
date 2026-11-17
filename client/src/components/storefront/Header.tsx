@@ -169,6 +169,9 @@ export function Header({
             className={`text-white hover:bg-white/10 rounded-full h-10 w-10 sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9 transition-colors ${categoryMenuOpen ? "bg-white/10" : ""}`}
             onClick={() => setCategoryMenuOpen(v => !v)}
             aria-label="Categories"
+            aria-haspopup="dialog"
+            aria-expanded={categoryMenuOpen}
+            aria-controls="category-menu-panel"
             data-testid="button-categories"
           >
             <img src={menuIconImg} alt="Categories" className="header-theme-icon h-6 w-6 sm:h-7 sm:w-7 max-[380px]:h-5 max-[380px]:w-5 object-contain" />
