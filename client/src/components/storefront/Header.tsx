@@ -117,14 +117,14 @@ export function Header({
         {/* Center: Search bar — desktop only */}
         {showSearchUI && (
           <form onSubmit={handleSubmit} className="flex-1 max-w-md relative hidden sm:block">
-            <img src={searchImg} alt="Search" className="header-theme-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
+            <img src={searchImg} alt="Search" className="header-theme-icon header-search-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
             <input
               type="search"
               value={searchValue}
-              placeholder="Search fresh seafood, meat & more"
+              placeholder="Search fresh seafood & more"
               autoFocus={!!initialSearchValue}
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#E8C8AA] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#B99578] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm text-[#4B2E1E] placeholder:text-[#75543F] transition-colors"
               data-testid="input-search-desktop"
             />
             <button
@@ -136,7 +136,7 @@ export function Header({
             >
               {isListening
                 ? <MicOff className="w-4 h-4 text-[#C8651B]" />
-                : <img src={micImg} alt="Voice search" className="header-theme-icon w-4 h-4 object-contain" />
+                : <img src={micImg} alt="Voice search" className="header-theme-icon header-search-icon w-4 h-4 object-contain" />
               }
             </button>
           </form>
@@ -218,14 +218,14 @@ export function Header({
       {showSearchUI && (!collapsibleMobileSearch || mobileSearchOpen) && (
         <div className="sm:hidden px-4 pb-2.5 pt-1 bg-white">
           <form onSubmit={handleSubmit} className="relative">
-            <img src={searchImg} alt="Search" className="header-theme-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
+            <img src={searchImg} alt="Search" className="header-theme-icon header-search-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain z-10" />
             <input
               type="search"
               autoFocus={(collapsibleMobileSearch && mobileSearchOpen) || !!initialSearchValue}
               value={searchValue}
-              placeholder="Search fresh seafood, meat & more"
+              placeholder="Search fresh seafood & more"
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#E8C8AA] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 transition-colors"
+              className="w-full pl-10 pr-10 h-10 rounded-none bg-transparent border-0 border-b border-[#B99578] focus:border-[#E8883A] focus:outline-none focus:ring-0 text-sm text-[#4B2E1E] placeholder:text-[#75543F] transition-colors"
               data-testid="input-search-mobile"
             />
             <button
@@ -237,7 +237,7 @@ export function Header({
             >
               {isListening
                 ? <MicOff className="w-4 h-4 text-[#C8651B]" />
-                : <img src={micImg} alt="Voice search" className="header-theme-icon w-4 h-4 object-contain" />
+                : <img src={micImg} alt="Voice search" className="header-theme-icon header-search-icon w-4 h-4 object-contain" />
               }
             </button>
           </form>

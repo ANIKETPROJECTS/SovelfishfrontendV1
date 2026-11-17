@@ -58,7 +58,7 @@ export function FreshCatchReels({ products }: FreshCatchReelsProps) {
     >
       <h2
         id="fresh-catch-reels-title"
-        className="mb-5 text-center font-display text-2xl font-bold tracking-[-0.03em] text-[#4f3021] sm:mb-6 sm:text-3xl"
+        className="mb-5 text-center font-display text-2xl font-bold tracking-[-0.03em] text-[#7B3A14] sm:mb-6 sm:text-3xl"
       >
         Today&apos;s Fresh Catch from FSX
       </h2>
