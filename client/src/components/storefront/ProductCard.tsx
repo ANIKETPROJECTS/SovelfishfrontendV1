@@ -19,6 +19,7 @@ type ProductCardProps = {
   disableNavigation?: boolean;
   onProductClick?: () => void;
   detailVariantKey?: string;
+  brandText?: boolean;
 };
 
 const DUMMY_DETAILS: Record<string, { pieces: string; serves: string }> = {
@@ -53,6 +54,7 @@ function SingleProductCard({
   disableNavigation = false,
   onProductClick,
   detailVariantKey,
+  brandText = false,
 }: ProductCardProps) {
   const { addToCart, removeFromCart, updateQuantity, items, computeMaxQty } = useCart();
   const { selectedCityArea } = useCityArea();
@@ -148,42 +150,42 @@ function SingleProductCard({
       </div>
 
       <div className="flex-1 flex flex-col px-1 pb-3">
-        <h3 className="font-sans font-medium text-base sm:text-lg text-foreground leading-snug mb-1.5 line-clamp-2">
+        <h3 className={`font-sans font-medium text-base sm:text-lg ${brandText ? "text-[#7B3A14]" : "text-foreground"} leading-snug mb-1.5 line-clamp-2`}>
           {product.name}
         </h3>
 
         {isSaleVariantCard && product.unit && (
-          <p className="mb-2 text-sm leading-snug text-muted-foreground">
+          <p className={`mb-2 text-sm leading-snug ${brandText ? "text-[#7B3A14]/80" : "text-muted-foreground"}`}>
             {product.unit}
           </p>
         )}
 
         {!isSaleVariantCard && (
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground mb-2.5 font-normal">
+          <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm ${brandText ? "text-[#7B3A14]/80" : "text-muted-foreground"} mb-2.5 font-normal`}>
             {product.grossWeight && (
               <>
-                <span className="font-medium text-foreground/80 whitespace-nowrap">{formatProductWeight(product.grossWeight, "gross")}</span>
-                <span className="text-muted-foreground/50">|</span>
+                <span className={`font-medium ${brandText ? "text-[#7B3A14]" : "text-foreground/80"} whitespace-nowrap`}>{formatProductWeight(product.grossWeight, "gross")}</span>
+                <span className={brandText ? "text-[#7B3A14]/50" : "text-muted-foreground/50"}>|</span>
               </>
             )}
             {product.netWeight && (
               <>
-                <span className="font-medium text-foreground/80 whitespace-nowrap">{formatProductWeight(product.netWeight, "net")}</span>
-                {piecesText && <span className="text-muted-foreground/50">|</span>}
+                <span className={`font-medium ${brandText ? "text-[#7B3A14]" : "text-foreground/80"} whitespace-nowrap`}>{formatProductWeight(product.netWeight, "net")}</span>
+                {piecesText && <span className={brandText ? "text-[#7B3A14]/50" : "text-muted-foreground/50"}>|</span>}
               </>
             )}
             {piecesText && (
-              <span className="font-medium text-foreground/80 whitespace-nowrap">{piecesText}</span>
+              <span className={`font-medium ${brandText ? "text-[#7B3A14]" : "text-foreground/80"} whitespace-nowrap`}>{piecesText}</span>
             )}
           </div>
         )}
 
         <div className="flex items-center justify-between mt-auto pt-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg sm:text-xl font-semibold text-foreground">₹{formatStorePrice(displayPrice)}</span>
-            {!isSaleVariantCard && <span className="text-xs text-muted-foreground">{product.unit}</span>}
-            {strikePrice && <span className="text-sm text-muted-foreground line-through">₹{strikePrice}</span>}
-            {discountPct && <span className="text-sm font-semibold text-green-600">{discountPct}% off</span>}
+            <span className={`text-lg sm:text-xl font-semibold ${brandText ? "text-[#7B3A14]" : "text-foreground"}`}>₹{formatStorePrice(displayPrice)}</span>
+            {!isSaleVariantCard && <span className={`text-xs ${brandText ? "text-[#7B3A14]/80" : "text-muted-foreground"}`}>{product.unit}</span>}
+            {strikePrice && <span className={`text-sm ${brandText ? "text-[#7B3A14]/70" : "text-muted-foreground"} line-through`}>₹{strikePrice}</span>}
+            {discountPct && <span className={`text-sm font-semibold ${brandText ? "text-[#7B3A14]" : "text-green-600"}`}>{discountPct}% off</span>}
           </div>
 
           {isUnavailable ? (

@@ -167,7 +167,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {preorderProducts.map((product) => (
             <div key={product.id} className="min-w-0">
-              <ProductCard product={product} preorderContext />
+              <ProductCard product={product} preorderContext brandText />
             </div>
           ))}
         </div>
@@ -497,7 +497,7 @@ export default function Home() {
                   ? [1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-[3/4] rounded-3xl" />)
                   : sectionProducts.length > 0
                     ? sectionProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
+                        <ProductCard key={product.id} product={product} brandText />
                       ))
                     : (
                         <p className="col-span-2 py-4 text-sm text-muted-foreground">No products in this section yet.</p>
@@ -516,7 +516,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
               {unsectionedCatalogProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} brandText />
               ))}
             </div>
           </section>
