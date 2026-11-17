@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useEffect, useRef, useState } from "react";
-import { MapPin, MessageCircle } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 
 import phoneIcon from "@assets/telephone_1778180674008.png";
@@ -67,27 +67,10 @@ export function Footer() {
               Shop fresh fish, prawns, chicken, and mutton—cleaned, packed, and delivered to your doorstep.
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                href="/category/Fish"
-                className="inline-flex min-h-10 items-center justify-center rounded-full border border-white bg-transparent px-3.5 py-2 text-xs font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
-                Shop fresh catch
-              </Link>
-              <a
-                href="https://wa.me/919619590694"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
-                <MessageCircle aria-hidden className="h-3.5 w-3.5 text-white" />
-                WhatsApp
-              </a>
-            </div>
           </section>
 
           <nav aria-label="Customer support" className="min-w-0">
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-white">
+            <h3 className="mb-3 text-base font-bold uppercase tracking-[0.16em] text-white">
               Customer care
             </h3>
             <ul className="space-y-2">
@@ -100,7 +83,7 @@ export function Footer() {
                 { label: "FAQ", to: "/faq" },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link href={to} className="text-sm font-semibold text-white transition-colors hover:text-white">
+                  <Link href={to} className="text-[15px] font-semibold text-white transition-colors hover:text-white">
                     {label}
                   </Link>
                 </li>
@@ -109,31 +92,31 @@ export function Footer() {
           </nav>
 
           <section aria-labelledby="footer-contact-heading" className="min-w-0">
-            <h3 id="footer-contact-heading" className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-white">
+            <h3 id="footer-contact-heading" className="mb-3 text-base font-bold uppercase tracking-[0.16em] text-white">
               Get in touch
             </h3>
             <ul className="space-y-3">
               <li className="flex items-center gap-3">
-                <img src={phoneIcon} alt="" aria-hidden className="h-4 w-4 shrink-0" style={whiteFilter} />
-                <a href="tel:+919619590694" className="break-all text-sm font-semibold text-white transition-colors hover:text-white">
+                <img src={phoneIcon} alt="" aria-hidden className="h-5 w-5 shrink-0" style={whiteFilter} />
+                <a href="tel:+919619590694" className="break-all text-[15px] font-semibold text-white transition-colors hover:text-white">
                   +91 9619590694
                 </a>
               </li>
               <li className="flex items-start gap-3">
-                <MapPin aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-white" />
-                <span className="text-sm font-semibold leading-relaxed text-white">
+                <MapPin aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-white" />
+                <span className="text-[15px] font-semibold leading-relaxed text-white">
                   RH 18, Sairaj Society, Plot 22, Sector 6, Airoli, Navi Mumbai, Maharashtra 400708
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <img src={mailIcon} alt="" aria-hidden className="h-4 w-4 shrink-0" style={whiteFilter} />
-                <a href="mailto:info@freshstockxchange.com" className="break-all text-sm font-semibold text-white transition-colors hover:text-white">
+                <img src={mailIcon} alt="" aria-hidden className="h-5 w-5 shrink-0" style={whiteFilter} />
+                <a href="mailto:info@freshstockxchange.com" className="break-all text-[15px] font-semibold text-white transition-colors hover:text-white">
                   info@freshstockxchange.com
                 </a>
               </li>
               <li className="flex items-start gap-3">
-                <img src={clockIcon} alt="" aria-hidden className="mt-0.5 h-4 w-4 shrink-0" style={whiteFilter} />
-                <span className="text-sm font-semibold leading-relaxed text-white">
+                <img src={clockIcon} alt="" aria-hidden className="mt-0.5 h-5 w-5 shrink-0" style={whiteFilter} />
+                <span className="text-[15px] font-semibold leading-relaxed text-white">
                   Mon – Sun: 6:00 AM – 9:00 PM
                 </span>
               </li>
