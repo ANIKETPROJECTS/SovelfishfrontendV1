@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import logoutAnim from "@/assets/lottie/logout.json";
 import walletIconImg from "@assets/wallet-filled-money-tool_1779874392752.png";
 import logoutPopupAnim from "@/assets/lottie/logout-fish.json";
 import searchImg from "@assets/search-interface-symbol_1774706690468.png";
@@ -36,7 +35,6 @@ import invoiceImg from "@/assets/invoice.png";
 import pdfIconImg from "@assets/pdf_(1)_1779891354459.png";
 import iconBriefcaseImg from "@assets/briefcase_1776927648499.png";
 import headerUserImg from "@assets/user_(1)_1774707188827.png";
-import headerCartImg from "@assets/shopping-bag_1774706595493.png";
 import headerLocationImg from "@assets/placeholder_(1)_1774706943633.png";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,8 +129,12 @@ interface OrderItem {
   imageUrl?: string | null;
 }
 
-const TABS = ["Profile & Addresses", "My Orders"] as const;
-type Tab = typeof TABS[number];
+const PROFILE_SECTIONS = [
+  { id: "profile", label: "Profile", icon: User },
+  { id: "addresses", label: "Addresses", icon: MapPin },
+  { id: "orders", label: "My Orders", icon: ShoppingBag },
+] as const;
+type ProfileSection = typeof PROFILE_SECTIONS[number]["id"];
 type OrdersSubTab = "current" | "previous";
 
 const ORDERS_PER_PAGE = 5;
@@ -883,9 +885,11 @@ export default function Profile() {
   const queryClient = useQueryClient();
 
   const search = useSearch();
-  const [activeTab, setActiveTab] = useState<Tab>(() => {
+  const [activeSection, setActiveSection] = useState<ProfileSection>(() => {
     const params = new URLSearchParams(search);
-    return params.get("tab") === "orders" ? "My Orders" : "Profile & Addresses";
+    if (params.get("tab") === "orders") return "orders";
+    if (params.get("tab") === "addresses") return "addresses";
+    return "profile";
   });
   const [ordersSubTab, setOrdersSubTab] = useState<OrdersSubTab>("current");
   const [otpModalOpen, setOtpModalOpen] = useState(false);
@@ -938,7 +942,7 @@ export default function Profile() {
       if (!res.ok) return [];
       return res.json();
     },
-    enabled: !!customer && activeTab === "My Orders",
+    enabled: !!customer && activeSection === "orders",
     refetchOnMount: true,
   });
 
@@ -1168,33 +1172,52 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex mb-7 rounded-full p-1.5 border border-white/40 bg-[#51240D]/70 shadow-lg">
-          {TABS.map(tab => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={isActive ? { backgroundColor: "#C8651B" } : {}}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-base font-semibold transition-all ${isActive ? "text-white shadow-md" : "text-white/85 hover:text-white"}`}
-                data-testid={`tab-${tab.toLowerCase().replace(/\s+/g, "-")}`}
-              >
-                {tab === "Profile & Addresses" && (
-                  <img src={headerUserImg} alt="" className="w-4 h-4 object-contain" style={{ filter: isActive ? "brightness(0) invert(1)" : "brightness(0)" }} />
-                )}
-                {tab === "My Orders" && (
-                  <img src={headerCartImg} alt="" className="w-4 h-4 object-contain" style={{ filter: isActive ? "brightness(0) invert(1)" : "brightness(0)" }} />
-                )}
-                {tab}
-              </button>
-            );
-          })}
-        </div>
+        <div className="grid items-start gap-5 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-7">
+          <aside className="profile-sidebar rounded-3xl border border-white/35 p-3 sm:p-4">
+            <p className="hidden px-3 pb-3 pt-1 text-xs font-bold uppercase tracking-[0.18em] text-white/70 lg:block">
+              Your account
+            </p>
+            <nav aria-label="Profile sections" className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+              {PROFILE_SECTIONS.map(({ id, label, icon: Icon }) => {
+                const isActive = activeSection === id;
+                const testId = id === "profile"
+                  ? "tab-profile-&-addresses"
+                  : id === "orders"
+                    ? "tab-my-orders"
+                    : "tab-addresses";
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setActiveSection(id)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`profile-nav-item ${isActive ? "profile-nav-item-active" : ""}`}
+                    data-testid={testId}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    <span>{label}</span>
+                    {id === "orders" && customerVisibleOrders.length > 0 && (
+                      <span className="profile-nav-count">{customerVisibleOrders.length}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="my-3 border-t border-white/25 lg:my-5" />
+            <button
+              type="button"
+              onClick={() => setLogoutConfirmOpen(true)}
+              className="profile-logout-button"
+              data-testid="button-logout"
+            >
+              <LogOut className="h-5 w-5" aria-hidden="true" />
+              <span>Logout</span>
+            </button>
+          </aside>
 
-        {/* ── Profile & Addresses Tab ── */}
-        {activeTab === "Profile & Addresses" && (
-          <div className="space-y-5">
+          <div className="min-w-0 space-y-5">
+        {activeSection === "profile" && (
+          <section className="space-y-5" aria-label="Profile details">
             <div className="bg-white rounded-3xl border border-white/35 shadow-xl p-5 sm:p-7">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
@@ -1306,7 +1329,11 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Addresses section */}
+          </section>
+        )}
+
+        {activeSection === "addresses" && (
+          <section className="space-y-5" aria-label="Saved addresses">
             <div className="bg-white rounded-3xl border border-white/35 shadow-xl p-5 sm:p-7">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
@@ -1572,27 +1599,11 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Logout button — bottom of Profile & Addresses tab */}
-            <button
-              onClick={() => setLogoutConfirmOpen(true)}
-              style={{ backgroundColor: "#8B3A0F" }}
-              className="w-full rounded-full shadow-lg px-5 py-3 flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-white/35"
-              data-testid="button-logout"
-            >
-              <Lottie
-                animationData={logoutAnim}
-                loop
-                className="w-6 h-6 shrink-0"
-                style={{ filter: "brightness(0) invert(1)" }}
-              />
-              <span className="text-base font-semibold text-white">Logout</span>
-            </button>
-          </div>
+          </section>
         )}
 
-        {/* ── My Orders Tab ── */}
-        {activeTab === "My Orders" && (
-          <div className="space-y-3">
+        {activeSection === "orders" && (
+          <section className="space-y-3" aria-label="My orders">
             {/* Active / Previous sub-tabs */}
             <div className="flex rounded-full p-1.5 border border-white/40 bg-[#51240D]/70 shadow-lg">
               {(["current", "previous"] as OrdersSubTab[]).map(sub => {
@@ -1661,8 +1672,10 @@ export default function Profile() {
                 {filteredOrders.map(order => <OrderCard key={order.id} order={order} productImageMap={productImageMap} />)}
               </div>
             )}
-          </div>
+          </section>
         )}
+          </div>
+        </div>
       </main>
 
       <Footer />
