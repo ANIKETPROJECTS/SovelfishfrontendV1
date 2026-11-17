@@ -110,12 +110,12 @@ function SingleProductCard({
 
   return (
     <div
-      className={`group relative bg-white flex flex-col h-full transition-all duration-300 ${
+      className={`group relative ${brandText ? "bg-[#7B3A14]" : "bg-white"} flex flex-col h-full transition-all duration-300 ${
         onProductClick || !disableNavigation ? "cursor-pointer" : ""
       }`}
       onClick={onProductClick ?? (disableNavigation ? undefined : () => setLocation(getProductDetailPath()))}
     >
-      <div className="relative aspect-square w-full bg-muted/30 overflow-hidden mb-3">
+      <div className={`relative aspect-square w-full bg-muted/30 overflow-hidden ${brandText ? "" : "mb-3"}`}>
         <img
           src={product.imageUrl || getFallbackImage(product.category)}
           alt={product.name}
@@ -149,43 +149,43 @@ function SingleProductCard({
         )}
       </div>
 
-      <div className="flex-1 flex flex-col px-1 pb-3">
-        <h3 className={`font-sans font-medium text-base sm:text-lg ${brandText ? "text-[#7B3A14]" : "text-foreground"} leading-snug mb-1.5 line-clamp-2`}>
+      <div className={`flex-1 flex flex-col ${brandText ? "bg-[#7B3A14] px-3 pt-3 pb-4 sm:px-4 sm:pt-4" : "px-1 pb-3"}`}>
+        <h3 className={`font-sans ${brandText ? "font-bold text-white text-lg sm:text-xl" : "font-medium text-base sm:text-lg text-foreground"} leading-snug mb-1.5 line-clamp-2`}>
           {product.name}
         </h3>
 
         {isSaleVariantCard && product.unit && (
-          <p className={`mb-2 text-sm leading-snug ${brandText ? "text-[#7B3A14]/80" : "text-muted-foreground"}`}>
+          <p className={`mb-2 text-sm leading-snug ${brandText ? "font-semibold text-white/90" : "text-muted-foreground"}`}>
             {product.unit}
           </p>
         )}
 
         {!isSaleVariantCard && (
-          <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm ${brandText ? "text-[#7B3A14]/80" : "text-muted-foreground"} mb-2.5 font-normal`}>
+          <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm ${brandText ? "text-white/90 font-semibold sm:text-base" : "text-muted-foreground font-normal"} mb-2.5`}>
             {product.grossWeight && (
               <>
-                <span className={`font-medium ${brandText ? "text-[#7B3A14]" : "text-foreground/80"} whitespace-nowrap`}>{formatProductWeight(product.grossWeight, "gross")}</span>
-                <span className={brandText ? "text-[#7B3A14]/50" : "text-muted-foreground/50"}>|</span>
+                <span className={`font-semibold ${brandText ? "text-white" : "text-foreground/80"} whitespace-nowrap`}>{formatProductWeight(product.grossWeight, "gross")}</span>
+                <span className={brandText ? "text-white/60" : "text-muted-foreground/50"}>|</span>
               </>
             )}
             {product.netWeight && (
               <>
-                <span className={`font-medium ${brandText ? "text-[#7B3A14]" : "text-foreground/80"} whitespace-nowrap`}>{formatProductWeight(product.netWeight, "net")}</span>
-                {piecesText && <span className={brandText ? "text-[#7B3A14]/50" : "text-muted-foreground/50"}>|</span>}
+                <span className={`font-semibold ${brandText ? "text-white" : "text-foreground/80"} whitespace-nowrap`}>{formatProductWeight(product.netWeight, "net")}</span>
+                {piecesText && <span className={brandText ? "text-white/60" : "text-muted-foreground/50"}>|</span>}
               </>
             )}
             {piecesText && (
-              <span className={`font-medium ${brandText ? "text-[#7B3A14]" : "text-foreground/80"} whitespace-nowrap`}>{piecesText}</span>
+              <span className={`font-semibold ${brandText ? "text-white" : "text-foreground/80"} whitespace-nowrap`}>{piecesText}</span>
             )}
           </div>
         )}
 
         <div className="flex items-center justify-between mt-auto pt-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-lg sm:text-xl font-semibold ${brandText ? "text-[#7B3A14]" : "text-foreground"}`}>₹{formatStorePrice(displayPrice)}</span>
-            {!isSaleVariantCard && <span className={`text-xs ${brandText ? "text-[#7B3A14]/80" : "text-muted-foreground"}`}>{product.unit}</span>}
-            {strikePrice && <span className={`text-sm ${brandText ? "text-[#7B3A14]/70" : "text-muted-foreground"} line-through`}>₹{strikePrice}</span>}
-            {discountPct && <span className={`text-sm font-semibold ${brandText ? "text-[#7B3A14]" : "text-green-600"}`}>{discountPct}% off</span>}
+            <span className={`font-bold ${brandText ? "text-xl sm:text-2xl text-white" : "text-lg sm:text-xl text-foreground"}`}>₹{formatStorePrice(displayPrice)}</span>
+            {!isSaleVariantCard && <span className={`text-xs ${brandText ? "font-medium text-white/85" : "text-muted-foreground"}`}>{product.unit}</span>}
+            {strikePrice && <span className={`text-sm ${brandText ? "text-white/75" : "text-muted-foreground"} line-through`}>₹{strikePrice}</span>}
+            {discountPct && <span className={`text-sm font-bold ${brandText ? "text-white" : "text-green-600"}`}>{discountPct}% off</span>}
           </div>
 
           {isUnavailable ? (
