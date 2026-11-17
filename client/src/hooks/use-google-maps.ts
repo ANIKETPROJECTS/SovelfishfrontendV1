@@ -30,17 +30,8 @@ function getSafeDiagnostics() {
       // Do not include the raw script URL; it can contain the public API key.
     }
   }
-  let referrerOrigin: string | null = null;
-  if (document.referrer) {
-    try {
-      referrerOrigin = new URL(document.referrer).origin;
-    } catch {
-      referrerOrigin = "unavailable";
-    }
-  }
   return {
     pageOrigin: window.location.origin,
-    referrerOrigin,
     buildMode: import.meta.env.MODE,
     keyConfigured: Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim()),
     scriptOrigin,
@@ -55,6 +46,11 @@ function logDiagnostics(message: string, details: Record<string, unknown> = {}) 
     ...getSafeDiagnostics(),
     ...details,
   });
+}
+
+function getSafeErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/([?&]key=)[^&\s]+/gi, "$1[redacted]");
 }
 
 function notify(next: MapsState) {
@@ -91,7 +87,7 @@ async function importRequiredLibraries(): Promise<boolean> {
             console.error("[GoogleMaps diagnostics] Library import failed.", {
               ...getSafeDiagnostics(),
               library,
-              error: error instanceof Error ? error.message : String(error),
+              error: getSafeErrorMessage(error),
             });
             throw error;
           }),
@@ -99,7 +95,7 @@ async function importRequiredLibraries(): Promise<boolean> {
     );
     return true;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "A required Google Maps library could not load.";
+    const message = getSafeErrorMessage(error) || "A required Google Maps library could not load.";
     console.error("[GoogleMaps diagnostics] Maps initialization failed.", {
       ...getSafeDiagnostics(),
       error: message,
@@ -116,7 +112,7 @@ function loadMaps(): Promise<boolean> {
 
   const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
   if (!key) {
-    const error = "Google Maps is not configured. Add VITE_GOOGLE_MAPS_API_KEY to Replit Secrets.";
+    const error = "Google Maps is not configured. The frontend build is missing VITE_GOOGLE_MAPS_API_KEY.";
     console.error("[GoogleMaps diagnostics] No API key is configured for this frontend build.", {
       ...getSafeDiagnostics(),
       expectedVariable: "VITE_GOOGLE_MAPS_API_KEY",
