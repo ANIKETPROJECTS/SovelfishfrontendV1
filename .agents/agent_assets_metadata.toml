@@ -21,3 +21,59 @@ mtime_ms = 1790779837520
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9260a6a2-44d5-4ee5-960a-82e2de243a97/401feb66-6141-4349-ba8f-d8c734bf3d69/29fa1349-4a2d-4aef-ab31-80d648070adf"
 storage_version_token = "1790779861560379"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "1aKeI_ZVyAP5Ee5iM3Gtg"
+uri = "file://client/public/reels/fresh-catch-1.mp4"
+type = "video"
+title = "Super Size Pomfret Reel"
+description = "Compressed 360×640 portrait clip used in the homepage Fresh Catch section."
+logical_id = "c6810bcf-d33f-4d38-a238-582efbeab0af"
+content_hash = "sha256:10e6ed0de7e718fa86ead3279c283894424ffa10b7590316ad661b893eea3dd5"
+size = 5445236
+mtime_ms = 1794920149985
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:e3a8a48d-6bfe-4909-becc-d34973915ca0/c6810bcf-d33f-4d38-a238-582efbeab0af/24d0d364-1106-4e8e-9941-03e521e820e4"
+storage_version_token = "1794920480023714"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "uabYmFXgxxnOtbqjyLnUn"
+uri = "file://client/public/reels/fresh-catch-2.mp4"
+type = "video"
+title = "Jumbo Crabs Offer Reel"
+description = "Compressed 360×640 portrait clip used in the homepage Fresh Catch section."
+logical_id = "f5e227e8-0763-44e9-8b36-ee33b015e881"
+content_hash = "sha256:2b13a23b7268743959f7fe90cafc9d88fee3fdf3aca589f67009243179da7558"
+size = 7005051
+mtime_ms = 1794920184107
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:e3a8a48d-6bfe-4909-becc-d34973915ca0/f5e227e8-0763-44e9-8b36-ee33b015e881/5717628d-91e3-4d21-b887-e86505f30964"
+storage_version_token = "1794920481408978"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "FEcl1M57eppzf1sPwNDOB"
+uri = "file://client/public/reels/fresh-catch-3.mp4"
+type = "video"
+title = "Sunday Special Reel"
+description = "Compressed 360×640 portrait clip used in the homepage Fresh Catch section."
+logical_id = "7519fe47-df58-4184-bc63-8fcdff7b29b9"
+content_hash = "sha256:377fb8895b9348c6119e827769c656bece2d0976d45531c9e060e49c1a5f0641"
+size = 6622685
+mtime_ms = 1794920215408
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:e3a8a48d-6bfe-4909-becc-d34973915ca0/7519fe47-df58-4184-bc63-8fcdff7b29b9/b158a260-134d-4839-ae47-343550263a86"
+storage_version_token = "1794920482768383"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "7GmvhgPN3XnHSB9pvqUE4"
+uri = "file://client/public/reels/fresh-catch-4.mp4"
+type = "video"
+title = "Fresh Catch Offer Reel"
+description = "Compressed 360×640 portrait clip used in the homepage Fresh Catch section."
+logical_id = "4930b344-996b-4d1c-8a15-c65eba3f4b7e"
+content_hash = "sha256:8c47e1c78504fb71617107f0d414eefdf25653b59c173a6a35e967077a07b7af"
+size = 5722021
+mtime_ms = 1794920241636
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:e3a8a48d-6bfe-4909-becc-d34973915ca0/4930b344-996b-4d1c-8a15-c65eba3f4b7e/f35a9b63-6e8e-485c-b0b0-c615257ead74"
+storage_version_token = "1794920484130124"
+content_type = "video/mp4"

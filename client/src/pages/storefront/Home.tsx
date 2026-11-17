@@ -320,7 +320,7 @@ export default function Home() {
           <DemoCatalogPreview />
         ) : (
           <>
-        <FreshCatchReels products={products ?? []} />
+        <FreshCatchReels />
 
         {/* Preserve the existing preorder placement for hubs that have not
             configured a ranked preorder section yet. */}

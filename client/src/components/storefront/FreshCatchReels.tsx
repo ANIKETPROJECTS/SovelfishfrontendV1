@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { Fish } from "lucide-react";
-import type { Product } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -9,47 +7,42 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type FreshCatchReelsProps = {
-  products: Product[];
-};
-
 type ReelItem = {
   id: string;
   name: string;
-  imageUrl: string | null;
+  videoUrl: string;
+  posterUrl: string;
 };
 
-const POSTER_TONES = [
-  "from-[#6f3b21] via-[#bd7040] to-[#e4ad72]",
-  "from-[#315e5b] via-[#6f9b88] to-[#d4c89d]",
-  "from-[#8b5638] via-[#cb8e5c] to-[#e7c69a]",
-  "from-[#31515c] via-[#688f91] to-[#c3c8a7]",
+const REELS: ReelItem[] = [
+  {
+    id: "super-size-pomfret",
+    name: "Super Size Pomfret",
+    videoUrl: "/reels/fresh-catch-1.mp4",
+    posterUrl: "/reels/fresh-catch-1.jpg",
+  },
+  {
+    id: "jumbo-crabs-offer",
+    name: "Jumbo Crabs Offer",
+    videoUrl: "/reels/fresh-catch-2.mp4",
+    posterUrl: "/reels/fresh-catch-2.jpg",
+  },
+  {
+    id: "sunday-special",
+    name: "Sunday Special",
+    videoUrl: "/reels/fresh-catch-3.mp4",
+    posterUrl: "/reels/fresh-catch-3.jpg",
+  },
+  {
+    id: "fresh-catch-offer",
+    name: "Fresh Catch Offer",
+    videoUrl: "/reels/fresh-catch-4.mp4",
+    posterUrl: "/reels/fresh-catch-4.jpg",
+  },
 ];
 
-function makeReelItems(products: Product[]): ReelItem[] {
-  const seafoodProducts = products.filter((product) =>
-    /fish|seafood|prawn|shrimp/i.test(product.category || ""),
-  );
-  return Array.from({ length: 4 }, (_, index) => {
-    const product = seafoodProducts[index] ?? products[index];
-
-    return product
-      ? {
-          id: product.id,
-          name: product.name,
-          imageUrl: product.imageUrl,
-        }
-      : {
-          id: `placeholder-${index}`,
-          name: "",
-          imageUrl: null,
-        };
-  });
-}
-
-export function FreshCatchReels({ products }: FreshCatchReelsProps) {
+export function FreshCatchReels() {
   const [activeReel, setActiveReel] = useState<ReelItem | null>(null);
-  const reels = makeReelItems(products);
 
   return (
     <section
@@ -64,42 +57,30 @@ export function FreshCatchReels({ products }: FreshCatchReelsProps) {
       </h2>
 
       <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        {reels.map((reel, index) => (
+        {REELS.map((reel) => (
           <button
             key={reel.id}
             type="button"
             onClick={() => setActiveReel(reel)}
-            aria-label={reel.name ? `View ${reel.name} video` : "Open empty reel preview"}
+            aria-label={`Play ${reel.name} video`}
             className="group relative aspect-[9/16] min-w-0 overflow-hidden rounded-2xl border-2 border-[#7B3A14] bg-[#d8c1a8] text-left transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a55e32] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
-            {reel.imageUrl ? (
-              <img
-                src={reel.imageUrl}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-              />
-            ) : (
-              <div
-                className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${POSTER_TONES[index]}`}
-              >
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-3 rounded-[0.9rem] border border-white/25"
-                />
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/45 bg-white/15 text-white/90 backdrop-blur-[2px]">
-                  <Fish aria-hidden="true" className="h-9 w-9 stroke-[1.25]" />
-                </div>
-                <span className="absolute right-5 top-7 h-2 w-2 rounded-full bg-[#f4d7a8]/80" />
-                <span className="absolute bottom-16 left-6 h-1.5 w-1.5 rounded-full bg-white/70" />
-              </div>
-            )}
+            <video
+              src={reel.videoUrl}
+              poster={reel.posterUrl}
+              muted
+              autoPlay
+              loop
+              playsInline
+              preload="metadata"
+              aria-hidden="true"
+              tabIndex={-1}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-[#24170f]/85 via-[#24170f]/10 to-[#24170f]/10" />
             <div className="absolute inset-x-0 bottom-0 p-3.5 text-white sm:p-4">
               {reel.name && (
-                <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-[-0.02em] sm:text-base">
+                <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-[-0.02em] drop-shadow-[0_2px_3px_rgba(0,0,0,0.95)] sm:text-base">
                   {reel.name}
                 </h3>
               )}
@@ -120,37 +101,27 @@ export function FreshCatchReels({ products }: FreshCatchReelsProps) {
               Fresh Stock Xchange
             </p>
             <DialogTitle className="text-xl font-semibold tracking-[-0.04em] text-[#4f3021] sm:text-2xl">
-              {activeReel?.name ?? "Market preview"}
+              {activeReel?.name ?? "Fresh Catch"}
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed text-[#795f4d]">
-              This is a poster preview, not a playable video. The actual reel will be connected from the admin later.
+              Watch this Fresh Stock Xchange reel.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-[1.25rem] bg-[#ead9c7] shadow-[0_14px_30px_-18px_rgba(68,41,25,0.5)]">
-            <div className="relative aspect-[9/14]">
-              {activeReel?.imageUrl ? (
-                <img
-                  src={activeReel.imageUrl}
-                  alt={`Poster preview for ${activeReel.name}`}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              ) : (
-                <div
-                  className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${POSTER_TONES[reels.findIndex((reel) => reel.id === activeReel?.id) % POSTER_TONES.length]}`}
-                >
-                  <Fish aria-hidden="true" className="h-16 w-16 stroke-[1.1] text-white/90" />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#24170f]/65 via-transparent to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                <p className="mt-1 text-lg font-semibold leading-tight">{activeReel?.name}</p>
-              </div>
-            </div>
+          <div className="mx-auto flex w-full max-w-[360px] justify-center overflow-hidden rounded-[1.25rem] bg-black shadow-[0_14px_30px_-18px_rgba(68,41,25,0.5)]">
+            {activeReel && (
+              <video
+                key={activeReel.id}
+                src={activeReel.videoUrl}
+                poster={activeReel.posterUrl}
+                controls
+                autoPlay
+                playsInline
+                preload="metadata"
+                className="aspect-[9/16] h-[65dvh] max-h-[640px] w-auto max-w-full object-contain"
+              />
+            )}
           </div>
-          <p className="text-center text-xs text-[#8a715e]">
-            Video content will appear here once added by the Fresh Stock Xchange team.
-          </p>
         </DialogContent>
       </Dialog>
     </section>
