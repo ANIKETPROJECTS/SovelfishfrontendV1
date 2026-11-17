@@ -98,12 +98,18 @@ export function Header({
         {/* Left: Logo */}
         <div className="flex items-center shrink-0">
           {onLogoClick ? (
-            <button onClick={onLogoClick} className="flex items-center group focus:outline-none">
-              <FreshStockXchangeLogo className="h-12 w-[64px] sm:h-[52px] sm:w-[72px]" />
+            <button onClick={onLogoClick} className="flex items-center gap-1.5 group focus:outline-none">
+              <FreshStockXchangeLogo className="h-10 w-[52px] sm:h-14 sm:w-[80px] max-[380px]:h-9 max-[380px]:w-[48px]" />
+              <span className="whitespace-nowrap font-display text-base font-bold leading-none tracking-normal text-[#7B3A14] sm:text-xl md:text-2xl max-[380px]:text-sm">
+                Fresh Stock Xchange
+              </span>
             </button>
           ) : (
-            <Link href="/" className="flex items-center group">
-              <FreshStockXchangeLogo className="h-12 w-[64px] sm:h-[52px] sm:w-[72px]" />
+            <Link href="/" className="flex items-center gap-1.5 group">
+              <FreshStockXchangeLogo className="h-10 w-[52px] sm:h-14 sm:w-[80px] max-[380px]:h-9 max-[380px]:w-[48px]" />
+              <span className="whitespace-nowrap font-display text-base font-bold leading-none tracking-normal text-[#7B3A14] sm:text-xl md:text-2xl max-[380px]:text-sm">
+                Fresh Stock Xchange
+              </span>
             </Link>
           )}
         </div>
