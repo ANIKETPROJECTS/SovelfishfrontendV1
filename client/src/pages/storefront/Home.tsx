@@ -343,8 +343,8 @@ export default function Home() {
             );
             return (
               <section key={section.id} className="home-content-section mb-7">
-                <div className="flex items-center gap-2 mb-3">
-                  <h2 className="home-section-heading text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
+                <div className="mb-4 sm:mb-5">
+                  <h2 className="text-center font-display text-2xl font-bold tracking-[-0.03em] text-[#7B3A14] sm:text-3xl">
                     {section.title}
                   </h2>
                 </div>
