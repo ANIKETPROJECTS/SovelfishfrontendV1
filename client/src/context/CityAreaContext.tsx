@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useHub } from "@/context/HubContext";
+import { useCustomer } from "@/context/CustomerContext";
 import type { CityAreaOption } from "@shared/cityAreaPricing";
 import { findCityAreaOption } from "@shared/cityAreaPricing";
 
@@ -17,6 +18,7 @@ const CityAreaContext = createContext<CityAreaContextValue | null>(null);
 
 export function CityAreaProvider({ children }: { children: React.ReactNode }) {
   const { selectedSubHub, isHubReady } = useHub();
+  const { customer, isLoading: isCustomerLoading } = useCustomer();
   const subHubId = selectedSubHub?.id ?? null;
   const [selection, setSelection] = useState<{ subHubId: string; name: string } | null>(null);
 
@@ -53,11 +55,31 @@ export function CityAreaProvider({ children }: { children: React.ReactNode }) {
     const cached = findCityAreaOption(cityAreas, cachedName);
     if (cached) {
       setSelection({ subHubId, name: cached.name });
-    } else {
-      localStorage.removeItem(storageKey);
-      setSelection((current) => current?.subHubId === subHubId ? null : current);
+      return;
     }
-  }, [subHubId, cityAreasQuery.isSuccess, cityAreas]);
+
+    if (isCustomerLoading) return;
+
+    const savedAddressArea = customer?.addresses
+      ?.flatMap((address) => [address.cityArea, address.area, address.city])
+      .map((name) => findCityAreaOption(cityAreas, name))
+      .find((option): option is CityAreaOption => option !== null);
+
+    if (savedAddressArea) {
+      localStorage.setItem(storageKey, savedAddressArea.name);
+      setSelection({ subHubId, name: savedAddressArea.name });
+      return;
+    }
+
+    localStorage.removeItem(storageKey);
+    setSelection((current) => current?.subHubId === subHubId ? null : current);
+  }, [
+    subHubId,
+    cityAreasQuery.isSuccess,
+    cityAreas,
+    isCustomerLoading,
+    customer?.addresses,
+  ]);
 
   const selectedCityArea = useMemo(() => {
     if (!subHubId || selection?.subHubId !== subHubId) return null;
