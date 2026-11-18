@@ -69,12 +69,12 @@ function CouponCard({ code, description }: { code: string; description: string; 
         />
         <div className="min-w-0 flex-1">
           <span
-            className="font-mono font-bold text-xs tracking-wider rounded-full px-2.5 py-0.5 text-white inline-block"
+            className="font-mono inline-block rounded-full px-3 py-1 text-sm font-bold tracking-wider text-white"
             style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
           >
             {code}
           </span>
-          <p className="mt-1 whitespace-normal break-words text-xs leading-snug text-[#80634e]">{description}</p>
+          <p className="mt-1 whitespace-normal break-words text-sm leading-snug text-[#80634e]">{description}</p>
         </div>
       </div>
     </div>
@@ -107,9 +107,9 @@ function RecipeCard({
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 bg-[#7B3A14] p-4">
-        <h4 className="line-clamp-2 text-base font-bold leading-snug text-white">{recipe.name}</h4>
-        <p className="line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-white/75">{recipe.description}</p>
-        <div className="mt-1 flex items-center gap-3 text-xs text-white/80">
+        <h4 className="line-clamp-2 text-lg font-bold leading-snug text-white">{recipe.name}</h4>
+        <p className="line-clamp-3 flex-1 text-sm font-medium leading-relaxed text-white/75">{recipe.description}</p>
+        <div className="mt-1 flex items-center gap-3 text-sm text-white/80">
           <span className="inline-flex items-center gap-1">
             <span
               aria-hidden
@@ -131,7 +131,7 @@ function RecipeCard({
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onViewRecipe(category, index); }}
-          className="mt-1 w-full rounded-full border border-white bg-white px-3 py-2 text-sm font-bold text-[#7B3A14] transition-colors hover:bg-[#fff1df]"
+          className="mt-1 w-full rounded-full border border-white bg-white px-3 py-2.5 text-base font-bold text-[#7B3A14] transition-colors hover:bg-[#fff1df]"
         >
           View Recipe
         </button>
@@ -421,7 +421,7 @@ export default function ProductDetail() {
 
             {/* Description */}
             {product.description && (
-              <p className="text-sm font-medium leading-relaxed text-white/80 sm:text-base">{product.description}</p>
+              <p className="text-base font-medium leading-relaxed text-white/85 sm:text-lg">{product.description}</p>
             )}
 
             {/* Pieces / Serves / Weight — wraps gracefully when text is long */}
@@ -431,7 +431,7 @@ export default function ProductDetail() {
               {displayPieces && <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
                 <span
                   aria-hidden
-                  className="inline-block h-5 w-5 shrink-0 bg-white sm:h-6 sm:w-6"
+                  className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
                   style={{
                     WebkitMaskImage: `url(${piecesIcon})`,
                     maskImage: `url(${piecesIcon})`,
@@ -443,7 +443,7 @@ export default function ProductDetail() {
                     maskPosition: "center",
                   }}
                 />
-                <span className="text-sm font-semibold leading-tight sm:text-base">
+                <span className="text-base font-semibold leading-tight sm:text-lg">
                   Pieces: {displayPieces}
                 </span>
               </div>}
@@ -452,7 +452,7 @@ export default function ProductDetail() {
               {displayServes && <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
                 <span
                   aria-hidden
-                  className="inline-block h-5 w-5 shrink-0 bg-white sm:h-6 sm:w-6"
+                  className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
                   style={{
                     WebkitMaskImage: `url(${servesIcon})`,
                     maskImage: `url(${servesIcon})`,
@@ -464,7 +464,7 @@ export default function ProductDetail() {
                     maskPosition: "center",
                   }}
                 />
-                <span className="text-sm font-semibold leading-tight sm:text-base">
+                <span className="text-base font-semibold leading-tight sm:text-lg">
                   Serves: {displayServes}
                 </span>
               </div>}
@@ -474,7 +474,7 @@ export default function ProductDetail() {
                 <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
                   <span
                     aria-hidden
-                    className="inline-block h-5 w-5 shrink-0 bg-white sm:h-6 sm:w-6"
+                    className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
                     style={{
                       WebkitMaskImage: `url(${weighScaleIcon})`,
                       maskImage: `url(${weighScaleIcon})`,
@@ -486,7 +486,7 @@ export default function ProductDetail() {
                       maskPosition: "center",
                     }}
                   />
-                  <div className="flex min-w-0 flex-row flex-wrap items-baseline gap-x-1 leading-tight text-sm font-semibold sm:text-base">
+                  <div className="flex min-w-0 flex-row flex-wrap items-baseline gap-x-1 leading-tight text-base font-semibold sm:text-lg">
                     {product.grossWeight && (
                       <span className="whitespace-nowrap">
                         {formatProductWeight(product.grossWeight, "gross")}
@@ -508,7 +508,7 @@ export default function ProductDetail() {
 
             {variants.length > 0 && (
               <div ref={variantOptionsRef} id="product-variants" className="scroll-mt-24">
-                <p className="mb-3 text-base font-bold text-white">Choose an option</p>
+                <p className="mb-4 text-lg font-bold text-white sm:text-xl">Choose an option</p>
                 <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
                   {variants.map((variant, index) => (
                     <button
@@ -519,7 +519,7 @@ export default function ProductDetail() {
                         setQty(1);
                       }}
                       aria-pressed={index === selectedVariantIndex}
-                      className="flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl border px-2.5 py-2 text-center text-[11px] font-bold leading-snug transition-colors hover:-translate-y-0.5 sm:px-3 sm:text-xs"
+                      className="flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border px-3 py-2.5 text-center text-sm font-bold leading-snug transition-colors hover:-translate-y-0.5 sm:text-base"
                       style={index === selectedVariantIndex
                         ? { borderColor: "#FFFFFF", backgroundColor: "#FFFFFF", color: "#7B3A14" }
                         : { borderColor: "rgba(255,255,255,.45)", backgroundColor: "rgba(255,255,255,.08)", color: "#FFFFFF" }}
@@ -544,12 +544,12 @@ export default function ProductDetail() {
 
             {/* Price */}
             <div className="rounded-2xl border border-white/25 bg-white px-5 py-4 shadow-sm">
-              <div className="flex items-end gap-3 mb-1">
-                <span className="text-3xl font-extrabold text-[#7B3A14]">₹{formatStorePrice(displayPrice)}</span>
-                {strikePrice && <span className="mb-0.5 text-base font-medium text-[#80634e] line-through">₹{strikePrice}</span>}
-                {effectiveDiscountPct > 0 && <span className="mb-0.5 rounded-full bg-[#fff1df] px-2.5 py-1 text-xs font-bold text-[#a84d12]">{effectiveDiscountPct}% off</span>}
+              <div className="mb-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+                <span className="text-4xl font-extrabold leading-none text-[#7B3A14] sm:text-5xl">₹{formatStorePrice(displayPrice)}</span>
+                {strikePrice && <span className="mb-0.5 text-lg font-medium text-[#80634e] line-through">₹{strikePrice}</span>}
+                {effectiveDiscountPct > 0 && <span className="mb-0.5 rounded-full bg-[#fff1df] px-3 py-1.5 text-sm font-bold text-[#a84d12]">{effectiveDiscountPct}% off</span>}
               </div>
-              <p className="text-xs font-semibold text-[#80634e]">
+              <p className="text-sm font-semibold text-[#80634e] sm:text-base">
                 {selectedVariant?.label ?? product.unit ?? "Inclusive of all taxes."}
                 {(selectedVariant || product.unit) ? " · Inclusive of all taxes." : ""}
               </p>
@@ -578,7 +578,7 @@ export default function ProductDetail() {
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-9 text-center text-sm font-bold">{displayQty}</span>
+                    <span className="w-9 text-center text-base font-bold">{displayQty}</span>
                     <button
                       onClick={() => {
                         if (isInCart) {
@@ -620,7 +620,7 @@ export default function ProductDetail() {
                       }
                     }}
                     disabled={isUnavailable || totalMax <= 0 || (!isInCart && !cuttingMethodSelected)}
-                    className="h-auto min-h-12 w-full min-w-0 flex-1 whitespace-normal rounded-full bg-white px-4 py-2 text-center text-sm font-bold leading-tight text-[#7B3A14] shadow-md transition hover:bg-[#fff1df] sm:text-base"
+                    className="h-auto min-h-12 w-full min-w-0 flex-1 whitespace-normal rounded-full bg-white px-4 py-2.5 text-center text-base font-bold leading-tight text-[#7B3A14] shadow-md transition hover:bg-[#fff1df] sm:text-lg"
                   >
                     {isUnavailable
                       ? "Out of Stock"
@@ -655,7 +655,7 @@ export default function ProductDetail() {
                     }}
                   />
                   <div className="flex-1 text-left min-w-0">
-                    <span className="text-sm font-bold text-[#542813]">
+                    <span className="text-base font-bold text-[#542813]">
                       Offers Available
                     </span>
                   </div>
@@ -675,7 +675,7 @@ export default function ProductDetail() {
                   {liveCoupons.length > 3 && (
                     <button
                       onClick={() => setShowAllCoupons(v => !v)}
-                      className="w-full py-3 text-xs font-bold text-center text-[#a84d12] transition-colors hover:bg-[#fffaf4]"
+                      className="w-full py-3 text-sm font-bold text-center text-[#a84d12] transition-colors hover:bg-[#fffaf4]"
                     >
                       {showAllCoupons ? "View Less" : `View ${liveCoupons.length - 3} More Offer${liveCoupons.length - 3 > 1 ? "s" : ""}`}
                     </button>
@@ -720,9 +720,9 @@ export default function ProductDetail() {
                       )}
                     </div>
                     <div className="flex flex-1 flex-col gap-2 bg-[#7B3A14] p-4">
-                      <h4 className="line-clamp-2 text-base font-bold leading-snug text-white">{r.title}</h4>
-                      <p className="line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-white/75">{r.description}</p>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-white/80">
+                      <h4 className="line-clamp-2 text-lg font-bold leading-snug text-white">{r.title}</h4>
+                      <p className="line-clamp-3 flex-1 text-sm font-medium leading-relaxed text-white/75">{r.description}</p>
+                      <div className="mt-1 flex items-center gap-3 text-sm text-white/80">
                         {r.totalTime && (
                           <span className="inline-flex items-center gap-1">
                             <span
@@ -746,7 +746,7 @@ export default function ProductDetail() {
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); setLocation(`/recipe/product/${product.id}/${idx}`); }}
-                        className="mt-1 w-full rounded-full border border-white bg-white px-3 py-2 text-sm font-bold text-[#7B3A14] transition-colors hover:bg-[#fff1df]"
+                        className="mt-1 w-full rounded-full border border-white bg-white px-3 py-2.5 text-base font-bold text-[#7B3A14] transition-colors hover:bg-[#fff1df]"
                       >
                         View Recipe
                       </button>

@@ -31,7 +31,7 @@ export function CuttingMethodSelector({
     return (
       <label
         key={method}
-        className={`flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+        className={`flex min-h-12 min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-3 text-sm font-semibold transition-colors ${
           checked
             ? "border-[#C8651B] bg-[#FFF5EB] text-[#7B3A14]"
             : "border-border/50 bg-white text-foreground hover:border-[#E8883A]"
@@ -44,7 +44,7 @@ export function CuttingMethodSelector({
           required={index === 0}
           checked={checked}
           onChange={() => onChange([method])}
-          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[#C8651B]"
+          className="h-4 w-4 shrink-0 accent-[#C8651B]"
         />
         <span className="leading-snug">{method}</span>
       </label>
@@ -54,10 +54,10 @@ export function CuttingMethodSelector({
   if (variant === "product") {
     return (
       <div className="min-w-0 rounded-2xl bg-white p-4 sm:p-5">
-        <div id={headingId} className="mb-1 text-base font-bold text-[#542813]">
+        <div id={headingId} className="mb-1 text-lg font-bold text-[#542813] sm:text-xl">
           {title} <span className="text-[#C8651B]" aria-hidden="true">*</span>
         </div>
-        <p className="mb-3 text-xs text-[#80634e]">Select one option.</p>
+        <p className="mb-4 text-sm text-[#80634e]">Select one option.</p>
         <fieldset
           aria-required="true"
           aria-labelledby={headingId}
