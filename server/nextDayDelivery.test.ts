@@ -36,6 +36,24 @@ test("marks the storefront's already-updated tomorrow date as automatic after cu
   assert.equal(result.nextDayOrder, true);
 });
 
+test("honors an explicit next-day choice before the cutoff", () => {
+  const result = applyAutomaticNextDayDelivery(
+    { ...standardDelivery, deliveryDate: "2026-11-14", nextDayOrder: true },
+    new Date("2026-11-13T11:29:00.000Z"),
+  );
+  assert.equal(result.deliveryDate, "2026-11-14");
+  assert.equal(result.nextDayOrder, true);
+});
+
+test("forces next-day delivery at cutoff even when the client sends same-day", () => {
+  const result = applyAutomaticNextDayDelivery(
+    { ...standardDelivery, nextDayOrder: false },
+    new Date("2026-11-13T11:30:00.000Z"),
+  );
+  assert.equal(result.deliveryDate, "2026-11-14");
+  assert.equal(result.nextDayOrder, true);
+});
+
 test("keeps an order placed at 11:59 PM on the following date", () => {
   const result = applyAutomaticNextDayDelivery(
     standardDelivery,

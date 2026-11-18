@@ -1695,6 +1695,7 @@ export async function registerRoutes(
         amount: order.amount,
         currency: order.currency,
         cancel_token: cancelToken,
+        deliveryDate: orderPayload.deliveryDate,
       });
     } catch (err: any) {
       console.error("[Razorpay] create-order error:", err);
@@ -2003,7 +2004,11 @@ export async function registerRoutes(
             },
           },
         );
-        return res.json({ phonepeOrderId, redirectUrl: checkout.redirectUrl });
+        return res.json({
+          phonepeOrderId,
+          redirectUrl: checkout.redirectUrl,
+          deliveryDate: orderPayload.deliveryDate,
+        });
       } catch (paymentCreateError: any) {
         await PendingPhonePe.updateOne(
           { phonepeOrderId },
@@ -2247,6 +2252,7 @@ export async function registerRoutes(
         paid: result.paid,
         state: result.paid ? "COMPLETED" : result.state,
         orderId: result.paid ? String(result.order?.orderId ?? "") : undefined,
+        deliveryDate: result.paid ? result.order?.deliveryDate ?? null : null,
       });
     } catch (error: any) {
       const statusCode = error?.statusCode === 404 ? 404 : 503;

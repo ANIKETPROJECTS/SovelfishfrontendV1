@@ -54,6 +54,8 @@ interface CartContextType {
   updateInstruction: (productId: string | number, instruction: string) => void;
   updateCuttingMethods: (productId: string | number, methods: string[]) => void;
   updatePreorderDeliveryDate: (dateKey: string) => void;
+  nextDayDeliverySelected: boolean;
+  setNextDayDeliverySelected: (selected: boolean) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -203,6 +205,7 @@ function calcMaxQty(
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [nextDayDeliverySelected, setNextDayDeliverySelected] = useState(false);
   const [cartHydratedForKey, setCartHydratedForKey] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -237,8 +240,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ) as CartItem[]
         : [];
       setItems(restored);
+      setNextDayDeliverySelected(
+        sessionStorage.getItem(`${cartStorageKey}:delivery-schedule`) === "next-day",
+      );
     } catch {
       setItems([]);
+      setNextDayDeliverySelected(false);
     }
     setCartHydratedForKey(cartStorageKey);
   }, [customerLoading, isHubReady, cartStorageKey]);
@@ -254,6 +261,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // Storage can be unavailable in private browsing; the in-memory cart remains usable.
     }
   }, [items, cartStorageKey, cartHydratedForKey]);
+  useEffect(() => {
+    if (!cartStorageKey || cartHydratedForKey !== cartStorageKey) return;
+    try {
+      sessionStorage.setItem(
+        `${cartStorageKey}:delivery-schedule`,
+        nextDayDeliverySelected ? "next-day" : "same-day",
+      );
+    } catch {
+      // Keep the in-memory selection if session storage is unavailable.
+    }
+  }, [nextDayDeliverySelected, cartStorageKey, cartHydratedForKey]);
+  useEffect(() => {
+    if (
+      cartStorageKey &&
+      cartHydratedForKey === cartStorageKey &&
+      items.length === 0 &&
+      nextDayDeliverySelected
+    ) {
+      setNextDayDeliverySelected(false);
+    }
+  }, [items.length, nextDayDeliverySelected, cartStorageKey, cartHydratedForKey]);
   const liveStockByProductId = useMemo(
     () => new Map((liveProducts ?? []).map((product) => [String(product.id), product.availableQty])),
     [liveProducts],
@@ -507,6 +535,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
+    setNextDayDeliverySelected(false);
   };
 
   // Exposed to components for disabling +/- buttons and capping qty pickers
@@ -597,6 +626,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateInstruction,
         updateCuttingMethods,
         updatePreorderDeliveryDate,
+        nextDayDeliverySelected,
+        setNextDayDeliverySelected,
         clearCart,
         totalItems,
         totalPrice,

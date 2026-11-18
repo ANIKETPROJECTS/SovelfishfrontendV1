@@ -97,9 +97,22 @@ export function applyAutomaticNextDayDelivery<T extends DeliveryScheduleInput>(
   const cutoffPassed = getIndiaMinutesSinceMidnight(now) >= NEXT_DAY_DELIVERY_CUTOFF_MINUTES;
   const tomorrow = addDaysToDateKey(today, 1);
 
-  // After the cutoff, the storefront may already have sent tomorrow's date
-  // from its live label. Recognize exactly that date as the automatic choice;
-  // other future dates remain explicit schedules.
+  // A customer may explicitly choose tomorrow before the cutoff. The server
+  // accepts that intent, but derives the actual calendar date itself.
+  if (
+    !cutoffPassed &&
+    input.nextDayOrder === true &&
+    (!input.deliveryDate || input.deliveryDate === tomorrow)
+  ) {
+    return {
+      ...input,
+      deliveryDate: tomorrow,
+      nextDayOrder: true,
+    } as T & { deliveryDate: string; nextDayOrder: boolean };
+  }
+
+  // After the cutoff, ordinary delivery is always scheduled for tomorrow.
+  // Other explicitly scheduled future dates remain unchanged.
   if (isValidDateKey(input.deliveryDate) && input.deliveryDate > today) {
     return {
       ...input,

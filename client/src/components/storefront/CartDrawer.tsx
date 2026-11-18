@@ -78,6 +78,8 @@ import {
   applyAutomaticNextDayDelivery,
   formatIndiaDateLabel,
   getIndiaDateKey,
+  getIndiaMinutesSinceMidnight,
+  NEXT_DAY_DELIVERY_CUTOFF_MINUTES,
 } from "@shared/nextDayDelivery";
 import { format } from "date-fns";
 
@@ -269,7 +271,7 @@ function areStockWarningsEqual(
 }
 
 export function CartDrawer() {
-  const { isCartOpen, setIsCartOpen, items, updateQuantity, updateInstruction, updateCuttingMethods, updatePreorderDeliveryDate, removeFromCart, totalPrice, clearCart, appliedCoupon, setAppliedCoupon, discountAmount, computeMaxQty } = useCart();
+  const { isCartOpen, setIsCartOpen, items, updateQuantity, updateInstruction, updateCuttingMethods, updatePreorderDeliveryDate, nextDayDeliverySelected, setNextDayDeliverySelected, removeFromCart, totalPrice, clearCart, appliedCoupon, setAppliedCoupon, discountAmount, computeMaxQty } = useCart();
   const { mutate: createOrder, isPending } = useCreateOrder();
   const { customer } = useCustomer();
   const { selectedSubHub, isHubReady } = useHub();
@@ -287,6 +289,7 @@ export function CartDrawer() {
   const { data: liveProducts = [] } = useProducts();
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [successDeliveryDate, setSuccessDeliveryDate] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
   const razorpayOpenRef = useRef(false);
@@ -311,6 +314,7 @@ export function CartDrawer() {
   const pendingRzpOrderIdRef = useRef<string | null>(null);
   const pendingRzpCancelTokenRef = useRef<string | null>(null);
   const pendingSelectedAddressRef = useRef<any>(null);
+  const pendingDeliveryDateRef = useRef<string | null>(null);
   const razorpayInstanceRef = useRef<any>(null);
   const cartStockCheckInFlightRef = useRef(false);
   const returningFromUpiRef = useRef(false);
@@ -361,7 +365,7 @@ export function CartDrawer() {
     };
   }, []);
 
-  const showRazorpaySuccess = useCallback(() => {
+  const showRazorpaySuccess = useCallback((order?: { deliveryDate?: string | null }) => {
     orderClaimedRef.current = true;
     paymentSucceededRef.current = true;
     razorpayOpenRef.current = false;
@@ -373,6 +377,8 @@ export function CartDrawer() {
     pendingSelectedAddressRef.current = null;
     returningFromUpiRef.current = false;
     setIsCartOpen(true);
+    setSuccessDeliveryDate(order?.deliveryDate ?? pendingDeliveryDateRef.current);
+    pendingDeliveryDateRef.current = null;
     setIsSuccess(true);
     clearCart();
     setUseWallet(false);
@@ -416,7 +422,7 @@ export function CartDrawer() {
           cleanReturnUrl();
           queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
           queryClient.invalidateQueries({ queryKey: ["/api/customer/me"] });
-          showRazorpaySuccess();
+          showRazorpaySuccess({ deliveryDate: result.deliveryDate });
           return;
         }
         if (String(result.state).toUpperCase() === "MANUAL_REVIEW") {
@@ -635,12 +641,17 @@ export function CartDrawer() {
   }, [items.length]);
 
   const isPreorderCart = items.some((item) => item.isPreorderCheckout);
+  const isAfterDeliveryCutoff =
+    getIndiaMinutesSinceMidnight(scheduleNow) >= NEXT_DAY_DELIVERY_CUTOFF_MINUTES;
+  const todayDeliveryDate = getIndiaDateKey(scheduleNow);
+  const tomorrowDeliveryDate = addDaysToDateKey(todayDeliveryDate, 1);
   const currentDeliverySchedule = applyAutomaticNextDayDelivery(
     {
       deliveryType: "delivery",
       orderType: isPreorderCart ? "preorder" : "normal",
       scheduleType: "standard",
-      deliveryDate: getIndiaDateKey(scheduleNow),
+      deliveryDate: nextDayDeliverySelected ? tomorrowDeliveryDate : todayDeliveryDate,
+      nextDayOrder: nextDayDeliverySelected,
     },
     scheduleNow,
   );
@@ -1128,6 +1139,7 @@ export function CartDrawer() {
       timeslotStart: null,
       timeslotEnd: null,
       deliveryDate,
+      nextDayOrder: !isPreorderCart && currentDeliverySchedule.nextDayOrder,
       couponCode: appliedCoupon?.code ?? null,
       discountAmount: discountAmount > 0 ? discountAmount : null,
       paymentMode: finalTotal === 0 ? "wallet" : paymentMethod === "online" ? "upi" : "cash",
@@ -1185,6 +1197,8 @@ export function CartDrawer() {
       return;
     }
     const stockCheckItems = getStockCheckItems(items);
+    const plannedOrderPayload = buildOrderPayload(selected);
+    pendingDeliveryDateRef.current = plannedOrderPayload.deliveryDate ?? null;
     const isUpiCheckout = paymentMethod === "online" && finalTotal > 0;
     if (isUpiCheckout && isHubReady) {
       setIsProcessingPayment(true);
@@ -1237,8 +1251,13 @@ export function CartDrawer() {
 
     // Wallet covers entire total — place order directly, no payment method needed
     if (finalTotal === 0) {
-      createOrder(buildOrderPayload(selected), {
-        onSuccess: () => { setIsSuccess(true); clearCart(); setUseWallet(false); },
+      createOrder(plannedOrderPayload, {
+        onSuccess: (order) => {
+          setSuccessDeliveryDate(order.deliveryDate ?? plannedOrderPayload.deliveryDate ?? null);
+          setIsSuccess(true);
+          clearCart();
+          setUseWallet(false);
+        },
         onError: (err: any) => {
           toast({ title: err?.message || "Could not place order. Please try again.", variant: "destructive" });
         },
@@ -1248,8 +1267,13 @@ export function CartDrawer() {
 
     // COD flow: place order directly
     if (paymentMethod === "cod") {
-      createOrder(buildOrderPayload(selected), {
-        onSuccess: () => { setIsSuccess(true); clearCart(); setUseWallet(false); },
+      createOrder(plannedOrderPayload, {
+        onSuccess: (order) => {
+          setSuccessDeliveryDate(order.deliveryDate ?? plannedOrderPayload.deliveryDate ?? null);
+          setIsSuccess(true);
+          clearCart();
+          setUseWallet(false);
+        },
         onError: (err: any) => {
           toast({ title: err?.message || "Could not place order. Please try again.", variant: "destructive" });
         },
@@ -1266,7 +1290,7 @@ export function CartDrawer() {
           credentials: "include",
           body: JSON.stringify({
             amount: finalTotal,
-            orderPayload: buildOrderPayload(selected),
+            orderPayload: plannedOrderPayload,
           }),
         });
         const result = await response.json().catch(() => ({}));
@@ -1290,6 +1314,8 @@ export function CartDrawer() {
         if (!result.redirectUrl) {
           throw new Error("PhonePe did not provide a checkout link.");
         }
+        pendingDeliveryDateRef.current =
+          result.deliveryDate ?? plannedOrderPayload.deliveryDate ?? null;
         window.location.assign(result.redirectUrl);
       } catch (error: any) {
         setIsProcessingPayment(false);
@@ -1324,6 +1350,7 @@ export function CartDrawer() {
       // it as a pending checkout. The webhook uses this to reconstruct the order if
       // the browser closes before the client-side handler fires.
       const pendingOrderPayload = buildOrderPayload(selected);
+      pendingDeliveryDateRef.current = pendingOrderPayload.deliveryDate ?? null;
 
       const res = await fetch("/api/razorpay/create-order", {
         method: "POST",
@@ -1354,6 +1381,7 @@ export function CartDrawer() {
         amount: rzpAmount,
         currency,
         cancel_token: cancelToken,
+        deliveryDate: authoritativeDeliveryDate,
       } = await res.json();
       if (!order_id || !cancelToken) {
         throw new Error("The payment session could not be prepared.");
@@ -1361,6 +1389,8 @@ export function CartDrawer() {
       pendingRzpOrderIdRef.current = order_id;
       pendingRzpCancelTokenRef.current = cancelToken;
       pendingSelectedAddressRef.current = selected;
+      pendingDeliveryDateRef.current =
+        authoritativeDeliveryDate ?? pendingDeliveryDateRef.current;
 
       // Recheck after the Razorpay order is prepared and immediately before
       // opening its payment UI, closing the small race after the initial tap check.
@@ -1894,6 +1924,17 @@ export function CartDrawer() {
               <p className="relative z-10 text-muted-foreground text-base mb-8 max-w-[260px]">
                 Thank you! We'll contact you shortly to confirm your delivery.
               </p>
+              {successDeliveryDate && (
+                <div
+                  className="relative z-10 mb-6 rounded-xl border border-[#e6c7a9] bg-white px-4 py-3 text-[#542813]"
+                  data-testid="order-confirmation-delivery-date"
+                >
+                  <p className="text-xs font-semibold text-[#80634e]">Scheduled delivery</p>
+                  <p className="mt-0.5 text-base font-bold">
+                    {formatIndiaDateLabel(successDeliveryDate)}
+                  </p>
+                </div>
+              )}
               <Button
                 onClick={() => {
                   setIsCartOpen(false);
@@ -2583,20 +2624,66 @@ export function CartDrawer() {
                         </Popover>
                       </div>
                     )}
-                    {!isPreorderCart && isNextDayDelivery && (
+                    {!isPreorderCart && (
                       <div
-                        className="mx-4 mt-4 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm"
-                        style={{ borderColor: "#E8883A", backgroundColor: "#FFF4E8", color: "#7B3A14" }}
-                        role="status"
-                        data-testid="next-day-delivery-notice"
+                        className="mx-4 mt-4 rounded-xl border border-[#e6c7a9] bg-[#fffaf5] p-3.5 text-[#542813]"
+                        data-testid="delivery-schedule-choice"
                       >
-                        <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                        <span>
-                          <strong>Next-day delivery</strong>
-                          <span className="block text-xs">
-                            Expected {formatIndiaDateLabel(currentDeliverySchedule.deliveryDate)}
-                          </span>
-                        </span>
+                        <div className="mb-2.5 flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 shrink-0 text-[#a84d12]" aria-hidden="true" />
+                          <div>
+                            <p className="text-sm font-bold">Delivery schedule</p>
+                            <p className="text-xs text-[#80634e]">
+                              {isAfterDeliveryCutoff
+                                ? "Orders placed after 5:00 PM are delivered tomorrow."
+                                : "Choose when you’d like your order delivered."}
+                            </p>
+                          </div>
+                        </div>
+                        <div
+                          className="grid grid-cols-2 gap-2"
+                          role="radiogroup"
+                          aria-label="Choose delivery date"
+                        >
+                          <button
+                            type="button"
+                            role="radio"
+                            aria-checked={!isNextDayDelivery}
+                            disabled={isAfterDeliveryCutoff}
+                            onClick={() => setNextDayDeliverySelected(false)}
+                            className={`rounded-xl border px-3 py-2 text-left transition-colors ${
+                              !isNextDayDelivery
+                                ? "border-[#a84d12] bg-[#fff0df] ring-1 ring-[#a84d12]"
+                                : "border-[#e6c7a9] bg-white"
+                            } ${isAfterDeliveryCutoff ? "cursor-not-allowed opacity-45" : "hover:border-[#c8651b]"}`}
+                            data-testid="delivery-option-today"
+                          >
+                            <span className="block text-sm font-bold">Today</span>
+                            <span className="block text-xs text-[#80634e]">
+                              {formatIndiaDateLabel(todayDeliveryDate)}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            role="radio"
+                            aria-checked={isNextDayDelivery}
+                            onClick={() => setNextDayDeliverySelected(true)}
+                            className={`rounded-xl border px-3 py-2 text-left transition-colors ${
+                              isNextDayDelivery
+                                ? "border-[#a84d12] bg-[#fff0df] ring-1 ring-[#a84d12]"
+                                : "border-[#e6c7a9] bg-white"
+                            } hover:border-[#c8651b]`}
+                            data-testid="delivery-option-tomorrow"
+                          >
+                            <span className="block text-sm font-bold">Next day</span>
+                            <span className="block text-xs text-[#80634e]">
+                              {formatIndiaDateLabel(tomorrowDeliveryDate)}
+                            </span>
+                          </button>
+                        </div>
+                        <p className="mt-2 text-xs font-semibold text-[#704526]" role="status">
+                          Expected delivery: {formatIndiaDateLabel(currentDeliverySchedule.deliveryDate)}
+                        </p>
                       </div>
                     )}
 
