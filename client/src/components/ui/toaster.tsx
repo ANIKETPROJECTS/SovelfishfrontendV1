@@ -7,7 +7,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import fishIcon from "@assets/fish_(1)_1779944030843.png"
+import { CircleAlert, Fish } from "lucide-react"
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -15,43 +15,39 @@ export function Toaster() {
   return (
     <ToastProvider duration={3000}>
       {toasts.map(function ({ id, title, description, action, variant, ...props }) {
-        if (variant === "destructive") {
-          return (
-            <Toast key={id} variant="destructive" {...props}>
-              <div className="grid gap-1">
-                {title && <ToastTitle>{title}</ToastTitle>}
-                {description && <ToastDescription>{description}</ToastDescription>}
-              </div>
-              {action}
-              <ToastClose />
-            </Toast>
-          )
-        }
+        const isDestructive = variant === "destructive"
+        const NotificationIcon = isDestructive ? CircleAlert : Fish
 
         return (
-          <Toast key={id} {...props}>
-            <div className="flex items-center gap-2.5">
-              <img
-                src={fishIcon}
-                alt=""
-                className="w-5 h-5 shrink-0"
-                style={{ filter: "brightness(0) saturate(100%) invert(55%) sepia(90%) saturate(700%) hue-rotate(340deg) brightness(105%)" }}
-              />
-              <span
-                className="text-white text-sm font-medium whitespace-nowrap tracking-wide"
-                style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500 }}
-              >
-                {title}
+          <Toast
+            key={id}
+            variant={variant}
+            {...props}
+            className={`w-[calc(100vw-2rem)] max-w-[420px] items-start gap-3 rounded-2xl border px-4 py-3.5 pr-12 text-white shadow-xl ${
+              isDestructive
+                ? "border-[#a76344] border-l-4 border-l-[#e8883a] bg-[#542813]"
+                : "border-[#a76344] border-l-4 border-l-[#e8a45b] bg-[#542813]"
+            }`}
+          >
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${isDestructive ? "bg-[#a44728]" : "bg-[#c8651b]"}`}>
+                <NotificationIcon className="h-5 w-5" aria-hidden="true" />
               </span>
-              {description && (
-                <span
-                  className="text-white/80 text-xs whitespace-nowrap"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
-                >
-                  {description}
-                </span>
-              )}
+              <div className="min-w-0 flex-1">
+                {title && (
+                  <ToastTitle className="break-words font-display text-sm font-bold leading-snug text-white">
+                    {title}
+                  </ToastTitle>
+                )}
+                {description && (
+                  <ToastDescription className="mt-1 break-words text-xs leading-relaxed text-white/85">
+                    {description}
+                  </ToastDescription>
+                )}
+              </div>
             </div>
+            {action}
+            <ToastClose aria-label="Dismiss notification" />
           </Toast>
         )
       })}
