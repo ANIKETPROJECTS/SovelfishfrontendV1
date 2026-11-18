@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { useCustomer } from "@/context/CustomerContext";
 import Lottie from "lottie-react";
 import fishAnimation from "@assets/fish_1776404909449.json";
 import otpAnimation from "@/assets/lottie/otp-animation.json";
@@ -81,7 +81,6 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
   const [focusedOtpIndex, setFocusedOtpIndex] = useState<number | null>(null);
   const [showWhatsAppNotif, setShowWhatsAppNotif] = useState(false);
   const { toast } = useToast();
-  const { refetch } = useCustomer();
   const queryClient = useQueryClient();
 
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -218,13 +217,11 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
             <div
               style={{
                 position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
+                top: "152px",
+                right: "16px",
                 zIndex: 99999,
                 display: "flex",
-                justifyContent: "center",
-                paddingTop: "16px",
+                justifyContent: "flex-end",
                 pointerEvents: "none",
               }}
             >
@@ -248,7 +245,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.845L.057 23.743a.5.5 0 0 0 .614.676l6.076-1.583A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.593-.504-5.088-1.383l-.364-.215-3.762.98.999-3.657-.236-.376A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
                   </svg>
-                  <span style={{ color: "white", fontSize: "14px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  <span style={{ color: "white", fontSize: "14px", fontWeight: 600, whiteSpace: "normal", lineHeight: 1.35, textAlign: "center" }}>
                     OTP sent on your registered WhatsApp number
                   </span>
                 </div>
@@ -332,8 +329,8 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                     <span className="text-base font-bold text-[#542813]">+91</span>
                   </div>
                   <input
-                    id="customer-login-phone"
                     ref={phoneRef}
+                    id="customer-login-phone"
                     type="tel"
                     inputMode="numeric"
                     value={phone}
@@ -341,7 +338,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                     placeholder="0000000000"
-                    className="w-full flex-1 bg-transparent text-xl font-bold tracking-[0.1em] text-[#542813] outline-none placeholder:font-normal placeholder:tracking-normal placeholder:text-[#b7a18b] sm:text-2xl"
+                    className="w-full flex-1 bg-transparent text-xl font-semibold tracking-[0.12em] text-[#392719] outline-none placeholder:text-[#c8b6a8] placeholder:font-normal placeholder:text-lg placeholder:tracking-normal"
                     style={{ caretColor: BRAND_ORANGE }}
                     data-testid="input-phone"
                   />
@@ -356,14 +353,14 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                 loadingText="Sending OTP..."
                 testId="button-send-otp"
               >
-                Login
+                Continue
               </SolidButton>
 
-              <p className="mt-4 text-center text-xs leading-relaxed text-[#80634e]">
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-[#8c796a]">
                 By continuing, you agree to our{" "}
-                <span className="cursor-pointer font-semibold text-[#7B3A14] underline">Terms</span>
+                <Link href="/terms" className="font-semibold text-[#7B3A14] underline underline-offset-2">Terms</Link>
                 {" & "}
-                <span className="cursor-pointer font-semibold text-[#7B3A14] underline">Privacy Policy</span>
+                <Link href="/privacy" className="font-semibold text-[#7B3A14] underline underline-offset-2">Privacy Policy</Link>
               </p>
             </>
           ) : (
@@ -378,6 +375,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                   <p className="text-sm font-semibold text-[#542813]">+91 {phone}</p>
                   <button
                     className="text-xs font-bold text-[#C8651B] underline"
+                    type="button"
                     onClick={() => { setOtpSent(false); setOtp(createEmptyOtp()); }}
                     data-testid="button-back-to-phone"
                   >
@@ -403,7 +401,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                       onPaste={handleOtpPaste}
                       onFocus={() => setFocusedOtpIndex(i)}
                       onBlur={() => setFocusedOtpIndex(null)}
-                      className="h-12 w-9 rounded-xl border-2 text-center text-xl font-bold outline-none transition-all duration-200 focus:scale-[1.04] sm:h-[58px] sm:w-[50px] sm:text-2xl"
+                      className="h-12 w-10 rounded-xl border-2 text-center text-xl font-bold outline-none transition-all duration-200 focus:scale-[1.04] sm:h-[54px] sm:w-[46px] sm:rounded-2xl sm:text-2xl"
                       style={{
                         borderColor: isFocused ? BRAND_HIGHLIGHT : "#ead7c3",
                         background: "#fffaf4",
@@ -428,13 +426,14 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                 Verify
               </SolidButton>
 
-              <p className="mt-4 text-center text-sm text-[#80634e]">
+              <p className="mt-4 text-center text-[13px] text-[#8c796a]">
                 Didn't get it?{" "}
                 <button
                   type="button"
-                  className="font-semibold text-[#C8651B] underline"
+                  className="font-semibold text-[#C8651B] underline underline-offset-2"
                   onClick={handlePhoneSubmit}
                   disabled={loading}
+                  data-testid="button-resend-otp"
                 >
                   Resend OTP
                 </button>
