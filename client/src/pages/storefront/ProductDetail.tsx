@@ -763,7 +763,7 @@ export default function ProductDetail() {
             <div className="mb-5 flex justify-center">
               <h2 className="font-display text-center text-2xl font-bold text-[#542813] sm:text-3xl">Fresh Picks for You</h2>
             </div>
-            <div className="mx-auto grid max-w-[680px] grid-cols-2 items-start gap-3 sm:gap-5">
+            <div className="grid grid-cols-2 items-start gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
               {recommendedCards.map((card) => (
                 <div key={card.key} className="min-w-0">
                   <ProductCard
