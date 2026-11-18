@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@shared/schema";
-import { getProductVariantKey } from "@/lib/productVariants";
-import { ArrowRight, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import fishImg from "@assets/Gemini_Generated_Image_w6wqkkw6wqkkw6wq_(1)_1772713077919.png";
 import prawnsImg from "@assets/Gemini_Generated_Image_5xy0sd5xy0sd5xy0_1772713090650.png";
@@ -47,7 +46,6 @@ interface Props {
 }
 
 export function CategoryMenuDropdown({ open, onClose }: Props) {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [, navigate] = useLocation();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -61,25 +59,9 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
 
   const visibleCategories = categories.filter((c) => c.isActive);
 
-  const activeCategoryName = activeCategory ?? "All";
-
   const storefrontProducts = allProducts.filter(
     (product) => !product.isArchived && !product.batchExpired && isNormalStorefrontProduct(product),
   );
-  const activeProducts = activeCategoryName === "All"
-    ? storefrontProducts
-    : storefrontProducts.filter((product) => product.category === activeCategoryName);
-  const activeProductEntries = activeProducts.flatMap((product) => {
-    const variants = product.weightVariants ?? [];
-    if (variants.length === 0) {
-      return [{ product, variant: undefined, key: product.id }];
-    }
-    return variants.map((variant, index) => ({
-      product,
-      variant,
-      key: `${product.id}:${getProductVariantKey(variant)}:${index}`,
-    }));
-  });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -102,24 +84,7 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const handleProductClick = (
-    product: Product,
-    variant?: NonNullable<Product["weightVariants"]>[number],
-  ) => {
-    onClose();
-    const search = new URLSearchParams();
-    if (variant) search.set("saleOption", getProductVariantKey(variant));
-    if (product.weightVariants?.length) search.set("showOptions", "1");
-    const query = search.toString();
-    navigate(`/product/${product.id}${query ? `?${query}` : ""}`);
-  };
-
   const handleCategoryClick = (catName: string) => {
-    onClose();
-    navigate(`/category/${encodeURIComponent(catName)}`);
-  };
-
-  const handleViewAll = (catName: string) => {
     onClose();
     navigate(`/category/${encodeURIComponent(catName)}`);
   };
@@ -161,29 +126,22 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
           >
             <button
               type="button"
-              aria-pressed={activeCategoryName === "All"}
               onClick={() => handleCategoryClick("All")}
-              onMouseEnter={() => setActiveCategory("All")}
-              className={`group flex min-h-[82px] flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-center transition duration-200 sm:min-h-[92px] ${
-                activeCategoryName === "All"
-                  ? "border-[#C8651B] bg-[#C8651B] text-white shadow-md"
-                  : "border-[#EAD3BB] bg-white text-[#7B3A14] hover:-translate-y-0.5 hover:border-[#C8651B] hover:shadow"
-              }`}
+              className="group flex min-h-[82px] flex-col items-center justify-center gap-1.5 rounded-xl border border-[#EAD3BB] bg-white px-2 py-2 text-center text-[#7B3A14] transition duration-200 hover:-translate-y-0.5 hover:border-[#C8651B] hover:shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8651B] sm:min-h-[92px]"
               data-testid="menu-category-all"
             >
               <img
                 src={bagIcon}
                 alt=""
-                className={`h-8 w-8 object-contain ${activeCategoryName === "All" ? "brightness-0 invert" : ""}`}
+                className="h-8 w-8 object-contain"
               />
               <span className="text-xs font-semibold sm:text-sm">All</span>
-              <span className={`text-[10px] ${activeCategoryName === "All" ? "text-white/80" : "text-[#9D6B4A]"}`}>
+              <span className="text-[10px] text-[#9D6B4A]">
                 {formatItemCount(storefrontProducts.reduce((count, product) => count + getProductOptionCount(product), 0))}
               </span>
             </button>
 
             {visibleCategories.map((category) => {
-              const isActive = category.name === activeCategoryName;
               const image = category.imageUrl || getFallbackImage(category.name);
               const count = storefrontProducts
                 .filter((product) => product.category === category.name)
@@ -192,14 +150,8 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
                 <button
                   key={category.id}
                   type="button"
-                  aria-pressed={isActive}
                   onClick={() => handleCategoryClick(category.name)}
-                  onMouseEnter={() => setActiveCategory(category.name)}
-                  className={`group flex min-h-[82px] flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-center transition duration-200 sm:min-h-[92px] ${
-                    isActive
-                      ? "border-[#C8651B] bg-[#C8651B] text-white shadow-md"
-                      : "border-[#EAD3BB] bg-white text-[#7B3A14] hover:-translate-y-0.5 hover:border-[#C8651B] hover:shadow"
-                  }`}
+                  className="group flex min-h-[82px] flex-col items-center justify-center gap-1.5 rounded-xl border border-[#EAD3BB] bg-white px-2 py-2 text-center text-[#7B3A14] transition duration-200 hover:-translate-y-0.5 hover:border-[#C8651B] hover:shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8651B] sm:min-h-[92px]"
                   data-testid={`menu-category-${category.name.toLowerCase().replace(/\s+/g, "-")}`}
                 >
                   <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-white/90">
@@ -210,7 +162,7 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
                     />
                   </span>
                   <span className="line-clamp-1 text-xs font-semibold sm:text-sm">{category.name}</span>
-                  <span className={`text-[10px] ${isActive ? "text-white/80" : "text-[#9D6B4A]"}`}>
+                  <span className="text-[10px] text-[#9D6B4A]">
                     {formatItemCount(count)}
                   </span>
                 </button>
@@ -218,60 +170,6 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
             })}
           </div>
 
-          <div className="mt-4 rounded-xl border border-[#EAD3BB] bg-white p-3 sm:mt-5 sm:p-5">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="truncate text-base font-bold text-[#7B3A14] sm:text-lg">
-                  {activeCategoryName === "All" ? "Popular products" : activeCategoryName}
-                </h3>
-                <p className="mt-0.5 text-xs font-medium text-[#8D6953]">
-                  Open a product to view details and available sizes.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleViewAll(activeCategoryName)}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-[#7B3A14] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#5C2A0E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8651B] sm:px-4"
-              >
-                View all <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </div>
-
-            {activeProducts.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-[#D8B99C] bg-[#FFFAF4] px-4 py-6 text-center text-sm font-medium text-[#7B3A14]">
-                No products available in this category yet.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {activeProductEntries.map(({ product, variant, key }, index) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleProductClick(product, variant)}
-                    aria-label={`View ${product.name}${variant ? ` ${variant.label}` : ""} details`}
-                    className="group flex min-h-[76px] items-center gap-3 rounded-lg border border-[#F0E3D5] bg-[#FFFAF4] p-2.5 text-left transition hover:border-[#C8651B] hover:bg-[#FFF3E5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C8651B]"
-                    data-testid={`menu-product-${product.id}-${index}`}
-                  >
-                    <img
-                      src={product.imageUrl || getFallbackImage(product.category)}
-                      alt=""
-                      loading="lazy"
-                      className="h-14 w-14 shrink-0 rounded-md bg-[#F3E0CA] object-cover"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-[#7B3A14]">
-                        {product.name}
-                      </span>
-                      <span className="mt-1 block truncate text-xs font-medium text-[#8D6953]">
-                        {variant ? variant.label : "View product details"}
-                      </span>
-                    </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-[#C8651B] transition group-hover:translate-x-0.5" aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </section>
     </div>
