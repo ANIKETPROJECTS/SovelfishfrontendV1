@@ -1,11 +1,12 @@
 import express, { type Express } from "express";
-import { readdir, stat } from "node:fs/promises";
+import { open, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 
 const BANNER_VIDEO_DIRECTORY = path.resolve(process.cwd(), "Bannervids");
 const VIDEO_EXTENSIONS = new Set([".mp4", ".webm", ".m4v"]);
 const POSTER_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 const MAX_BANNER_VIDEOS = 4;
+const GIT_LFS_POINTER_PREFIX = "version https://git-lfs.github.com/spec/v1";
 
 function titleFromFilename(filename: string) {
   const baseName = path.basename(filename, path.extname(filename));
@@ -18,6 +19,17 @@ function titleFromFilename(filename: string) {
 
 function assetUrl(filename: string, modifiedAt: number) {
   return `/Bannervids/${encodeURIComponent(filename)}?v=${Math.trunc(modifiedAt)}`;
+}
+
+async function isGitLfsPointer(filePath: string) {
+  const handle = await open(filePath, "r");
+  try {
+    const header = Buffer.alloc(96);
+    const { bytesRead } = await handle.read(header, 0, header.length, 0);
+    return header.toString("utf8", 0, bytesRead).startsWith(GIT_LFS_POINTER_PREFIX);
+  } finally {
+    await handle.close();
+  }
 }
 
 export function registerBannerVideoRoutes(app: Express) {
@@ -40,6 +52,31 @@ export function registerBannerVideoRoutes(app: Express) {
         .filter((file) => VIDEO_EXTENSIONS.has(path.extname(file.name).toLowerCase()))
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }))
         .slice(0, MAX_BANNER_VIDEOS);
+
+      const mediaFiles = videos.flatMap((video) => {
+        const baseName = path.basename(video.name, path.extname(video.name)).toLowerCase();
+        const posterName = posterByBaseName.get(baseName);
+        return posterName ? [video.name, posterName] : [video.name];
+      });
+      const lfsPointerFiles = (
+        await Promise.all(
+          mediaFiles.map(async (filename) => ({
+            filename,
+            isPointer: await isGitLfsPointer(path.join(BANNER_VIDEO_DIRECTORY, filename)),
+          })),
+        )
+      )
+        .filter((file) => file.isPointer)
+        .map((file) => file.filename);
+
+      if (lfsPointerFiles.length > 0) {
+        console.error(
+          "[banner-videos] Git LFS pointer files found instead of media. Run `git lfs pull` on this server:",
+          lfsPointerFiles.join(", "),
+        );
+        res.status(503).json({ message: "Banner media has not been downloaded from Git LFS on this server" });
+        return;
+      }
 
       const results = await Promise.all(videos.map(async (video) => {
         const videoPath = path.join(BANNER_VIDEO_DIRECTORY, video.name);
