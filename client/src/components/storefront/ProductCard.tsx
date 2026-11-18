@@ -1,4 +1,4 @@
-import { Plus, Minus, Info } from "lucide-react";
+import { Plus, Minus, Info, Fish } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
@@ -22,6 +22,7 @@ type ProductCardProps = {
   onProductClick?: () => void;
   detailVariantKey?: string;
   brandText?: boolean;
+  compactBrandCard?: boolean;
   variantDisplay?: "separate-cards" | "single-card";
 };
 
@@ -99,6 +100,7 @@ function SingleProductCard({
   onProductClick,
   detailVariantKey,
   brandText = false,
+  compactBrandCard = false,
   variantDisplay = "separate-cards",
 }: ProductCardProps) {
   const { addToCart, removeFromCart, updateQuantity, items, computeMaxQty } = useCart();
@@ -158,21 +160,32 @@ function SingleProductCard({
 
   return (
     <div
-      className={`group relative ${brandText ? "overflow-hidden rounded-2xl bg-[#7B3A14]" : "bg-white"} flex flex-col h-full transition-all duration-300 ${
+      className={`group relative ${brandText ? `overflow-hidden rounded-2xl bg-[#7B3A14] ${compactBrandCard ? "h-auto max-w-[320px] self-start" : "h-full"}` : "bg-white"} flex w-full flex-col transition-all duration-300 ${
         onProductClick || !disableNavigation ? "cursor-pointer" : ""
       }`}
       onClick={onProductClick ?? (disableNavigation ? undefined : () => setLocation(getProductDetailPath()))}
     >
       <div className={`relative w-full bg-muted/30 overflow-hidden ${brandText ? "aspect-[4/5]" : "aspect-square mb-3"}`}>
-        <img
-          src={product.imageUrl || getFallbackImage(product.category)}
-          alt={product.name}
-          loading="lazy"
-          decoding="async"
-          className={`w-full h-full object-cover transition-transform duration-700 ${
-            isUnavailable ? "grayscale opacity-60" : "group-hover:scale-110"
-          }`}
-        />
+        {brandText && preorderContext && !product.imageUrl ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#f6e7d5] px-4 text-center text-[#7B3A14]">
+            <span className="grid h-16 w-16 place-items-center rounded-full bg-white shadow-sm">
+              <Fish className="h-9 w-9" aria-hidden="true" />
+            </span>
+            <span className="max-w-[14rem] text-sm font-bold leading-snug sm:text-base">
+              Fresh catch photo coming soon
+            </span>
+          </div>
+        ) : (
+          <img
+            src={product.imageUrl || getFallbackImage(product.category)}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+            className={`h-full w-full object-cover transition-transform duration-700 ${
+              isUnavailable ? "grayscale opacity-60" : "group-hover:scale-110"
+            }`}
+          />
+        )}
 
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {product.status === "limited" && (
@@ -207,7 +220,7 @@ function SingleProductCard({
         )}
       </div>
 
-      <div className={`flex-1 flex flex-col ${brandText ? "bg-[#7B3A14] px-3 pt-2 pb-3 sm:px-3 sm:pt-3" : "px-1 pb-3"}`}>
+      <div className={`flex ${brandText && !compactBrandCard ? "flex-1" : "flex-none"} flex-col ${brandText ? "bg-[#7B3A14] px-3 pt-2 pb-3 sm:px-3 sm:pt-3" : "px-1 pb-3"}`}>
         <h3 className={`font-sans ${brandText ? "font-bold text-white text-lg sm:text-xl" : "font-medium text-base sm:text-lg text-foreground"} leading-snug mb-1 line-clamp-2`}>
           {product.name}
         </h3>
@@ -244,7 +257,7 @@ function SingleProductCard({
           </div>
         )}
 
-        <div className={`flex items-center justify-between mt-auto ${brandText ? "pt-0.5" : "pt-1"}`}>
+        <div className={`flex items-center justify-between ${brandText && !compactBrandCard ? "mt-auto pt-0.5" : brandText ? "mt-2 pt-0.5" : "mt-auto pt-1"}`}>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`font-bold ${brandText ? "text-xl sm:text-2xl text-white" : "text-lg sm:text-xl text-foreground"}`}>₹{formatStorePrice(displayPrice)}</span>
             {!isSaleVariantCard && <span className={`text-xs ${brandText ? "font-medium text-white/85" : "text-muted-foreground"}`}>{product.unit}</span>}
