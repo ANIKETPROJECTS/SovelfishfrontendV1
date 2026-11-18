@@ -158,15 +158,13 @@ export default function Home() {
     if (preorderProducts.length === 0) return null;
     return (
       <section key={key} className="home-content-section mb-7" data-testid="section-preorder">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="home-section-heading text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
-              {title}
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Reserve these items for a future delivery date
-            </p>
-          </div>
+        <div className="mb-4 sm:mb-5">
+          <h2 className="text-center font-display text-2xl font-bold tracking-[-0.03em] text-[#7B3A14] sm:text-3xl">
+            {title}
+          </h2>
+          <p className="mt-1 text-center text-sm font-medium text-[#704526]">
+            Reserve these items for a future delivery date
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {preorderProducts.map((product) => (
