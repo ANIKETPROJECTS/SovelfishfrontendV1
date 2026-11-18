@@ -6,6 +6,8 @@ import { useProducts } from "@/hooks/use-products";
 import { useHub } from "@/context/HubContext";
 import { useCityArea } from "@/context/CityAreaContext";
 import { getCartLineId, normalizeCuttingMethods } from "@shared/cuttingMethods";
+import { isPreorderDateAvailableForAll } from "@shared/preorderAvailability";
+import { addDaysToDateKey, getIndiaDateKey } from "@shared/nextDayDelivery";
 
 export interface ComboInclude {
   productId: string;
@@ -21,6 +23,8 @@ export interface CartItem extends Omit<Product, 'id'> {
   isPreviewOnly?: boolean;
   /** True when this item was added from the dedicated preorder storefront area. */
   isPreorderCheckout?: boolean;
+  /** Shared India-calendar delivery date chosen for the preorder cart. */
+  preorderDeliveryDate?: string | null;
   isCombo?: boolean;
   originalId?: string;
   weightKgPerUnit?: number;
@@ -49,6 +53,7 @@ interface CartContextType {
   updateQuantity: (productId: string | number, quantity: number) => void;
   updateInstruction: (productId: string | number, instruction: string) => void;
   updateCuttingMethods: (productId: string | number, methods: string[]) => void;
+  updatePreorderDeliveryDate: (dateKey: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -286,7 +291,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     let acceptedQuantity = 0;
-    let modeSwitchMessage = "";
     const cartBaseId = String((product as CartItem).cartBaseId ?? product.id);
     const availableCuttingMethods = normalizeCuttingMethods(
       (product as CartItem).availableCuttingMethods ?? product.cuttingMethods,
@@ -294,6 +298,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const selectedCuttingMethods = normalizeCuttingMethods(
       (product as CartItem).selectedCuttingMethods,
     ).filter((method) => availableCuttingMethods.includes(method));
+    const isPreorderProduct =
+      (product as CartItem).isPreorderCheckout === true ||
+      product.preorderMode === "preorder_only";
+    const oppositeModeItems = items.filter(
+      (item) => Boolean(item.isPreorderCheckout) !== isPreorderProduct,
+    );
+    if (oppositeModeItems.length > 0) {
+      toast({
+        title: "Keep one order type in your cart",
+        description: isPreorderProduct
+          ? "Your cart has regular items. Place or remove them before adding preorder products."
+          : "Your cart has preorder items. Place or remove them before adding regular products.",
+        duration: 4500,
+        variant: "destructive",
+      });
+      return;
+    }
+    const selectedPreorderDate = isPreorderProduct
+      ? (product as CartItem).preorderDeliveryDate ??
+        items.find((item) => item.isPreorderCheckout)?.preorderDeliveryDate ??
+        null
+      : null;
+    if (isPreorderProduct) {
+      const firstFutureDate = addDaysToDateKey(getIndiaDateKey(), 1);
+      const preorderAvailability = [
+        ...items
+          .filter((item) => item.isPreorderCheckout)
+          .map((item) => item.preorderAvailability),
+        product.preorderAvailability,
+      ];
+      if (
+        !selectedPreorderDate ||
+        selectedPreorderDate < firstFutureDate ||
+        !isPreorderDateAvailableForAll(selectedPreorderDate, preorderAvailability)
+      ) {
+        toast({
+          title: "Choose an available preorder date",
+          description: "Select a valid future delivery date for every preorder item before adding this product.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     const cartProduct = {
       ...product,
       id: getCartLineId(cartBaseId, selectedCuttingMethods, {
@@ -306,34 +353,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } as CartItem;
 
     setItems((current) => {
-      const isPreorderProduct =
-        (product as CartItem).isPreorderCheckout === true ||
-        product.preorderMode === "preorder_only";
-
       // A cart can only contain one checkout mode. Preorder orders use a
-      // calendar date, while normal orders use the regular delivery flow, so
-      // never mix the two kinds of products in one cart.
-      const oppositeModeItems = current.filter(
+      // calendar date, while normal orders use the regular delivery flow.
+      // If another tab added the opposite type, preserve the cart unchanged.
+      const hasOppositeModeItems = current.some(
         (item) => Boolean(item.isPreorderCheckout) !== isPreorderProduct,
       );
-      const modeItems = oppositeModeItems.length > 0
-        ? current.filter((item) => Boolean(item.isPreorderCheckout) === isPreorderProduct)
-        : current;
-
-      if (oppositeModeItems.length > 0) {
-        modeSwitchMessage = isPreorderProduct
-          ? "Normal products were removed because preorder items use a separate delivery date."
-          : "Preorder products were removed because normal items use the regular delivery flow.";
-      }
-
-      const existing = modeItems.find((i) => String(i.id) === String(cartProduct.id));
+      if (hasOppositeModeItems) return current;
+      const existing = current.find((i) => String(i.id) === String(cartProduct.id));
       const candidate = {
         ...cartProduct,
         quantity: existing?.quantity ?? 0,
       } as CartItem;
       const maxTotal = calcMaxQty(
         candidate,
-        modeItems,
+        current,
         liveStockByProductId,
         liveProductsLoaded,
       );
@@ -350,41 +384,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       if (existing) {
-        return modeItems.map((i) =>
-          String(i.id) === String(cartProduct.id)
-            ? {
-                ...i,
-                quantity: i.quantity + acceptedQuantity,
-                // If the same product is added from the preorder section later,
-                // keep the cart in preorder checkout mode for that item.
-                isPreorderCheckout:
-                  i.isPreorderCheckout ||
-                  (product as CartItem).isPreorderCheckout ||
-                  product.preorderMode === "preorder_only",
-              }
-            : i
-        );
+        return current.map((item) => {
+          if (String(item.id) === String(cartProduct.id)) {
+            return {
+              ...item,
+              quantity: item.quantity + acceptedQuantity,
+              isPreorderCheckout: isPreorderProduct,
+              preorderDeliveryDate: selectedPreorderDate ?? item.preorderDeliveryDate ?? null,
+            };
+          }
+          if (item.isPreorderCheckout && selectedPreorderDate) {
+            return { ...item, preorderDeliveryDate: selectedPreorderDate };
+          }
+          return item;
+        });
       }
       return [
-        ...modeItems,
+        ...current.map((item) =>
+          item.isPreorderCheckout && selectedPreorderDate
+            ? { ...item, preorderDeliveryDate: selectedPreorderDate }
+            : item,
+        ),
         {
         ...cartProduct,
           quantity: acceptedQuantity,
           isPreorderCheckout:
             isPreorderProduct,
+          preorderDeliveryDate: selectedPreorderDate,
         },
       ];
     });
 
     if (acceptedQuantity <= 0) return;
-    if (modeSwitchMessage) {
-      setAppliedCoupon(null);
-      toast({
-        title: "Cart updated",
-        description: modeSwitchMessage,
-        duration: 3500,
-      });
-    }
     toast({
       title: "Fresh catch added to your Tokri!",
       duration: 2000,
@@ -465,6 +496,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
     });
   };
+
+  const updatePreorderDeliveryDate = useCallback((dateKey: string) => {
+    setItems((current) => current.map((item) =>
+      item.isPreorderCheckout
+        ? { ...item, preorderDeliveryDate: dateKey }
+        : item,
+    ));
+  }, []);
 
   const clearCart = () => {
     setItems([]);
@@ -557,6 +596,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         updateInstruction,
         updateCuttingMethods,
+        updatePreorderDeliveryDate,
         clearCart,
         totalItems,
         totalPrice,

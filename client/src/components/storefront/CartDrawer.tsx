@@ -68,8 +68,13 @@ import {
   reverseGeocodeCoordinates,
 } from "@/lib/googleMapsLocation";
 import type { GooglePlaceSuggestion } from "@/lib/googleMapsLocation";
-import { isPreorderDateAvailableForAll, normalizePreorderAvailability } from "@shared/preorderAvailability";
 import {
+  findFirstPreorderDateKey,
+  isPreorderDateAvailableForAll,
+  normalizePreorderAvailability,
+} from "@shared/preorderAvailability";
+import {
+  addDaysToDateKey,
   applyAutomaticNextDayDelivery,
   formatIndiaDateLabel,
   getIndiaDateKey,
@@ -98,10 +103,7 @@ const emptyForm: Omit<CustomerAddress, "id"> = {
 };
 
 function startOfTomorrow(): Date {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  date.setHours(0, 0, 0, 0);
-  return date;
+  return dateFromKey(addDaysToDateKey(getIndiaDateKey(), 1));
 }
 
 const PREORDER_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -114,6 +116,11 @@ function dateFromKey(dateKey: string): Date {
 }
 
 function formatPreorderAvailability(item: any): string {
+  const earliestDate = findFirstPreorderDateKey(
+    addDaysToDateKey(getIndiaDateKey(), 1),
+    [item.preorderAvailability],
+  );
+  if (!earliestDate) return "No eligible future delivery dates";
   const rule = normalizePreorderAvailability(item.preorderAvailability);
   if (rule.type === "all") return "Available on all future dates";
   if (rule.type === "weekdays") {
@@ -262,7 +269,7 @@ function areStockWarningsEqual(
 }
 
 export function CartDrawer() {
-  const { isCartOpen, setIsCartOpen, items, updateQuantity, updateInstruction, updateCuttingMethods, removeFromCart, totalPrice, clearCart, appliedCoupon, setAppliedCoupon, discountAmount, computeMaxQty } = useCart();
+  const { isCartOpen, setIsCartOpen, items, updateQuantity, updateInstruction, updateCuttingMethods, updatePreorderDeliveryDate, removeFromCart, totalPrice, clearCart, appliedCoupon, setAppliedCoupon, discountAmount, computeMaxQty } = useCart();
   const { mutate: createOrder, isPending } = useCreateOrder();
   const { customer } = useCustomer();
   const { selectedSubHub, isHubReady } = useHub();
@@ -515,7 +522,10 @@ export function CartDrawer() {
   const [couponError, setCouponError] = useState("");
   const [showAllCoupons, setShowAllCoupons] = useState(false);
   const [couponExpanded, setCouponExpanded] = useState(true);
-  const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(startOfTomorrow);
+  const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(() => {
+    const savedDate = items.find((item) => item.isPreorderCheckout)?.preorderDeliveryDate;
+    return savedDate ? dateFromKey(savedDate) : dateFromKey(addDaysToDateKey(getIndiaDateKey(), 1));
+  });
   const [scheduleNow, setScheduleNow] = useState<Date>(() => new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -678,10 +688,7 @@ export function CartDrawer() {
   const isPreorderDateSelectable = useCallback((date: Date): boolean => {
     // Preorders are for future delivery only. Keep today and all earlier dates
     // unavailable even if a slot or product schedule happens to match.
-    const tomorrow = startOfTomorrow();
-    const candidate = new Date(date);
-    candidate.setHours(0, 0, 0, 0);
-    if (candidate < tomorrow) return false;
+    if (getDateKey(date) < addDaysToDateKey(getIndiaDateKey(), 1)) return false;
     return isPreorderProductDateAvailable(date);
   }, [isPreorderProductDateAvailable]);
 
@@ -700,14 +707,27 @@ export function CartDrawer() {
 
   useEffect(() => {
     if (!isPreorderCart) return;
-    if (!firstValidPreorderDate) {
-      setSelectedDeliveryDate(startOfTomorrow());
+    const savedDate = preorderItems.find((item) => item.preorderDeliveryDate)?.preorderDeliveryDate;
+    if (savedDate) {
+      if (getDateKey(selectedDeliveryDate) !== savedDate) {
+        setSelectedDeliveryDate(dateFromKey(savedDate));
+      }
       return;
     }
+    if (!firstValidPreorderDate) return;
     if (!isPreorderDateSelectable(selectedDeliveryDate)) {
       setSelectedDeliveryDate(firstValidPreorderDate);
+      updatePreorderDeliveryDate(getDateKey(firstValidPreorderDate));
     }
-  }, [isPreorderCart, selectedDeliveryDate, firstValidPreorderDate, isPreorderDateSelectable]);
+  }, [
+    isPreorderCart,
+    preorderItems,
+    selectedDeliveryDate,
+    firstValidPreorderDate,
+    isPreorderDateSelectable,
+    updatePreorderDeliveryDate,
+    getDateKey,
+  ]);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState(emptyForm);
@@ -2003,9 +2023,16 @@ export function CartDrawer() {
                                 </p>
                               )}
                                {item.isPreorderCheckout && (
-                                  <p className="text-[11px] leading-snug text-[#7B3A14] mt-1" data-testid={`availability-${item.id}`}>
-                                   {formatPreorderAvailability(item)}
-                                 </p>
+                                  <div className="mt-1 space-y-0.5 text-[11px] leading-snug text-[#7B3A14]">
+                                    <p className="font-bold" data-testid={`preorder-label-${item.id}`}>
+                                      Preorder · delivery {item.preorderDeliveryDate
+                                        ? formatIndiaDateLabel(item.preorderDeliveryDate)
+                                        : "date to be selected"}
+                                    </p>
+                                    <p data-testid={`availability-${item.id}`}>
+                                      {formatPreorderAvailability(item)}
+                                    </p>
+                                  </div>
                                )}
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-sm font-bold text-[#a84d12]">₹{item.price}</span>
@@ -2512,11 +2539,16 @@ export function CartDrawer() {
 
                     {isPreorderCart && (
                       <div className="px-4 mt-5 mb-2">
-                        <h3 className="font-semibold text-foreground text-sm mb-3">Delivery Date</h3>
+                        <h3 className="font-semibold text-foreground text-sm mb-3">Preorder delivery date</h3>
                         {!firstValidPreorderDate && (
                           <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 mb-2 text-xs text-amber-800" role="alert">
                             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                             <span>No common preorder date is available for these items.</span>
+                          </div>
+                        )}
+                        {firstValidPreorderDate && !isPreorderDateSelectable(selectedDeliveryDate) && (
+                          <div className="mb-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900" role="alert">
+                            Your selected date is no longer available for every preorder item. Choose another date to continue.
                           </div>
                         )}
                         <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
@@ -2541,6 +2573,7 @@ export function CartDrawer() {
                                 if (!date || !isPreorderDateSelectable(date)) return;
                                 date.setHours(0, 0, 0, 0);
                                 setSelectedDeliveryDate(date);
+                                updatePreorderDeliveryDate(getDateKey(date));
                                 setDatePickerOpen(false);
                               }}
                               disabled={(date) => !isPreorderDateSelectable(date)}

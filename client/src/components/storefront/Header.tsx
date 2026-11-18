@@ -150,6 +150,14 @@ export function Header({
           </form>
         )}
 
+        <Link
+          href="/preorder"
+          className="hidden shrink-0 rounded-full border border-white/50 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 sm:inline-flex"
+          data-testid="link-preorder"
+        >
+          Preorder
+        </Link>
+
         {/* Right: Icons */}
         <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
           {/* Mobile-only search icon — toggles the search bar below */}

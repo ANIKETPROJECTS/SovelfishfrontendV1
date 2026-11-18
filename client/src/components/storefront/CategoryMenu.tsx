@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@shared/schema";
 import { X } from "lucide-react";
+import { Link } from "wouter";
 
 import fishImg from "@assets/Gemini_Generated_Image_w6wqkkw6wqkkw6wq_(1)_1772713077919.png";
 import prawnsImg from "@assets/Gemini_Generated_Image_5xy0sd5xy0sd5xy0_1772713090650.png";
@@ -107,15 +108,25 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
               Choose a category to find your fresh favourites.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close categories"
-            title="Close categories"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/30 text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F0A458]"
-          >
-            <X className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/preorder"
+              onClick={onClose}
+              className="rounded-full border border-white/50 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/10 sm:text-sm"
+              data-testid="link-preorder-menu"
+            >
+              Preorder
+            </Link>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close categories"
+              title="Close categories"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/30 text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F0A458]"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         <div className="max-h-[calc(78vh-100px)] overflow-y-auto bg-[#F7EBDD] px-3 pb-4 pt-1 sm:px-6 sm:pb-6">

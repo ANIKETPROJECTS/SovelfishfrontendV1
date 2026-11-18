@@ -10,6 +10,7 @@ import { ChevronLeft, Plus, Minus } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useCityArea } from "@/context/CityAreaContext";
 import type { Section, Combo } from "@shared/schema";
+import { isNormalStorefrontProduct } from "@shared/productVisibility";
 
 import noImageImg from "@/assets/coming-soon.png";
 import { SeoHead } from "@/components/SeoHead";
@@ -172,7 +173,11 @@ export default function CombosPage() {
   const availableCombos = combos.filter(combo =>
     combo.includes.every(inc => {
       const p = productMap[inc.productId];
-      return !p || (!p.batchExpired && p.status !== "unavailable");
+      return !p || (
+        isNormalStorefrontProduct(p) &&
+        !p.batchExpired &&
+        p.status !== "unavailable"
+      );
     })
   );
 

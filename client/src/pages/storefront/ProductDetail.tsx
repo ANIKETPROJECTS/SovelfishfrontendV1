@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronLeft, Plus, Minus, Copy, Check, ChefHat, ShoppingBasket,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, CalendarDays,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +32,14 @@ import {
   getProductVariantKey,
 } from "@/lib/productVariants";
 import { getCartLineId } from "@shared/cuttingMethods";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import {
+  findFirstPreorderDateKey,
+  isPreorderDateAvailableForAll,
+} from "@shared/preorderAvailability";
+import { addDaysToDateKey, getIndiaDateKey } from "@shared/nextDayDelivery";
 
 import weighScaleIcon from "@assets/weight-scale_1774801344716.png";
 import piecesIcon from "@assets/cutlery_1774801395283.png";
@@ -47,6 +55,15 @@ function getFallbackImage(_category: string) {
 }
 
 const EMPTY_CUTTING_METHODS: string[] = [];
+
+function calendarDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function calendarDateFromKey(dateKey: string): Date {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
 
 function CouponCard({ code, description }: { code: string; description: string; color?: string; onApply?: () => void; isApplied?: boolean }) {
   return (
@@ -147,12 +164,14 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const { data: products, isLoading } = useProducts();
   const search = useSearch();
-  const { addToCart, updateQuantity, appliedCoupon, setAppliedCoupon, items: cartItems, computeMaxQty } = useCart();
+  const { addToCart, updateQuantity, updatePreorderDeliveryDate, appliedCoupon, setAppliedCoupon, items: cartItems, computeMaxQty } = useCart();
   const { selectedCityArea } = useCityArea();
   const { customer, openLoginModal } = useCustomer();
   const [qty, setQty] = useState(1);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [selectedCuttingMethods, setSelectedCuttingMethods] = useState<string[]>([]);
+  const [selectedPreorderDateKey, setSelectedPreorderDateKey] = useState("");
+  const [preorderCalendarOpen, setPreorderCalendarOpen] = useState(false);
   const recipeScrollRef = useRef<HTMLDivElement>(null);
 
   const productId = params?.id;
@@ -160,6 +179,7 @@ export default function ProductDetail() {
   const showOptions = new URLSearchParams(search).get("showOptions") === "1";
   const variantOptionsRef = useRef<HTMLDivElement>(null);
   const product = products?.find((p) => p.id === productId && !p.batchExpired && isStorefrontProductVisible(p));
+  const isPreorderProduct = Boolean(product && product.preorderMode === "preorder_only");
   const variants = product?.weightVariants ?? [];
   const selectedVariant = variants[selectedVariantIndex] ?? variants[0];
   const cartProduct = product && selectedVariant
@@ -184,6 +204,47 @@ export default function ProductDetail() {
     availableCuttingMethods,
   );
   const isUnavailable = product?.status === "unavailable";
+  const existingPreorderItems = cartItems.filter((item) => item.isPreorderCheckout);
+  const liveProductById = new Map((products ?? []).map((item) => [item.id, item]));
+  const preorderAvailabilityRules = [
+    ...existingPreorderItems.map((item) => {
+      const liveProductId = String((item as any).originalId ?? item.cartBaseId ?? item.id);
+      return liveProductById.get(liveProductId)?.preorderAvailability ?? item.preorderAvailability;
+    }),
+    ...(isPreorderProduct && product ? [product.preorderAvailability] : []),
+  ];
+  const preorderAvailabilityRulesKey = preorderAvailabilityRules
+    .map((rule) => JSON.stringify(rule ?? null))
+    .join("|");
+  const existingPreorderDateKey = existingPreorderItems[0]?.preorderDeliveryDate ?? "";
+  const firstFuturePreorderDateKey = addDaysToDateKey(getIndiaDateKey(), 1);
+  const firstEligiblePreorderDateKey = isPreorderProduct
+    ? findFirstPreorderDateKey(firstFuturePreorderDateKey, preorderAvailabilityRules)
+    : null;
+  const isPreorderDateEligible = (dateKey: string) =>
+    dateKey >= firstFuturePreorderDateKey &&
+    preorderAvailabilityRules.length > 0 &&
+    isPreorderDateAvailableForAll(dateKey, preorderAvailabilityRules);
+
+  useEffect(() => {
+    if (!isPreorderProduct) {
+      setSelectedPreorderDateKey("");
+      return;
+    }
+    setSelectedPreorderDateKey((current) => {
+      if (current && isPreorderDateEligible(current)) return current;
+      if (existingPreorderDateKey && isPreorderDateEligible(existingPreorderDateKey)) {
+        return existingPreorderDateKey;
+      }
+      return firstEligiblePreorderDateKey ?? "";
+    });
+  }, [
+    productId,
+    isPreorderProduct,
+    firstEligiblePreorderDateKey,
+    existingPreorderDateKey,
+    preorderAvailabilityRulesKey,
+  ]);
 
   // Auto-redirect to home when the product disappears from the list (went out of stock
   // after ordering or due to a background stock poll). Show a toast so the user knows why.
@@ -402,8 +463,14 @@ export default function ProductDetail() {
 
             {/* Name + category / subcategory */}
             <div>
-              {(showCategoryLabel || showSubCategoryLabel) && (
+              {(isPreorderProduct || showCategoryLabel || showSubCategoryLabel) && (
                 <div className="mb-3 flex flex-wrap items-center gap-2">
+                  {isPreorderProduct && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#7B3A14]" data-testid="badge-preorder">
+                      <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                      Preorder
+                    </span>
+                  )}
                   {showCategoryLabel && (
                     <span
                       className="inline-block rounded-full bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#7B3A14]"
@@ -425,6 +492,60 @@ export default function ProductDetail() {
             {/* Description */}
             {product.description && (
               <p className="text-base font-medium leading-relaxed text-white/85 sm:text-lg">{product.description}</p>
+            )}
+
+            {isPreorderProduct && (
+              <section className="rounded-2xl border border-white/30 bg-white/10 p-4" aria-labelledby="preorder-date-heading">
+                <div className="mb-2 flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 shrink-0 text-white" aria-hidden="true" />
+                  <h2 id="preorder-date-heading" className="text-base font-bold text-white sm:text-lg">
+                    Choose preorder delivery date
+                  </h2>
+                </div>
+                <p className="mb-3 text-sm font-medium text-white/80">
+                  Select a future date allowed for this product. The same date will apply to your preorder cart.
+                </p>
+                {!firstEligiblePreorderDateKey ? (
+                  <p className="rounded-xl bg-white px-3 py-2.5 text-sm font-semibold text-[#7B3A14]" role="alert">
+                    There are no available future dates for this product and your current preorder items.
+                  </p>
+                ) : (
+                  <Popover open={preorderCalendarOpen} onOpenChange={setPreorderCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-12 w-full justify-between rounded-xl border-2 border-white bg-white px-4 text-left font-bold text-[#7B3A14] hover:bg-[#fff1df]"
+                        aria-label="Choose preorder delivery date"
+                        data-testid="product-preorder-date"
+                      >
+                        <span>
+                          {selectedPreorderDateKey
+                            ? format(calendarDateFromKey(selectedPreorderDateKey), "EEE, dd MMM yyyy")
+                            : "Choose a delivery date"}
+                        </span>
+                        <CalendarDays className="h-5 w-5" aria-hidden="true" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-auto rounded-xl p-0">
+                      <Calendar
+                        mode="single"
+                        selected={selectedPreorderDateKey ? calendarDateFromKey(selectedPreorderDateKey) : undefined}
+                        disabled={(date) => !isPreorderDateEligible(calendarDateKey(date))}
+                        onSelect={(date) => {
+                          if (!date) return;
+                          const dateKey = calendarDateKey(date);
+                          if (!isPreorderDateEligible(dateKey)) return;
+                          setSelectedPreorderDateKey(dateKey);
+                          if (currentCartQty > 0) updatePreorderDeliveryDate(dateKey);
+                          setPreorderCalendarOpen(false);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </section>
             )}
 
             {/* Pieces / Serves / Weight — wraps gracefully when text is long */}
@@ -608,21 +729,37 @@ export default function ProductDetail() {
                         });
                         return;
                       }
+                       if (isPreorderProduct) {
+                         if (!selectedPreorderDateKey || !isPreorderDateEligible(selectedPreorderDateKey)) {
+                           toast({
+                             title: "Choose an available preorder date",
+                             description: "Select a future delivery date that works for every preorder item in your cart.",
+                             variant: "destructive",
+                           });
+                           return;
+                         }
+                         updatePreorderDeliveryDate(selectedPreorderDateKey);
+                       }
                       if (!isInCart) {
                          addToCart(
                             {
                               ...cartProduct!,
                              selectedCuttingMethods,
                              isPreorderCheckout:
-                               new URLSearchParams(search).get("preorder") === "1" ||
-                               product.preorderMode === "preorder_only",
+                                isPreorderProduct,
+                              preorderDeliveryDate: isPreorderProduct ? selectedPreorderDateKey : null,
                            } as any,
                            qty,
                            true,
                          );
                       }
                     }}
-                    disabled={isUnavailable || totalMax <= 0 || (!isInCart && !cuttingMethodSelected)}
+                    disabled={
+                      isUnavailable ||
+                      totalMax <= 0 ||
+                      (!isInCart && !cuttingMethodSelected) ||
+                      (isPreorderProduct && (!selectedPreorderDateKey || !isPreorderDateEligible(selectedPreorderDateKey)))
+                    }
                     className="h-auto min-h-12 w-full min-w-0 flex-1 whitespace-normal rounded-full bg-white px-4 py-2.5 text-center text-base font-bold leading-tight text-[#7B3A14] shadow-md transition hover:bg-[#fff1df] sm:text-lg"
                   >
                     {isUnavailable

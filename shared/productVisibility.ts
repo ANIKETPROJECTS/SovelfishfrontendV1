@@ -19,5 +19,5 @@ export function isNormalStorefrontProduct(product: { preorderMode?: unknown }): 
 
 export function isPreorderStorefrontProduct(product: { preorderMode?: unknown }): boolean {
   const mode = normalizePreorderMode(product.preorderMode);
-  return mode === "preorder_only" || mode === "normal_and_preorder";
+  return mode === "preorder_only";
 }

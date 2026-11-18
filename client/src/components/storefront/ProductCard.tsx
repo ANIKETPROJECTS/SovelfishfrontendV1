@@ -12,6 +12,8 @@ import {
   getProductVariantKey,
 } from "@/lib/productVariants";
 import noImageImg from "@/assets/coming-soon.png";
+import { normalizePreorderAvailability, findFirstPreorderDateKey } from "@shared/preorderAvailability";
+import { addDaysToDateKey, getIndiaDateKey } from "@shared/nextDayDelivery";
 
 type ProductCardProps = {
   product: Product;
@@ -30,6 +32,38 @@ const DUMMY_DETAILS: Record<string, { pieces: string; serves: string }> = {
   Mutton:  { pieces: "6-8 Pieces", serves: "Serves 4" },
   Masalas: { pieces: "1 Pack", serves: "Serves 6" },
 };
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function getPreorderAvailabilityLabel(product: Product): string {
+  const availability = product.preorderAvailability;
+  const firstFutureDate = addDaysToDateKey(getIndiaDateKey(), 1);
+  if (!findFirstPreorderDateKey(firstFutureDate, [availability])) {
+    return "No eligible future dates";
+  }
+  const rule = normalizePreorderAvailability(availability);
+  if (rule.type === "all") return "Available on future dates";
+  if (rule.type === "weekdays") {
+    const days = (rule.weekdays ?? []).map((day) => WEEKDAY_LABELS[day]).join(", ");
+    return days ? `Available: ${days}` : "No eligible future dates";
+  }
+  const dateLabel = (dateKey?: string) => {
+    if (!dateKey) return "";
+    const [year, month, day] = dateKey.split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+    });
+  };
+  const range = rule.startDate && rule.endDate
+    ? `${dateLabel(rule.startDate)}–${dateLabel(rule.endDate)}`
+    : rule.startDate
+      ? `from ${dateLabel(rule.startDate)}`
+      : `until ${dateLabel(rule.endDate)}`;
+  if (rule.type === "date_range") return `Available ${range}`;
+  const days = (rule.weekdays ?? []).map((day) => WEEKDAY_LABELS[day]).join(", ");
+  return `Available ${range}${days ? ` · ${days}` : ""}`;
+}
 
 export function ProductCard(props: ProductCardProps) {
   const variants = props.product.weightVariants ?? [];
@@ -157,6 +191,11 @@ function SingleProductCard({
             </Badge>
           )}
         </div>
+        {preorderContext && (
+          <span className="absolute right-2 top-2 rounded-full border border-white bg-white px-2.5 py-1 text-xs font-bold text-[#7B3A14] shadow-sm">
+            Preorder
+          </span>
+        )}
 
         {product.status === "limited" && product.limitedStockNote && (
           <div className="absolute bottom-2 left-2 right-2">
@@ -172,6 +211,12 @@ function SingleProductCard({
         <h3 className={`font-sans ${brandText ? "font-bold text-white text-lg sm:text-xl" : "font-medium text-base sm:text-lg text-foreground"} leading-snug mb-1 line-clamp-2`}>
           {product.name}
         </h3>
+
+        {preorderContext && (
+          <p className="mb-2 text-xs font-semibold leading-snug text-white/85 sm:text-sm" data-testid={`preorder-availability-${product.id}`}>
+            {getPreorderAvailabilityLabel(product)}
+          </p>
+        )}
 
         {isSaleVariantCard && product.unit && (
           <p className={`mb-2 text-sm leading-snug ${brandText ? "font-semibold text-white/90" : "text-muted-foreground"}`}>

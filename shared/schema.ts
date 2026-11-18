@@ -238,6 +238,8 @@ export type OrderRequest = {
   notes: string | null;
   createdAt: Date;
   deliveryType?: string | null;
+  orderType?: "normal" | "preorder" | null;
+  deliveryDate?: string | null;
   timeslotLabel?: string | null;
   instantDeliveryCharge?: number | null;
   slotCharge?: number | null;
@@ -299,6 +301,7 @@ export type InsertOrderRequest = {
   source?: string | null;
   hubDbName?: string | null;
   deliveryType?: string | null;
+  orderType?: "normal" | "preorder" | null;
   scheduleType?: string | null;
   timeslotId?: string | null;
   timeslotLabel?: string | null;

@@ -8,3 +8,9 @@ Preorder carts default to the first future date allowed by every cart product; u
 **Why:** Preorder eligibility remains product-driven. On 2026-11-13, the user requested automatic next-day scheduling for normal delivery orders while keeping preorder date selection.
 
 **How to apply:** Preserve preorder intent on cart items added from preorder sections, normalize external-admin payloads where `type: "all"` may coexist with restrictive weekdays/date fields, show each product's friendly availability label, disable dates that fail any product schedule, send `orderType: "preorder"` with the selected `deliveryDate`, and validate current product schedules server-side. Normal delivery uses the shared 5:00 PM cutoff helper; compute and persist `deliveryDate` plus `nextDayOrder` at payment initiation, and let trusted payment finalizers reuse that frozen schedule across retries and midnight. Preserve explicit future dates, takeaway, and custom scheduled orders.
+
+When catalog schedule changes make a saved preorder date invalid, keep the customer's selected date visible, explain the conflict, and require them to choose another eligible date; never silently replace it.
+
+**Why:** The uploaded preorder requirements explicitly require revalidation without changing a customer's saved delivery choice behind their back.
+
+**How to apply:** Recheck eligibility after cart edits and against live catalog data at checkout and payment initiation; block submission until the customer selects a valid shared date.

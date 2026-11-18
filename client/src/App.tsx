@@ -13,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/storefront/Home";
 import ProductDetail from "@/pages/storefront/ProductDetail";
 import CategoryPage from "@/pages/storefront/CategoryPage";
+import PreorderPage from "@/pages/storefront/PreorderPage";
 import RecipeDetail from "@/pages/storefront/RecipeDetail";
 import Profile from "@/pages/storefront/Profile";
 import ComboDetail from "@/pages/storefront/ComboDetail";
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/profile" component={Profile} />
       <Route path="/category/:categoryName" component={CategoryPage} />
+      <Route path="/preorder" component={PreorderPage} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/recipe/product/:productId/:recipeIndex" component={RecipeDetail} />
       <Route path="/recipe/:category/:index" component={RecipeDetail} />

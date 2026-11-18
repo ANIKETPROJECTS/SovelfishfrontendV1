@@ -389,7 +389,20 @@ export default function ComboDetail() {
   const productCategories = includedProducts
     .map(({ product }) => product?.category ?? "Fish");
 
-  const otherCombos = allCombos.filter((c) => c.id !== id).slice(0, 8);
+  const isComboRegularlyOrderable = (candidate: Combo) =>
+    candidate.includes.every((inc) => {
+      const product = productMap[inc.productId];
+      return !product || isNormalStorefrontProduct(product);
+    });
+  const comboHasPreorderOnlyProduct = Boolean(
+    combo?.includes.some((inc) => {
+      const product = productMap[inc.productId];
+      return product?.preorderMode === "preorder_only";
+    }),
+  );
+  const otherCombos = allCombos
+    .filter((candidate) => candidate.id !== id && isComboRegularlyOrderable(candidate))
+    .slice(0, 8);
 
   // Per-item combo prices calculated proportionally from each product's current standalone price
   const sumStandalonePrice = includedProducts.reduce((sum, { product }) => {
@@ -552,6 +565,31 @@ export default function ComboDetail() {
         <p className="text-muted-foreground text-lg">Combo not found.</p>
         <Button onClick={() => navigate("/")}>Go Home</Button>
         <CartDrawer />
+      </div>
+    );
+  }
+
+  if (comboHasPreorderOnlyProduct) {
+    return (
+      <div className="home-storefront-page min-h-screen flex flex-col font-sans">
+        <Header
+          onSearchSubmit={(q) => navigate(q ? `/?q=${encodeURIComponent(q)}` : "/")}
+          collapsibleMobileSearch
+        />
+        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-16 text-center">
+          <h1 className="font-display text-2xl font-bold text-[#7B3A14]">
+            This combo isn&apos;t available for regular checkout
+          </h1>
+          <p className="mt-2 text-[#704526]">
+            It includes an item reserved for preorder. Please browse another combo or visit Preorder.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Button onClick={() => navigate("/combos")}>Browse combos</Button>
+            <Button variant="outline" onClick={() => navigate("/preorder")}>View preorder items</Button>
+          </div>
+        </main>
+        <CartDrawer />
+        <Footer />
       </div>
     );
   }

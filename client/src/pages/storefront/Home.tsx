@@ -132,7 +132,11 @@ export default function Home() {
       ).filter(combo =>
         combo.includes.every(inc => {
           const p = productMap[inc.productId];
-          return !p || (!p.batchExpired && p.status !== "unavailable");
+          return !p || (
+            isNormalStorefrontProduct(p) &&
+            !p.batchExpired &&
+            p.status !== "unavailable"
+          );
         })
       )
     : [];
@@ -338,7 +342,11 @@ export default function Home() {
             const availableCombos = combos.filter(combo =>
               combo.includes.every(inc => {
                 const p = productMap[inc.productId];
-                return !p || (!p.batchExpired && p.status !== "unavailable");
+                return !p || (
+                  isNormalStorefrontProduct(p) &&
+                  !p.batchExpired &&
+                  p.status !== "unavailable"
+                );
               })
             );
             return (

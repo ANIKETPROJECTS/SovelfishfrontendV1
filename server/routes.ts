@@ -5,6 +5,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { normalizePreorderMode } from "../shared/productVisibility";
 import { isPreorderDateAvailable, isPreorderDateAvailableForAll, normalizePreorderAvailability } from "../shared/preorderAvailability";
+import { validatePreorderOrderInput } from "../shared/preorderOrderValidation";
 import passport from "passport";
 import { setupAuth } from "./auth";
 import {
@@ -216,6 +217,63 @@ async function validateTimeslotBeforeCheckout(params: {
     return "This time slot is full for the selected date.";
   }
 
+  return null;
+}
+
+async function validateStorefrontOrderMode(hub: any, input: any): Promise<string | null> {
+  const items = Array.isArray(input.items) ? input.items : [];
+  if (input.orderType === "preorder" && !input.hubDbName) {
+    return "Please select a delivery hub for this preorder.";
+  }
+  const productIds = [...new Set(
+    items
+      .map((item: any) => String(item.productId ?? "").trim())
+      .filter((id: string) => /^[a-f\d]{24}$/i.test(id)),
+  )];
+  const [products, combos] = productIds.length
+    ? await Promise.all([
+      hub.Product.find({ _id: { $in: productIds } })
+        .select("_id name preorderMode preOrderMode preorderAvailability isArchived status")
+        .lean() as Promise<any[]>,
+      hub.Combo.find({ _id: { $in: productIds } })
+        .select("_id name includes.productId")
+        .lean() as Promise<any[]>,
+    ])
+    : [[], []];
+
+  if (input.orderType === "preorder") {
+    const comboIds = new Set(combos.map((combo) => String(combo._id)));
+    if ((input.items ?? []).some((item: any) => comboIds.has(String(item.productId)))) {
+      return "Combos cannot be added to a preorder order. Choose preorder products individually.";
+    }
+  }
+
+  const allPreorderIncludedIds = [...new Set(
+    combos.flatMap((combo) => (combo.includes ?? []).map((item: any) => String(item.productId)))
+      .filter((id: string) => /^[a-f\d]{24}$/i.test(id)),
+  )];
+  const extraProducts = allPreorderIncludedIds.length
+    ? await hub.Product.find({ _id: { $in: allPreorderIncludedIds } })
+      .select("_id name preorderMode preOrderMode")
+      .lean() as any[]
+    : [];
+  const allProducts = [...products, ...extraProducts];
+  const directError = validatePreorderOrderInput(input, products, getIndiaDateKey());
+  if (directError) return directError;
+
+  if (input.orderType !== "preorder") {
+    const productsById = new Map(allProducts.map((product) => [String(product._id), product]));
+    for (const combo of combos) {
+      const preorderOnlyItem = (combo.includes ?? [])
+        .map((item: any) => productsById.get(String(item.productId)))
+        .find((product: any) =>
+          product && normalizePreorderMode(product.preorderMode ?? product.preOrderMode) === "preorder_only",
+        );
+      if (preorderOnlyItem) {
+        return `"${combo.name}" includes preorder-only product "${preorderOnlyItem.name}".`;
+      }
+    }
+  }
   return null;
 }
 
@@ -1443,8 +1501,18 @@ export async function registerRoutes(
       }
       let orderPayload = applyAutomaticNextDayDelivery(rawOrderPayload);
       let checkoutTotal = Number(orderPayload.total);
+      const checkoutHub = orderPayload.hubDbName
+        ? await getCheckoutHubModels(orderPayload.hubDbName)
+        : null;
+      if (orderPayload.orderType === "preorder" && !checkoutHub) {
+        return res.status(400).json({ message: "Please select a valid delivery hub." });
+      }
+      if (checkoutHub) {
+        const orderModeError = await validateStorefrontOrderMode(checkoutHub, orderPayload);
+        if (orderModeError) return res.status(400).json({ message: orderModeError });
+      }
       if ((orderPayload.deliveryType ?? "delivery") === "delivery") {
-        const hub = await getCheckoutHubModels(orderPayload.hubDbName);
+        const hub = checkoutHub ?? await getCheckoutHubModels(orderPayload.hubDbName);
         if (!hub) {
           return res.status(400).json({ message: "Please select a valid delivery hub." });
         }
@@ -1707,6 +1775,8 @@ export async function registerRoutes(
       if (!hub) {
         return res.status(400).json({ message: "Please select a valid delivery hub." });
       }
+      const orderModeError = await validateStorefrontOrderMode(hub, orderPayload);
+      if (orderModeError) return res.status(400).json({ message: orderModeError });
       const cuttingMethodsError = await validateCuttingMethodsForHub(hub, orderPayload.items ?? []);
       if (cuttingMethodsError) {
         return res.status(400).json({ message: cuttingMethodsError });
@@ -3078,6 +3148,17 @@ export async function registerRoutes(
       let input = isInternalPaymentFinalizer
         ? parsedInput
         : applyAutomaticNextDayDelivery(parsedInput);
+      if (input.orderType === "preorder" && !input.hubDbName) {
+        return res.status(400).json({ message: "Please select a delivery hub for this preorder." });
+      }
+      if (input.hubDbName) {
+        const modeHub = await getCheckoutHubModels(input.hubDbName);
+        if (!modeHub) {
+          return res.status(400).json({ message: "Please select a valid delivery hub." });
+        }
+        const orderModeError = await validateStorefrontOrderMode(modeHub, input);
+        if (orderModeError) return res.status(400).json({ message: orderModeError });
+      }
       const shouldValidateCuttingMethods = !isInternalPaymentFinalizer || isPendingRazorpayCreation;
       if (shouldValidateCuttingMethods && (input.items as any[]).length > 0) {
         try {
@@ -3277,8 +3358,8 @@ export async function registerRoutes(
               return res.status(400).json({ message: `Product "${item.name}" is no longer available.` });
             }
             const mode = normalizePreorderMode(product.preorderMode ?? product.preOrderMode);
-            if (mode === "normal") {
-              return res.status(400).json({ message: `"${product.name}" is not available for preorder.` });
+            if (mode !== "preorder_only") {
+              return res.status(400).json({ message: `"${product.name}" is not marked as preorder-only.` });
             }
           }
           if (input.timeslotId) {

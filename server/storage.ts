@@ -92,6 +92,7 @@ function toOrder(doc: any): OrderRequest {
     notes: doc.notes ?? null,
     createdAt: doc.createdAt,
     deliveryType: doc.deliveryType ?? null,
+    orderType: doc.orderType ?? null,
     timeslotLabel: doc.timeslotLabel ?? null,
     instantDeliveryCharge: doc.instantDeliveryCharge ?? null,
     slotCharge: doc.slotCharge ?? 0,

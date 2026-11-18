@@ -60,29 +60,68 @@ export function normalizePreorderAvailability(value: unknown): PreorderAvailabil
   };
 }
 
+function isValidDateKey(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function getWeekdays(raw: Record<string, unknown>): number[] | null {
+  if (raw.weekdays === undefined) return ALL_WEEKDAYS;
+  if (!Array.isArray(raw.weekdays)) return null;
+  const weekdays = raw.weekdays;
+  if (
+    weekdays.length === 0 ||
+    weekdays.some((day) => !Number.isInteger(day) || day < 0 || day > 6)
+  ) {
+    return null;
+  }
+  return [...new Set(weekdays)];
+}
+
 /** Date keys are deliberately treated as calendar dates, not UTC timestamps. */
 export function isPreorderDateAvailable(
   dateKey: string,
   availability: unknown,
 ): boolean {
-  const rule = normalizePreorderAvailability(availability);
-  if (rule.type === "all") return true;
+  if (!isValidDateKey(dateKey)) return false;
+  if (availability == null) return true;
+  if (!availability || typeof availability !== "object" || Array.isArray(availability)) return false;
 
-  if (rule.type === "weekdays") {
-    const weekday = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
-    return (rule.weekdays ?? ALL_WEEKDAYS).includes(weekday);
+  const raw = availability as Record<string, unknown>;
+  const supportedType = PREORDER_AVAILABILITY_TYPES.includes(raw.type as PreorderAvailabilityType);
+  if (raw.type !== undefined && !supportedType) return false;
+
+  const weekdays = getWeekdays(raw);
+  if (!weekdays) return false;
+
+  const startDate = raw.startDate === undefined || raw.startDate === ""
+    ? null
+    : isValidDateKey(raw.startDate) ? raw.startDate : false;
+  const endDate = raw.endDate === undefined || raw.endDate === ""
+    ? null
+    : isValidDateKey(raw.endDate) ? raw.endDate : false;
+  if (startDate === false || endDate === false) return false;
+
+  const hasRange = startDate !== null || endDate !== null;
+  if (hasRange && (startDate === null || endDate === null || startDate > endDate)) return false;
+
+  const weekdaysRestricted = weekdays.length < ALL_WEEKDAYS.length;
+  const type = raw.type as PreorderAvailabilityType | undefined;
+  const effectiveType: PreorderAvailabilityType = hasRange
+    ? (weekdaysRestricted ? "date_range_and_weekdays" : "date_range")
+    : weekdaysRestricted
+      ? "weekdays"
+      : type ?? "all";
+
+  if (effectiveType === "date_range" || effectiveType === "date_range_and_weekdays") {
+    if (startDate === null || endDate === null || dateKey < startDate || dateKey > endDate) return false;
   }
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
-  if (rule.startDate && dateKey < rule.startDate) return false;
-  if (rule.endDate && dateKey > rule.endDate) return false;
-  if (!rule.startDate && !rule.endDate) return false;
-
-  // The admin editor can constrain a date range to selected weekdays.
-  // Both conditions must match for date_range_and_weekdays.
-  const weekday = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
-  return rule.type === "date_range"
-    || (rule.weekdays ?? ALL_WEEKDAYS).includes(weekday);
+  if (effectiveType === "weekdays" || effectiveType === "date_range_and_weekdays") {
+    const weekday = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
+    if (!weekdays.includes(weekday)) return false;
+  }
+  return true;
 }
 
 /**
@@ -95,4 +134,24 @@ export function isPreorderDateAvailableForAll(
 ): boolean {
   return availabilities.length > 0
     && availabilities.every((availability) => isPreorderDateAvailable(dateKey, availability));
+}
+
+/**
+ * Finds the next date accepted by every product schedule. The starting date
+ * is supplied by the caller so browser and server code can use India-local
+ * "tomorrow" without making this pure helper depend on a machine timezone.
+ */
+export function findFirstPreorderDateKey(
+  firstFutureDateKey: string,
+  availabilities: unknown[],
+  maxDays = 730,
+): string | null {
+  if (!isValidDateKey(firstFutureDateKey) || availabilities.length === 0) return null;
+  const candidate = new Date(`${firstFutureDateKey}T00:00:00.000Z`);
+  for (let offset = 0; offset < maxDays; offset += 1) {
+    const dateKey = candidate.toISOString().slice(0, 10);
+    if (isPreorderDateAvailableForAll(dateKey, availabilities)) return dateKey;
+    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  }
+  return null;
 }
