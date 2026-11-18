@@ -294,6 +294,8 @@ export default function ProductDetail() {
         <Header
           onSearchSubmit={(q) => setLocation(q ? `/?q=${encodeURIComponent(q)}` : "/")}
           collapsibleMobileSearch
+          hideMobileSearch
+          compactMobileHeader
         />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
           <Skeleton className="aspect-square rounded-3xl" />
@@ -361,6 +363,8 @@ export default function ProductDetail() {
       <Header
         onSearchSubmit={(q) => setLocation(q ? `/?q=${encodeURIComponent(q)}` : "/")}
         collapsibleMobileSearch
+        hideMobileSearch
+        compactMobileHeader
       />
 
       <div className="mx-auto max-w-[1280px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">

@@ -9,15 +9,13 @@ import otpAnimation from "@/assets/lottie/otp-animation.json";
 import successAnimation from "@assets/animation-original_(10)_1777277220026.json";
 import flagImg from "@assets/flag_(1)_1776403319572.png";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import userImg from "@assets/user_(1)_1774707188827.png";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 
-const BRAND_BLUE = "#7B3A14";
-const BRAND_RED = "#C8651B";
-const BRAND_ORANGE = "#E8883A";
+const BRAND_BROWN = "#7B3A14";
+const BRAND_ORANGE = "#C8651B";
+const BRAND_HIGHLIGHT = "#E8883A";
 const createEmptyOtp = () => Array.from({ length: OTP_DIGIT_COUNT }, () => "");
 
 interface OtpModalProps {
@@ -261,24 +259,30 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
         document.body
       )}
 
-    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-[420px] p-0 overflow-y-auto border-0 shadow-2xl flex flex-col bg-white"
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        className="flex w-[calc(100vw-1.5rem)] max-w-[460px] max-h-[calc(100dvh-1.5rem)] flex-col gap-0 overflow-y-auto rounded-[28px] border border-[#d7b18d] bg-[#fbf1e6] p-0 font-sans text-[#542813] shadow-2xl [&>button]:right-4 [&>button]:top-4 [&>button]:z-20 [&>button]:h-9 [&>button]:w-9 [&>button]:bg-white/15 [&>button]:text-white [&>button]:shadow-none [&>button]:hover:bg-white/25"
         data-testid="auth-sheet"
-        aria-describedby={undefined}
       >
-        <VisuallyHidden>
-          <SheetTitle>Login to Fresh Stock Xchange</SheetTitle>
-        </VisuallyHidden>
-
-        {/* Header — matches Order Summary style */}
-        <SheetHeader className="px-5 py-4 border-b border-border/30 bg-white sticky top-0 z-10">
-          <SheetTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-            <img src={userImg} alt="Login" className="w-5 h-5 object-contain" />
-            Login
-          </SheetTitle>
-        </SheetHeader>
+        <DialogHeader className="footer-wood-bg shrink-0 px-5 py-5 pr-16 text-left sm:px-7 sm:py-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white p-1">
+              <FreshStockXchangeLogo className="h-full w-full scale-[1.12]" />
+            </span>
+            <div>
+              <p className="font-display text-lg font-bold leading-tight text-white sm:text-xl">Fresh Stock Xchange</p>
+              <p className="mt-1 text-xs font-medium text-white/85">Fresh seafood, packed with care</p>
+            </div>
+          </div>
+          <div className="mt-5">
+            <DialogTitle className="font-display text-2xl font-bold leading-tight text-white sm:text-3xl">
+              Welcome!
+            </DialogTitle>
+            <DialogDescription className="mt-1 text-sm font-medium text-white/85">
+              Sign in to order fresh seafood and meat.
+            </DialogDescription>
+          </div>
+        </DialogHeader>
 
         {/* Success Overlay */}
         <AnimatePresence>
@@ -286,52 +290,49 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 z-50 flex flex-col items-center justify-start bg-white pt-16 px-6"
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#fbf1e6] px-6 text-center"
             >
-              <div className="mt-4 mb-6">
-                <FreshStockXchangeLogo className="h-16 w-20" />
-              </div>
-              <div className="w-72 h-72">
+              <span className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white p-1 shadow-sm">
+                <FreshStockXchangeLogo className="h-full w-full scale-[1.12]" />
+              </span>
+              <div className="h-56 w-56">
                 <Lottie animationData={successAnimation} loop={false} autoplay />
               </div>
+              <p className="font-display text-xl font-bold text-[#7B3A14]">You’re signed in</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex flex-col flex-1 px-7 pt-8 pb-8">
-          {/* Logo — always visible */}
-          <div className="flex justify-center mb-5">
-              <FreshStockXchangeLogo className="h-16 w-20" />
-          </div>
-
+        <div className="flex flex-1 flex-col px-4 py-4 sm:px-7 sm:py-6">
+          <div className="rounded-2xl border border-[#ead7c3] bg-white p-5 shadow-sm sm:p-6">
           {!otpSent ? (
             <>
-              {/* Hero */}
-              <div className="flex flex-col items-center mb-7">
-                <div className="w-28 h-28">
+              <div className="mb-5 flex flex-col items-center text-center">
+                <div className="h-20 w-20">
                   <Lottie animationData={fishAnimation} loop autoplay />
                 </div>
-                <h2 className="text-[21px] font-bold text-center leading-snug mt-2">
-                  <span style={{ color: BRAND_RED }}>Welcome!</span>{" "}
-                  <span style={{ color: BRAND_BLUE }}>Fresh Seafood & Meat</span>
-                  <br /><span className="text-slate-800">at your doorstep</span>
+                <h2 className="mt-2 font-display text-xl font-bold leading-snug text-[#7B3A14] sm:text-2xl">
+                  Fresh seafood and meat, delivered to your door
                 </h2>
-                <p className="text-sm mt-2 text-center font-medium text-slate-800">
+                <p className="mt-2 text-sm font-medium text-[#80634e]">
                   Enter your mobile number to continue
                 </p>
               </div>
 
-              {/* Phone Input — underline style, no card */}
-              <div className="mb-6">
+              <div className="mb-5">
+                <label htmlFor="customer-login-phone" className="mb-2 block text-sm font-semibold text-[#542813]">
+                  Mobile number
+                </label>
                 <div
-                  className="flex items-center gap-3 pb-3 border-b-2 transition-all duration-200"
-                  style={{ borderColor: focused ? BRAND_RED : isFull ? `${BRAND_BLUE}88` : "#e2e8f0" }}
+                  className="flex items-center gap-3 rounded-xl border-2 bg-[#fffaf4] px-3 py-3 transition-all duration-200"
+                  style={{ borderColor: focused ? BRAND_ORANGE : isFull ? `${BRAND_BROWN}88` : "#ead7c3" }}
                 >
-                  <div className="flex items-center gap-1.5 shrink-0 pr-3 border-r border-slate-200">
-                    <img src={flagImg} alt="India" className="w-6 h-6 rounded-full object-cover" />
-                    <span className="text-base font-bold text-slate-700">+91</span>
+                  <div className="flex shrink-0 items-center gap-1.5 border-r border-[#e6d4c1] pr-3">
+                    <img src={flagImg} alt="India" className="h-6 w-6 rounded-full object-cover" />
+                    <span className="text-base font-bold text-[#542813]">+91</span>
                   </div>
                   <input
+                    id="customer-login-phone"
                     ref={phoneRef}
                     type="tel"
                     inputMode="numeric"
@@ -340,16 +341,15 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                     placeholder="0000000000"
-                    className="flex-1 bg-transparent outline-none text-2xl font-bold tracking-[0.15em] text-slate-800 placeholder:text-slate-300 placeholder:font-light placeholder:text-xl placeholder:tracking-normal w-full"
-                    style={{ caretColor: BRAND_RED }}
+                    className="w-full flex-1 bg-transparent text-xl font-bold tracking-[0.1em] text-[#542813] outline-none placeholder:font-normal placeholder:tracking-normal placeholder:text-[#b7a18b] sm:text-2xl"
+                    style={{ caretColor: BRAND_ORANGE }}
                     data-testid="input-phone"
                   />
                 </div>
               </div>
 
-              {/* Login button — red */}
               <SolidButton
-                color={BRAND_RED}
+                color={BRAND_ORANGE}
                 onClick={handlePhoneSubmit}
                 disabled={loading || !isFull}
                 loading={loading}
@@ -359,27 +359,25 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                 Login
               </SolidButton>
 
-              <p className="text-[11px] text-center mt-3 text-slate-400">
+              <p className="mt-4 text-center text-xs leading-relaxed text-[#80634e]">
                 By continuing, you agree to our{" "}
-                <span className="underline cursor-pointer" style={{ color: BRAND_BLUE }}>Terms</span>
+                <span className="cursor-pointer font-semibold text-[#7B3A14] underline">Terms</span>
                 {" & "}
-                <span className="underline cursor-pointer" style={{ color: BRAND_BLUE }}>Privacy Policy</span>
+                <span className="cursor-pointer font-semibold text-[#7B3A14] underline">Privacy Policy</span>
               </p>
             </>
           ) : (
             <>
-              {/* OTP Section */}
-              <div className="flex flex-col items-center mb-4">
-                <div className="w-28 h-28">
+              <div className="mb-5 flex flex-col items-center text-center">
+                <div className="h-20 w-20">
                   <Lottie animationData={otpAnimation} loop autoplay />
                 </div>
-                <h3 className="text-lg font-bold text-center text-slate-800">Verify it's you!</h3>
-                <p className="text-sm text-slate-500 mt-1 text-center">Code sent on WhatsApp</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-sm font-semibold text-slate-700">+91 {phone}</p>
+                <h3 className="font-display text-xl font-bold text-[#7B3A14] sm:text-2xl">Verify your number</h3>
+                <p className="mt-1 text-sm text-[#80634e]">We sent a code to WhatsApp</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="text-sm font-semibold text-[#542813]">+91 {phone}</p>
                   <button
-                    className="text-xs font-bold underline"
-                    style={{ color: BRAND_RED }}
+                    className="text-xs font-bold text-[#C8651B] underline"
                     onClick={() => { setOtpSent(false); setOtp(createEmptyOtp()); }}
                     data-testid="button-back-to-phone"
                   >
@@ -388,8 +386,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                 </div>
               </div>
 
-              {/* OTP Boxes — white inside, blue border, orange on focus */}
-              <div className="flex gap-2 justify-center mb-5">
+              <div className="mb-5 flex justify-center gap-1.5 sm:gap-2">
                 {otpRefs.map((ref, i) => {
                   const isFocused = focusedOtpIndex === i;
                   return (
@@ -406,11 +403,11 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                       onPaste={handleOtpPaste}
                       onFocus={() => setFocusedOtpIndex(i)}
                       onBlur={() => setFocusedOtpIndex(null)}
-                      className="w-[46px] h-[56px] sm:w-[50px] sm:h-[58px] text-center text-xl sm:text-2xl font-bold rounded-2xl outline-none border-2 focus:scale-[1.05] transition-all duration-200"
+                      className="h-12 w-9 rounded-xl border-2 text-center text-xl font-bold outline-none transition-all duration-200 focus:scale-[1.04] sm:h-[58px] sm:w-[50px] sm:text-2xl"
                       style={{
-                        borderColor: isFocused ? BRAND_ORANGE : BRAND_BLUE,
-                        background: "white",
-                        color: "#1e293b",
+                        borderColor: isFocused ? BRAND_HIGHLIGHT : "#ead7c3",
+                        background: "#fffaf4",
+                        color: BRAND_BROWN,
                         caretColor: BRAND_ORANGE,
                         boxShadow: isFocused ? `0 0 0 3px ${BRAND_ORANGE}33` : "none",
                       }}
@@ -420,9 +417,8 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                 })}
               </div>
 
-              {/* Verify button — blue */}
               <SolidButton
-                color={BRAND_BLUE}
+                color={BRAND_BROWN}
                 onClick={handleOtpSubmit}
                 disabled={loading || otp.join("").length !== OTP_DIGIT_COUNT}
                 loading={loading}
@@ -432,21 +428,23 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                 Verify
               </SolidButton>
 
-              <p className="text-[11px] text-center mt-4 text-slate-400">
+              <p className="mt-4 text-center text-sm text-[#80634e]">
                 Didn't get it?{" "}
-                <span
-                  className="font-semibold cursor-pointer"
-                  style={{ color: BRAND_RED }}
+                <button
+                  type="button"
+                  className="font-semibold text-[#C8651B] underline"
                   onClick={handlePhoneSubmit}
+                  disabled={loading}
                 >
                   Resend OTP
-                </span>
+                </button>
               </p>
             </>
           )}
+          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
