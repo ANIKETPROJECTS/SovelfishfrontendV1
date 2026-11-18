@@ -3,14 +3,10 @@ import { createPortal } from "react-dom";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import Lottie from "lottie-react";
-import fishAnimation from "@assets/fish_1776404909449.json";
-import otpAnimation from "@/assets/lottie/otp-animation.json";
-import successAnimation from "@assets/animation-original_(10)_1777277220026.json";
 import flagImg from "@assets/flag_(1)_1776403319572.png";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, Fish, MessageCircle, ShieldCheck } from "lucide-react";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 
 const BRAND_BROWN = "#7B3A14";
@@ -40,33 +36,19 @@ function SolidButton({
   children: React.ReactNode;
   testId?: string;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onMouseDown={() => setHovered(true)}
-      onMouseUp={() => setHovered(false)}
-      className="w-full py-4 rounded-full font-bold text-base transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] border-2"
+      className="w-full rounded-full border-2 py-4 text-base font-bold hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-40"
       style={{
-        background: hovered ? "white" : color,
-        color: hovered ? color : "white",
+        background: color,
+        color: "white",
         borderColor: color,
       }}
       data-testid={testId}
     >
-      {loading ? (
-        <span className="flex items-center justify-center gap-2">
-          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-          </svg>
-          {loadingText}
-        </span>
-      ) : children}
+      {loading ? loadingText : children}
     </button>
   );
 }
@@ -210,49 +192,18 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
 
   return (
     <>
-      {/* Portal: full-width fixed row at top of viewport — no transform-based centering so Framer Motion can't clobber it */}
+      {/* Static delivery confirmation keeps the login flow free of decorative motion. */}
       {createPortal(
-        <AnimatePresence>
-          {showWhatsAppNotif && (
-            <div
-              style={{
-                position: "fixed",
-                top: "152px",
-                right: "16px",
-                zIndex: 99999,
-                display: "flex",
-                justifyContent: "flex-end",
-                pointerEvents: "none",
-              }}
-            >
-              <motion.div
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.3 }}
-                style={{ maxWidth: "calc(100vw - 32px)" }}
-              >
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  backgroundColor: "#16a34a",
-                  borderRadius: "9999px",
-                  padding: "8px 20px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-                }}>
-                  <svg style={{ width: 16, height: 16, flexShrink: 0 }} viewBox="0 0 24 24" fill="white">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.845L.057 23.743a.5.5 0 0 0 .614.676l6.076-1.583A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.593-.504-5.088-1.383l-.364-.215-3.762.98.999-3.657-.236-.376A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-                  </svg>
-                  <span style={{ color: "white", fontSize: "14px", fontWeight: 600, whiteSpace: "normal", lineHeight: 1.35, textAlign: "center" }}>
-                    OTP sent on your registered WhatsApp number
-                  </span>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
+        showWhatsAppNotif ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed right-4 top-4 z-[99999] flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full bg-[#7B3A14] px-4 py-2 text-sm font-semibold text-white shadow-lg"
+          >
+            <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>We sent a sign-in code to your WhatsApp.</span>
+          </div>
+        ) : null,
         document.body
       )}
 
@@ -281,47 +232,44 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
           </div>
         </DialogHeader>
 
-        {/* Success Overlay */}
-        <AnimatePresence>
-          {showSuccess && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#fbf1e6] px-6 text-center"
-            >
-              <span className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white p-1 shadow-sm">
-                <FreshStockXchangeLogo className="h-full w-full scale-[1.12]" />
-              </span>
-              <div className="h-56 w-56">
-                <Lottie animationData={successAnimation} loop={false} autoplay />
-              </div>
-              <p className="font-display text-xl font-bold text-[#7B3A14]">You’re signed in</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {showSuccess && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#fbf1e6] px-6 text-center"
+          >
+            <span className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white text-[#C8651B] shadow-sm">
+              <CheckCircle2 className="h-12 w-12" aria-hidden="true" />
+            </span>
+            <p className="font-display text-2xl font-bold text-[#7B3A14]">You’re all set</p>
+            <p className="mt-2 max-w-xs text-sm text-[#80634e]">
+              Your Fresh Stock Xchange account is ready for your next order.
+            </p>
+          </div>
+        )}
 
         <div className="flex flex-1 flex-col px-4 py-4 sm:px-7 sm:py-6">
           <div className="rounded-2xl border border-[#ead7c3] bg-white p-5 shadow-sm sm:p-6">
           {!otpSent ? (
             <>
               <div className="mb-5 flex flex-col items-center text-center">
-                <div className="h-20 w-20">
-                  <Lottie animationData={fishAnimation} loop autoplay />
-                </div>
-                <h2 className="mt-2 font-display text-xl font-bold leading-snug text-[#7B3A14] sm:text-2xl">
-                  Fresh seafood and meat, delivered to your door
+                <span className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fbf1e6] text-[#C8651B]">
+                  <Fish className="h-9 w-9" aria-hidden="true" />
+                </span>
+                <h2 className="font-display text-xl font-bold leading-snug text-[#7B3A14] sm:text-2xl">
+                  Fresh catch starts here
                 </h2>
                 <p className="mt-2 text-sm font-medium text-[#80634e]">
-                  Enter your mobile number to continue
+                  Sign in to explore today’s seafood and place your order.
                 </p>
               </div>
 
               <div className="mb-5">
                 <label htmlFor="customer-login-phone" className="mb-2 block text-sm font-semibold text-[#542813]">
-                  Mobile number
+                  WhatsApp mobile number
                 </label>
                 <div
-                  className="flex items-center gap-3 rounded-xl border-2 bg-[#fffaf4] px-3 py-3 transition-all duration-200"
+                  className="flex items-center gap-3 rounded-xl border-2 bg-[#fffaf4] px-3 py-3"
                   style={{ borderColor: focused ? BRAND_ORANGE : isFull ? `${BRAND_BROWN}88` : "#ead7c3" }}
                 >
                   <div className="flex shrink-0 items-center gap-1.5 border-r border-[#e6d4c1] pr-3">
@@ -356,6 +304,9 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                 Continue
               </SolidButton>
 
+              <p className="mt-3 text-center text-xs leading-relaxed text-[#80634e]">
+                We’ll send a one-time sign-in code to this number.
+              </p>
               <p className="mt-4 text-center text-[11px] leading-relaxed text-[#8c796a]">
                 By continuing, you agree to our{" "}
                 <Link href="/terms" className="font-semibold text-[#7B3A14] underline underline-offset-2">Terms</Link>
@@ -366,11 +317,11 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
           ) : (
             <>
               <div className="mb-5 flex flex-col items-center text-center">
-                <div className="h-20 w-20">
-                  <Lottie animationData={otpAnimation} loop autoplay />
-                </div>
+                <span className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fbf1e6] text-[#7B3A14]">
+                  <ShieldCheck className="h-9 w-9" aria-hidden="true" />
+                </span>
                 <h3 className="font-display text-xl font-bold text-[#7B3A14] sm:text-2xl">Verify your number</h3>
-                <p className="mt-1 text-sm text-[#80634e]">We sent a code to WhatsApp</p>
+                <p className="mt-1 text-sm text-[#80634e]">Enter the one-time code sent to WhatsApp at</p>
                 <div className="mt-1 flex items-center gap-2">
                   <p className="text-sm font-semibold text-[#542813]">+91 {phone}</p>
                   <button
@@ -401,7 +352,7 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
                       onPaste={handleOtpPaste}
                       onFocus={() => setFocusedOtpIndex(i)}
                       onBlur={() => setFocusedOtpIndex(null)}
-                      className="h-12 w-10 rounded-xl border-2 text-center text-xl font-bold outline-none transition-all duration-200 focus:scale-[1.04] sm:h-[54px] sm:w-[46px] sm:rounded-2xl sm:text-2xl"
+                      className="h-12 w-10 rounded-xl border-2 text-center text-xl font-bold outline-none sm:h-[54px] sm:w-[46px] sm:rounded-2xl sm:text-2xl"
                       style={{
                         borderColor: isFocused ? BRAND_HIGHLIGHT : "#ead7c3",
                         background: "#fffaf4",
