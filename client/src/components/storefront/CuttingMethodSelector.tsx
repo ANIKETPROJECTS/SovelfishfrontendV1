@@ -7,6 +7,7 @@ interface CuttingMethodSelectorProps {
   onChange: (methods: string[]) => void;
   title?: string;
   compact?: boolean;
+  variant?: "default" | "product";
 }
 
 export function CuttingMethodSelector({
@@ -15,6 +16,7 @@ export function CuttingMethodSelector({
   onChange,
   title = "Choose cutting method",
   compact = false,
+  variant = "default",
 }: CuttingMethodSelectorProps) {
   const options = normalizeCuttingMethods(methods);
   const radioName = useId();
@@ -26,24 +28,46 @@ export function CuttingMethodSelector({
   return (
     <fieldset
       aria-required="true"
-      className={compact ? "min-w-0" : "rounded-xl border border-border/50 bg-white p-4"}
+      className={
+        variant === "product"
+          ? "min-w-0 rounded-2xl bg-white p-4 sm:p-5"
+          : compact
+            ? "min-w-0"
+            : "rounded-xl border border-border/50 bg-white p-4"
+      }
     >
-      <legend className={compact ? "sr-only" : "px-1 text-sm font-semibold text-foreground"}>
+      <legend
+        className={
+          variant === "product"
+            ? "mb-1 block w-full px-0 text-base font-bold text-[#542813]"
+            : compact
+              ? "sr-only"
+              : "px-1 text-sm font-semibold text-foreground"
+        }
+      >
         {title} <span className="text-[#C8651B]" aria-hidden="true">*</span>
         <span className="sr-only"> required</span>
       </legend>
       {!compact && (
-        <p className="mb-3 text-xs text-muted-foreground">
+        <p className={`mb-3 text-xs ${variant === "product" ? "text-[#80634e]" : "text-muted-foreground"}`}>
           Select one option.
         </p>
       )}
-      <div className={compact ? "mt-2 flex flex-wrap gap-2" : "grid grid-cols-1 gap-2 sm:grid-cols-2"}>
+      <div
+        className={
+          variant === "product"
+            ? "grid grid-cols-1 gap-2 sm:grid-cols-2"
+            : compact
+              ? "mt-2 flex flex-wrap gap-2"
+              : "grid grid-cols-1 gap-2 sm:grid-cols-2"
+        }
+      >
         {options.map((method, index) => {
           const checked = selectedMethod === method;
           return (
             <label
               key={method}
-              className={`flex min-w-0 cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-xs transition-colors ${
+              className={`flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
                 checked
                   ? "border-[#C8651B] bg-[#FFF5EB] text-[#7B3A14]"
                   : "border-border/50 bg-white text-foreground hover:border-[#E8883A]"

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ChevronLeft, Plus, Minus, Copy, Check, ChefHat, ShoppingBasket,
+  ChevronLeft, Plus, Minus, Copy, Check, ChefHat, Heart, ShoppingBasket,
   ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -39,10 +39,6 @@ import servesIcon from "@assets/hot-food_1774801420499.png";
 import iconTimeImg from "@assets/time_1776949603776.png";
 import giftCardIconImg from "@/assets/gift-card.png";
 import tagIconImg from "@/assets/tag.png";
-import Lottie from "lottie-react";
-import recipesIconAnim from "@/assets/lottie/recipes-icon.json";
-import mayAlsoLikeAnim from "@/assets/lottie/may-also-like.json";
-
 import noImageImg from "@/assets/coming-soon.png";
 import { SeoHead } from "@/components/SeoHead";
 
@@ -361,7 +357,7 @@ export default function ProductDetail() {
         collapsibleMobileSearch
       />
 
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-[1280px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
 
         {/* Back */}
         <button
@@ -372,10 +368,10 @@ export default function ProductDetail() {
         </button>
 
         {/* ── Main Grid: Image | Details ── */}
-        <div className="mb-12 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2 lg:gap-8">
+        <div className="mb-12 grid grid-cols-1 items-start gap-5 lg:grid-cols-2 lg:gap-8 2xl:gap-10">
 
           {/* LEFT – Image */}
-          <div className="relative">
+          <div className="relative lg:sticky lg:top-24">
             <div className="aspect-square overflow-hidden rounded-3xl border border-[#9e5424] bg-white p-2 shadow-[0_10px_30px_rgba(82,39,15,.18)] sm:p-3">
               <img
                 src={product.imageUrl || getFallbackImage(product.category)}
@@ -392,7 +388,7 @@ export default function ProductDetail() {
           </div>
 
           {/* RIGHT – Details */}
-          <div className="flex h-full flex-col gap-5 rounded-3xl border border-[#9e5424] bg-[#7B3A14] p-5 text-white shadow-[0_10px_30px_rgba(82,39,15,.18)] sm:p-7">
+          <div className="flex min-w-0 flex-col gap-4 rounded-3xl border border-[#9e5424] bg-[#7B3A14] p-4 text-white shadow-[0_10px_30px_rgba(82,39,15,.18)] sm:gap-5 sm:p-6 lg:p-7">
 
             {/* Name + category / subcategory */}
             <div>
@@ -412,7 +408,7 @@ export default function ProductDetail() {
                   </span>
                 )}
               </div>
-              <h1 className="font-display text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">{product.name}</h1>
+              <h1 className="break-words font-display text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">{product.name}</h1>
             </div>
 
             {/* Description */}
@@ -422,12 +418,12 @@ export default function ProductDetail() {
 
             {/* Pieces / Serves / Weight — wraps gracefully when text is long */}
             {(displayPieces || displayServes || product.grossWeight || product.netWeight) && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
+            <div className="grid grid-cols-1 gap-2 rounded-2xl border border-white/15 bg-white/5 p-3 text-white sm:grid-cols-2">
               {/* Pieces */}
-              {displayPieces && <div className="flex items-center gap-2 shrink-0">
+              {displayPieces && <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
                 <span
                   aria-hidden
-                  className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
+                  className="inline-block h-5 w-5 shrink-0 bg-white sm:h-6 sm:w-6"
                   style={{
                     WebkitMaskImage: `url(${piecesIcon})`,
                     maskImage: `url(${piecesIcon})`,
@@ -439,20 +435,16 @@ export default function ProductDetail() {
                     maskPosition: "center",
                   }}
                 />
-                <span className="text-sm sm:text-lg font-semibold leading-tight whitespace-nowrap">
+                <span className="text-sm font-semibold leading-tight sm:text-base">
                   Pieces: {displayPieces}
                 </span>
               </div>}
 
-              {displayPieces && displayServes && (
-                <span aria-hidden className="block h-6 w-px shrink-0 bg-white/35 sm:h-7" />
-              )}
-
               {/* Serves */}
-              {displayServes && <div className="flex items-center gap-2 shrink-0">
+              {displayServes && <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
                 <span
                   aria-hidden
-                  className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
+                  className="inline-block h-5 w-5 shrink-0 bg-white sm:h-6 sm:w-6"
                   style={{
                     WebkitMaskImage: `url(${servesIcon})`,
                     maskImage: `url(${servesIcon})`,
@@ -464,21 +456,17 @@ export default function ProductDetail() {
                     maskPosition: "center",
                   }}
                 />
-                <span className="text-sm sm:text-lg font-semibold leading-tight whitespace-nowrap">
+                <span className="text-sm font-semibold leading-tight sm:text-base">
                   Serves: {displayServes}
                 </span>
               </div>}
 
-              {(displayPieces || displayServes) && (product.grossWeight || product.netWeight) && (
-                <span aria-hidden className="block h-6 w-px shrink-0 bg-white/35 sm:h-7" />
-              )}
-
               {/* Weight */}
               {(product.grossWeight || product.netWeight) && (
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
                   <span
                     aria-hidden
-                    className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
+                    className="inline-block h-5 w-5 shrink-0 bg-white sm:h-6 sm:w-6"
                     style={{
                       WebkitMaskImage: `url(${weighScaleIcon})`,
                       maskImage: `url(${weighScaleIcon})`,
@@ -490,7 +478,7 @@ export default function ProductDetail() {
                       maskPosition: "center",
                     }}
                   />
-                  <div className="flex flex-row flex-wrap items-baseline gap-x-1 leading-tight text-sm sm:text-lg font-semibold">
+                  <div className="flex min-w-0 flex-row flex-wrap items-baseline gap-x-1 leading-tight text-sm font-semibold sm:text-base">
                     {product.grossWeight && (
                       <span className="whitespace-nowrap">
                         {formatProductWeight(product.grossWeight, "gross")}
@@ -513,7 +501,7 @@ export default function ProductDetail() {
             {variants.length > 0 && (
               <div ref={variantOptionsRef} id="product-variants" className="scroll-mt-24">
                 <p className="mb-3 text-base font-bold text-white">Choose an option</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
                   {variants.map((variant, index) => (
                     <button
                       key={variant.batchId ?? `${variant.weightKg}-${variant.minWeightKg ?? ""}-${variant.maxWeightKg ?? ""}-${index}`}
@@ -523,14 +511,16 @@ export default function ProductDetail() {
                         setQty(1);
                       }}
                       aria-pressed={index === selectedVariantIndex}
-                      className="rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:-translate-y-0.5"
+                      className="flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl border px-2.5 py-2 text-center text-[11px] font-bold leading-snug transition-colors hover:-translate-y-0.5 sm:px-3 sm:text-xs"
                       style={index === selectedVariantIndex
                         ? { borderColor: "#FFFFFF", backgroundColor: "#FFFFFF", color: "#7B3A14" }
                         : { borderColor: "rgba(255,255,255,.45)", backgroundColor: "rgba(255,255,255,.08)", color: "#FFFFFF" }}
                     >
-                        {variant.label}
-                        {variant.averageWeightLabel ? ` (avg ${variant.averageWeightLabel})` : ""}
-                        {" · ₹"}{formatStorePrice(variant.price + areaCharge)}
+                        <span>
+                          {variant.label}
+                          {variant.averageWeightLabel ? ` (avg ${variant.averageWeightLabel})` : ""}
+                          {" · ₹"}{formatStorePrice(variant.price + areaCharge)}
+                        </span>
                     </button>
                   ))}
                 </div>
@@ -541,6 +531,7 @@ export default function ProductDetail() {
               methods={availableCuttingMethods}
               selectedMethods={selectedCuttingMethods}
               onChange={setSelectedCuttingMethods}
+              variant="product"
             />
 
             {/* Price */}
@@ -564,8 +555,8 @@ export default function ProductDetail() {
               const displayQty = isInCart ? currentCartQty : qty;
 
               return (
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="flex items-center overflow-hidden rounded-full border border-white/60 bg-white text-[#7B3A14] shadow-sm">
+                <div className="flex flex-col items-stretch gap-3 min-[420px]:flex-row min-[420px]:items-center sm:gap-4">
+                  <div className="flex w-full max-w-[148px] shrink-0 items-center justify-between overflow-hidden rounded-full border border-white/60 bg-white text-[#7B3A14] shadow-sm">
                     <button
                       onClick={() => {
                         if (isInCart) {
@@ -621,7 +612,7 @@ export default function ProductDetail() {
                       }
                     }}
                     disabled={isUnavailable || totalMax <= 0 || (!isInCart && !cuttingMethodSelected)}
-                    className="h-11 flex-1 rounded-full bg-white text-sm font-bold text-[#7B3A14] shadow-md transition hover:bg-[#fff1df] sm:h-12 sm:text-base"
+                    className="h-auto min-h-12 w-full min-w-0 flex-1 whitespace-normal rounded-full bg-white px-4 py-2 text-center text-sm font-bold leading-tight text-[#7B3A14] shadow-md transition hover:bg-[#fff1df] sm:text-base"
                   >
                     {isUnavailable
                       ? "Out of Stock"
@@ -689,12 +680,14 @@ export default function ProductDetail() {
 
         {/* ── Explore New Recipes — only shown when the admin has added recipes to this product ── */}
         {product.recipes && product.recipes.length > 0 && (
-          <section className="mb-14">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
-                <Lottie animationData={recipesIconAnim} loop autoplay />
+          <section className="mb-12">
+            <div className="mb-5 flex justify-center">
+              <div className="inline-flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#7B3A14] text-white shadow-sm">
+                  <ChefHat className="h-5 w-5" />
+                </span>
+                <h2 className="font-display text-2xl font-bold text-[#542813] sm:text-3xl">Explore New Recipes</h2>
               </div>
-              <h2 className="font-display text-2xl font-bold text-[#542813] sm:text-3xl">Explore New Recipes</h2>
             </div>
             <div className="relative">
               <div ref={recipeScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
@@ -760,13 +753,15 @@ export default function ProductDetail() {
         {/* ── Similar Products ── */}
         {recommended.length > 0 && (
           <section className="mb-12">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
-                <Lottie animationData={mayAlsoLikeAnim} loop autoplay />
+            <div className="mb-5 flex justify-center">
+              <div className="inline-flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#7B3A14] text-white shadow-sm">
+                  <Heart className="h-5 w-5 fill-[#F0A458] text-[#F0A458]" />
+                </span>
+                <h2 className="font-display text-2xl font-bold text-[#542813] sm:text-3xl">
+                  {sameCategory.length > 0 ? `More ${product.category}` : "You May Also Like"}
+                </h2>
               </div>
-              <h2 className="font-display text-2xl font-bold text-[#542813] sm:text-3xl">
-                {sameCategory.length > 0 ? `More ${product.category}` : "You May Also Like"}
-              </h2>
             </div>
             <div className="relative">
               <div
