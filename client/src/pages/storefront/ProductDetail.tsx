@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ChevronLeft, Plus, Minus, Copy, Check, ChefHat, Heart, ShoppingBasket,
+  ChevronLeft, Plus, Minus, Copy, Check, ChefHat, ShoppingBasket,
   ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -154,7 +154,6 @@ export default function ProductDetail() {
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [selectedCuttingMethods, setSelectedCuttingMethods] = useState<string[]>([]);
   const recipeScrollRef = useRef<HTMLDivElement>(null);
-  const similarScrollRef = useRef<HTMLDivElement>(null);
 
   const productId = params?.id;
   const requestedSaleOption = new URLSearchParams(search).get("saleOption");
@@ -762,30 +761,18 @@ export default function ProductDetail() {
         {recommended.length > 0 && (
           <section className="mb-12">
             <div className="mb-5 flex justify-center">
-              <div className="inline-flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#7B3A14] text-white shadow-sm">
-                  <Heart className="h-5 w-5 fill-[#F0A458] text-[#F0A458]" />
-                </span>
-                <h2 className="font-display text-2xl font-bold text-[#542813] sm:text-3xl">
-                  {sameCategory.length > 0 ? `More ${product.category}` : "You May Also Like"}
-                </h2>
-              </div>
+              <h2 className="font-display text-center text-2xl font-bold text-[#542813] sm:text-3xl">Fresh Picks for You</h2>
             </div>
-            <div className="relative">
-              <div
-                ref={similarScrollRef}
-                className="flex items-start gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x"
-              >
-                {recommendedCards.map((card) => (
-                  <div key={card.key} className="w-[210px] sm:w-[230px] shrink-0 snap-start">
-                    <ProductCard
-                      product={card.product}
-                      detailVariantKey={card.detailVariantKey}
-                      brandText
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="mx-auto grid max-w-[680px] grid-cols-2 items-start gap-3 sm:gap-5">
+              {recommendedCards.map((card) => (
+                <div key={card.key} className="min-w-0">
+                  <ProductCard
+                    product={card.product}
+                    detailVariantKey={card.detailVariantKey}
+                    brandText
+                  />
+                </div>
+              ))}
             </div>
           </section>
         )}
