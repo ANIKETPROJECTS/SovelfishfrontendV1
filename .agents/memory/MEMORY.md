@@ -18,7 +18,7 @@
 - [Keep checkout helpers isolated](checkout-helper-imports.md) — stock calculations used by tests should not import DB-connected sync modules.
 - [Market price comparisons](market-price-comparisons.md) — Always show Mongo catalog rates; movements, ranges, and sparklines must use saved price history only.
 - [Homepage visual direction](homepage-visual-direction.md) — Use warm golden wood on the homepage, pure white header/cards, and brown wood for the footer.
-- [Fresh catch reels scope](fresh-catch-reels-scope.md) — Fresh catch reel tiles are UI-only placeholders until the user adds the admin backend.
+- [Fresh catch reel files](fresh-catch-reels-scope.md) — Root `Bannervids` files drive titles/cards; show at most four, hide at zero; admin CRUD remains future scope.
 - [Address map privacy](address-map-privacy.md) — Geocoder queries must use a separate public-place search, never customer or apartment details.
 - [Google Maps async loading](google-maps-loader.md) — wait for the Maps API callback before importing libraries; a script download event alone may be too early.
 - [City-area delivery pricing](city-area-pricing.md) — each address requires a six-digit pincode; active areas set pricing, and pincodes never determine serviceability.

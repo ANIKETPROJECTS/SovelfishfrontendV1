@@ -1,10 +1,10 @@
 ---
 name: Fresh catch reels scope
-description: Scope boundary for replacing the homepage market-rate board with fresh-catch video previews.
+description: File-driven homepage Fresh Catch video cards and future admin scope.
 ---
 
-Build the Fresh Catch reel experience as a UI-only placeholder until the user adds the admin backend.
+The homepage Fresh Catch cards are driven by video files in the root `Bannervids` folder. The video filename supplies the displayed title. Show no more than four videos, and hide the section when there are none.
 
-**Why:** the user explicitly requested dummy content for the four homepage tiles and said they will add the admin backend afterward.
+**Why:** the user requested a dynamic file-based section with up to four videos, including zero, and plans to manage the files through a future admin.
 
-**How to apply:** do not create or connect admin CRUD, storage, or video API routes unless the user asks for that follow-up.
+**How to apply:** keep the current listing read-only and discover files dynamically; do not add admin CRUD unless the user asks for it.

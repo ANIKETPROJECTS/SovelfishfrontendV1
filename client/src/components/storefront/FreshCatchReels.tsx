@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -9,40 +10,38 @@ import {
 
 type ReelItem = {
   id: string;
-  name: string;
+  title: string;
   videoUrl: string;
-  posterUrl: string;
+  posterUrl?: string;
 };
-
-const REELS: ReelItem[] = [
-  {
-    id: "super-size-pomfret",
-    name: "Super Size Pomfret",
-    videoUrl: "/reels/fresh-catch-1.mp4",
-    posterUrl: "/reels/fresh-catch-1.jpg",
-  },
-  {
-    id: "jumbo-crabs-offer",
-    name: "Jumbo Crabs Offer",
-    videoUrl: "/reels/fresh-catch-2.mp4",
-    posterUrl: "/reels/fresh-catch-2.jpg",
-  },
-  {
-    id: "sunday-special",
-    name: "Sunday Special",
-    videoUrl: "/reels/fresh-catch-3.mp4",
-    posterUrl: "/reels/fresh-catch-3.jpg",
-  },
-  {
-    id: "fresh-catch-offer",
-    name: "Fresh Catch Offer",
-    videoUrl: "/reels/fresh-catch-4.mp4",
-    posterUrl: "/reels/fresh-catch-4.jpg",
-  },
-];
 
 export function FreshCatchReels() {
   const [activeReel, setActiveReel] = useState<ReelItem | null>(null);
+  const {
+    data: reels = [],
+    isError,
+    isLoading,
+  } = useQuery<ReelItem[]>({
+    queryKey: ["/api/banner-videos"],
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
+  });
+
+  useEffect(() => {
+    if (!activeReel) return;
+    const latestReel = reels.find((reel) => reel.id === activeReel.id);
+    if (!latestReel) {
+      setActiveReel(null);
+      return;
+    }
+    if (latestReel.videoUrl !== activeReel.videoUrl || latestReel.posterUrl !== activeReel.posterUrl) {
+      setActiveReel(latestReel);
+    }
+  }, [activeReel, reels]);
+
+  if (isLoading || (!isError && reels.length === 0)) return null;
 
   return (
     <section
@@ -56,38 +55,42 @@ export function FreshCatchReels() {
         Today&apos;s Fresh Catch from FSX
       </h2>
 
-      <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        {REELS.map((reel) => (
-          <button
-            key={reel.id}
-            type="button"
-            onClick={() => setActiveReel(reel)}
-            aria-label={`Play ${reel.name} video`}
-            className="group relative aspect-[9/16] min-w-0 overflow-hidden rounded-2xl border-2 border-[#7B3A14] bg-[#d8c1a8] text-left transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a55e32] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          >
-            <video
-              src={reel.videoUrl}
-              poster={reel.posterUrl}
-              muted
-              autoPlay
-              loop
-              playsInline
-              preload="metadata"
-              aria-hidden="true"
-              tabIndex={-1}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            />
+      {isError ? (
+        <p className="rounded-xl border border-[#7B3A14]/20 bg-white/70 px-4 py-6 text-center text-sm font-medium text-[#7B3A14]">
+          Fresh catch videos are temporarily unavailable.
+        </p>
+      ) : (
+        <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {reels.map((reel) => (
+            <button
+              key={reel.id}
+              type="button"
+              onClick={() => setActiveReel(reel)}
+              aria-label={`Play ${reel.title} video`}
+              className="group relative aspect-[9/16] min-w-0 overflow-hidden rounded-2xl border-2 border-[#7B3A14] bg-[#d8c1a8] text-left transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a55e32] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            >
+              <video
+                src={reel.videoUrl}
+                poster={reel.posterUrl}
+                muted
+                autoPlay
+                loop
+                playsInline
+                preload="metadata"
+                aria-hidden="true"
+                tabIndex={-1}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              />
 
-            <div className="absolute inset-x-0 bottom-0 p-3.5 text-white sm:p-4">
-              {reel.name && (
+              <div className="absolute inset-x-0 bottom-0 p-3.5 text-white sm:p-4">
                 <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-[-0.02em] drop-shadow-[0_2px_3px_rgba(0,0,0,0.95)] sm:text-base">
-                  {reel.name}
+                  {reel.title}
                 </h3>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <Dialog
         open={activeReel !== null}
@@ -101,7 +104,7 @@ export function FreshCatchReels() {
               Fresh Stock Xchange
             </p>
             <DialogTitle className="text-xl font-semibold tracking-[-0.04em] text-[#4f3021] sm:text-2xl">
-              {activeReel?.name ?? "Fresh Catch"}
+              {activeReel?.title ?? "Fresh Catch"}
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed text-[#795f4d]">
               Watch this Fresh Stock Xchange reel.

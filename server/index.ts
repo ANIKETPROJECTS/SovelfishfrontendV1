@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import compression from "compression";
 import { registerRoutes } from "./routes";
+import { registerBannerVideoRoutes } from "./bannerVideos";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { startInventorySyncScheduler } from "./inventorySync";
@@ -113,6 +114,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  registerBannerVideoRoutes(app);
   await registerRoutes(httpServer, app);
   startInventorySyncScheduler();
 
