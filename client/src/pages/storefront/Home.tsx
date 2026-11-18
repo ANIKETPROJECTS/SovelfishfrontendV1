@@ -168,10 +168,13 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+        <div
+          className="grid justify-items-start gap-4 sm:gap-6"
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 240px), 1fr))" }}
+        >
           {preorderProducts.map((product) => (
             <div key={product.id} className="min-w-0">
-              <ProductCard product={product} preorderContext brandText />
+              <ProductCard product={product} preorderContext brandText compactBrandCard />
             </div>
           ))}
         </div>
