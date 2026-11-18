@@ -54,13 +54,13 @@ const EMPTY_CUTTING_METHODS: string[] = [];
 
 function CouponCard({ code, description }: { code: string; description: string; color?: string; onApply?: () => void; isApplied?: boolean }) {
   return (
-    <div className="flex items-center px-4 py-3 bg-background hover:bg-muted/10 transition-colors">
+    <div className="flex items-center px-4 py-3 bg-white transition-colors hover:bg-[#fffaf4]">
       <div className="flex items-start gap-2.5 min-w-0 flex-1">
         <span
           aria-hidden
           className="w-6 h-6 shrink-0 inline-block mt-0.5"
           style={{
-            backgroundColor: "#364F9F",
+            backgroundColor: "#C8651B",
             WebkitMaskImage: `url(${tagIconImg})`,
             maskImage: `url(${tagIconImg})`,
             WebkitMaskRepeat: "no-repeat",
@@ -78,7 +78,7 @@ function CouponCard({ code, description }: { code: string; description: string; 
           >
             {code}
           </span>
-          <p className="text-xs text-muted-foreground mt-1 whitespace-normal break-words leading-snug">{description}</p>
+          <p className="mt-1 whitespace-normal break-words text-xs leading-snug text-[#80634e]">{description}</p>
         </div>
       </div>
     </div>
@@ -95,31 +95,31 @@ function RecipeCard({
 }) {
   return (
     <div
-      className="min-w-[260px] sm:min-w-[280px] snap-start bg-card border border-border/30 rounded-2xl overflow-hidden hover:shadow-md transition-shadow flex flex-col cursor-pointer"
+      className="min-w-[260px] snap-start overflow-hidden rounded-2xl border border-[#9e5424] bg-[#7B3A14] shadow-[0_6px_20px_rgba(82,39,15,.14)] transition-all hover:-translate-y-1 hover:shadow-xl sm:min-w-[280px] flex flex-col cursor-pointer"
       onClick={() => onViewRecipe(category, index)}
     >
-      <div className="relative w-full h-44 overflow-hidden bg-muted/20">
+      <div className="relative w-full h-44 overflow-hidden bg-[#542813]">
         <img
           src={recipe.image}
           alt={recipe.name}
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
         />
         {recipe.difficulty && (
-          <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-[#F97316] text-white shadow-sm">
+          <span className="absolute top-2 right-2 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#7B3A14] shadow-sm">
             {recipe.difficulty}
           </span>
         )}
       </div>
-      <div className="p-4 flex flex-col flex-1 gap-2">
-        <h4 className="font-medium text-base text-foreground leading-snug line-clamp-2">{recipe.name}</h4>
-        <p className="text-xs font-light text-muted-foreground leading-relaxed line-clamp-3 flex-1">{recipe.description}</p>
-        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+      <div className="flex flex-1 flex-col gap-2 bg-[#7B3A14] p-4">
+        <h4 className="line-clamp-2 text-base font-bold leading-snug text-white">{recipe.name}</h4>
+        <p className="line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-white/75">{recipe.description}</p>
+        <div className="mt-1 flex items-center gap-3 text-xs text-white/80">
           <span className="inline-flex items-center gap-1">
             <span
               aria-hidden
               className="w-3.5 h-3.5 inline-block shrink-0"
               style={{
-                backgroundColor: "#364F9F",
+                backgroundColor: "#F0A458",
                 WebkitMaskImage: `url(${iconTimeImg})`,
                 maskImage: `url(${iconTimeImg})`,
                 WebkitMaskRepeat: "no-repeat",
@@ -135,7 +135,7 @@ function RecipeCard({
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onViewRecipe(category, index); }}
-          className="mt-1 w-full text-sm font-semibold bg-accent text-white border border-accent rounded-full px-3 py-2 hover:bg-[#364F9F] hover:border-[#364F9F] hover:text-white transition-colors"
+          className="mt-1 w-full rounded-full border border-white bg-white px-3 py-2 text-sm font-bold text-[#7B3A14] transition-colors hover:bg-[#fff1df]"
         >
           View Recipe
         </button>
@@ -295,7 +295,7 @@ export default function ProductDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen home-storefront-page">
         <Header
           onSearchSubmit={(q) => setLocation(q ? `/?q=${encodeURIComponent(q)}` : "/")}
           collapsibleMobileSearch
@@ -316,12 +316,12 @@ export default function ProductDetail() {
   if (!product) {
     // The useEffect above will redirect to home. Render a blank screen in the
     // interim so there's no jarring "Product not found." flash behind the cart drawer.
-    return <div className="min-h-screen bg-background" />;
+    return <div className="min-h-screen home-storefront-page" />;
   }
 
   const catKeyword = product.category?.toLowerCase() ?? "seafood";
   return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen home-storefront-page font-sans">
       <SeoHead
         title={`Buy ${product.name} Online in Mumbai | Fresh & Hygienically Cut`}
         description={`Order ${product.name} online in Mumbai. 100% fresh ${catKeyword}, hygienically cleaned & cut, delivered same-day to your doorstep. Free delivery above ₹500. Order now on Fresh Stock Xchange.`}
@@ -361,74 +361,73 @@ export default function ProductDetail() {
         collapsibleMobileSearch
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
 
         {/* Back */}
         <button
           onClick={() => setLocation("/")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#e6c7a9] bg-white/95 px-4 py-2 text-sm font-semibold text-[#7B3A14] shadow-sm transition-colors hover:bg-white"
         >
           <ChevronLeft className="w-4 h-4" /> Back to store
         </button>
 
         {/* ── Main Grid: Image | Details ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-14">
+        <div className="mb-12 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2 lg:gap-8">
 
           {/* LEFT – Image */}
           <div className="relative">
-            <div className="aspect-square rounded-3xl overflow-hidden border border-border/20 shadow-lg bg-muted/20">
+            <div className="aspect-square overflow-hidden rounded-3xl border border-[#9e5424] bg-white p-2 shadow-[0_10px_30px_rgba(82,39,15,.18)] sm:p-3">
               <img
                 src={product.imageUrl || getFallbackImage(product.category)}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="h-full w-full rounded-[1.25rem] object-cover"
               />
             </div>
             {product.status === "limited" && (
-              <Badge className="absolute top-4 left-4 bg-amber-500 text-white border-none shadow">Limited Stock</Badge>
+              <Badge className="absolute left-5 top-5 rounded-full border border-white bg-white px-3 py-1 font-bold text-[#7B3A14] shadow-md">Limited Stock</Badge>
             )}
             {product.status === "unavailable" && (
-              <Badge className="absolute top-4 left-4 bg-red-500 text-white border-none shadow">Sold Out</Badge>
+              <Badge className="absolute left-5 top-5 rounded-full border border-white bg-white px-3 py-1 font-bold text-[#7B3A14] shadow-md">Sold Out</Badge>
             )}
           </div>
 
           {/* RIGHT – Details */}
-          <div className="flex flex-col gap-5">
+          <div className="flex h-full flex-col gap-5 rounded-3xl border border-[#9e5424] bg-[#7B3A14] p-5 text-white shadow-[0_10px_30px_rgba(82,39,15,.18)] sm:p-7">
 
             {/* Name + category / subcategory */}
             <div>
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
                 <span
-                  className="text-xs font-bold tracking-wide rounded-full px-2.5 py-0.5 text-white inline-block"
-                  style={{ backgroundColor: "#8B3A0F", color: "#FFFFFF" }}
+                  className="inline-block rounded-full bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#7B3A14]"
+                  style={{ color: "#7B3A14" }}
                   data-testid={`badge-category-${product.category}`}
                 >
                   {product.category}
                 </span>
                 {product.subCategory && product.subCategory !== product.name && (
                   <span
-                    className="text-xs font-semibold tracking-wide rounded-full px-2.5 py-0.5 inline-block border"
-                    style={{ borderColor: "#C8651B", color: "#7B3A14", backgroundColor: "#FFF4E8" }}
+                    className="inline-block rounded-full border border-white/40 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-white"
                   >
                     {product.subCategory}
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">{product.name}</h1>
+              <h1 className="font-display text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">{product.name}</h1>
             </div>
 
             {/* Description */}
             {product.description && (
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">{product.description}</p>
+              <p className="text-sm font-medium leading-relaxed text-white/80 sm:text-base">{product.description}</p>
             )}
 
             {/* Pieces / Serves / Weight — wraps gracefully when text is long */}
             {(displayPieces || displayServes || product.grossWeight || product.netWeight) && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 py-1 text-black dark:text-white">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
               {/* Pieces */}
               {displayPieces && <div className="flex items-center gap-2 shrink-0">
                 <span
                   aria-hidden
-                  className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
+                  className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
                   style={{
                     WebkitMaskImage: `url(${piecesIcon})`,
                     maskImage: `url(${piecesIcon})`,
@@ -446,14 +445,14 @@ export default function ProductDetail() {
               </div>}
 
               {displayPieces && displayServes && (
-                <span aria-hidden className="block w-px h-6 sm:h-7 bg-black/70 dark:bg-white/70 shrink-0" />
+                <span aria-hidden className="block h-6 w-px shrink-0 bg-white/35 sm:h-7" />
               )}
 
               {/* Serves */}
               {displayServes && <div className="flex items-center gap-2 shrink-0">
                 <span
                   aria-hidden
-                  className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
+                  className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
                   style={{
                     WebkitMaskImage: `url(${servesIcon})`,
                     maskImage: `url(${servesIcon})`,
@@ -471,7 +470,7 @@ export default function ProductDetail() {
               </div>}
 
               {(displayPieces || displayServes) && (product.grossWeight || product.netWeight) && (
-                <span aria-hidden className="block w-px h-6 sm:h-7 bg-black/70 dark:bg-white/70 shrink-0" />
+                <span aria-hidden className="block h-6 w-px shrink-0 bg-white/35 sm:h-7" />
               )}
 
               {/* Weight */}
@@ -479,7 +478,7 @@ export default function ProductDetail() {
                 <div className="flex items-center gap-2 shrink-0">
                   <span
                     aria-hidden
-                    className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
+                    className="inline-block h-6 w-6 shrink-0 bg-white sm:h-7 sm:w-7"
                     style={{
                       WebkitMaskImage: `url(${weighScaleIcon})`,
                       maskImage: `url(${weighScaleIcon})`,
@@ -513,7 +512,7 @@ export default function ProductDetail() {
 
             {variants.length > 0 && (
               <div ref={variantOptionsRef} id="product-variants" className="scroll-mt-24">
-                <p className="mb-2 text-sm font-semibold text-foreground">Choose an option</p>
+                <p className="mb-3 text-base font-bold text-white">Choose an option</p>
                 <div className="flex flex-wrap gap-2">
                   {variants.map((variant, index) => (
                     <button
@@ -524,10 +523,10 @@ export default function ProductDetail() {
                         setQty(1);
                       }}
                       aria-pressed={index === selectedVariantIndex}
-                      className="rounded-full border px-3 py-2 text-sm font-semibold transition-colors"
+                      className="rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:-translate-y-0.5"
                       style={index === selectedVariantIndex
-                        ? { borderColor: "#8B3A0F", backgroundColor: "#8B3A0F", color: "#FFFFFF" }
-                        : { borderColor: "#C8651B", backgroundColor: "#FFFFFF", color: "#7B3A14" }}
+                        ? { borderColor: "#FFFFFF", backgroundColor: "#FFFFFF", color: "#7B3A14" }
+                        : { borderColor: "rgba(255,255,255,.45)", backgroundColor: "rgba(255,255,255,.08)", color: "#FFFFFF" }}
                     >
                         {variant.label}
                         {variant.averageWeightLabel ? ` (avg ${variant.averageWeightLabel})` : ""}
@@ -545,13 +544,13 @@ export default function ProductDetail() {
             />
 
             {/* Price */}
-            <div className="bg-muted/30 border border-border/30 rounded-2xl px-5 py-4">
+            <div className="rounded-2xl border border-white/25 bg-white px-5 py-4 shadow-sm">
               <div className="flex items-end gap-3 mb-1">
-                <span className="text-3xl font-bold text-foreground">₹{formatStorePrice(displayPrice)}</span>
-                {strikePrice && <span className="text-base text-muted-foreground line-through mb-0.5">₹{strikePrice}</span>}
-                {effectiveDiscountPct > 0 && <span className="text-sm font-semibold text-green-600 mb-0.5">{effectiveDiscountPct}% off</span>}
+                <span className="text-3xl font-extrabold text-[#7B3A14]">₹{formatStorePrice(displayPrice)}</span>
+                {strikePrice && <span className="mb-0.5 text-base font-medium text-[#80634e] line-through">₹{strikePrice}</span>}
+                {effectiveDiscountPct > 0 && <span className="mb-0.5 rounded-full bg-[#fff1df] px-2.5 py-1 text-xs font-bold text-[#a84d12]">{effectiveDiscountPct}% off</span>}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs font-semibold text-[#80634e]">
                 {selectedVariant?.label ?? product.unit ?? "Inclusive of all taxes."}
                 {(selectedVariant || product.unit) ? " · Inclusive of all taxes." : ""}
               </p>
@@ -565,8 +564,8 @@ export default function ProductDetail() {
               const displayQty = isInCart ? currentCartQty : qty;
 
               return (
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center border border-border/40 rounded-full overflow-hidden">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="flex items-center overflow-hidden rounded-full border border-white/60 bg-white text-[#7B3A14] shadow-sm">
                     <button
                       onClick={() => {
                         if (isInCart) {
@@ -575,11 +574,12 @@ export default function ProductDetail() {
                           setQty(q => Math.max(1, q - 1));
                         }
                       }}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
+                      aria-label="Decrease quantity"
+                      className="flex h-11 w-10 items-center justify-center transition-colors hover:bg-[#fff1df]"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-10 text-center font-semibold text-sm">{displayQty}</span>
+                    <span className="w-9 text-center text-sm font-bold">{displayQty}</span>
                     <button
                       onClick={() => {
                         if (isInCart) {
@@ -589,7 +589,8 @@ export default function ProductDetail() {
                         }
                       }}
                       disabled={displayQty >= totalMax}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label="Increase quantity"
+                      className="flex h-11 w-10 items-center justify-center transition-colors hover:bg-[#fff1df] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -620,7 +621,7 @@ export default function ProductDetail() {
                       }
                     }}
                     disabled={isUnavailable || totalMax <= 0 || (!isInCart && !cuttingMethodSelected)}
-                    className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-sm shadow-md"
+                    className="h-11 flex-1 rounded-full bg-white text-sm font-bold text-[#7B3A14] shadow-md transition hover:bg-[#fff1df] sm:h-12 sm:text-base"
                   >
                     {isUnavailable
                       ? "Out of Stock"
@@ -634,16 +635,16 @@ export default function ProductDetail() {
 
             {/* Available Offers — collapsible (matches Order Summary styling) */}
             {liveCoupons.length > 0 && (
-              <div className="border border-border/40 rounded-2xl overflow-hidden">
+              <div className="overflow-hidden rounded-2xl border border-[#e6c7a9] bg-white shadow-sm">
                 <div
-                  className="w-full flex items-center gap-2.5 px-4 py-3 bg-muted/20"
+                  className="flex w-full items-center gap-2.5 bg-[#fff5e9] px-4 py-3.5"
                   data-testid="header-offers"
                 >
                   <span
                     aria-hidden
                     className="w-5 h-5 shrink-0 inline-block"
                     style={{
-                      backgroundColor: "#364F9F",
+                      backgroundColor: "#C8651B",
                       WebkitMaskImage: `url(${giftCardIconImg})`,
                       maskImage: `url(${giftCardIconImg})`,
                       WebkitMaskRepeat: "no-repeat",
@@ -655,13 +656,13 @@ export default function ProductDetail() {
                     }}
                   />
                   <div className="flex-1 text-left min-w-0">
-                    <span className="text-sm font-semibold text-foreground">
+                    <span className="text-sm font-bold text-[#542813]">
                       Offers Available
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col divide-y divide-border/20 border-t border-border/20">
+                <div className="flex flex-col divide-y divide-[#f0dfcf] border-t border-[#f0dfcf]">
                   {(showAllCoupons ? liveCoupons : liveCoupons.slice(0, 3)).map((c) => (
                     <CouponCard
                       key={c.id}
@@ -675,8 +676,7 @@ export default function ProductDetail() {
                   {liveCoupons.length > 3 && (
                     <button
                       onClick={() => setShowAllCoupons(v => !v)}
-                      className="w-full py-2.5 text-xs font-semibold text-center transition-colors hover:opacity-80"
-                      style={{ color: "#364F9F" }}
+                      className="w-full py-3 text-xs font-bold text-center text-[#a84d12] transition-colors hover:bg-[#fffaf4]"
                     >
                       {showAllCoupons ? "View Less" : `View ${liveCoupons.length - 3} More Offer${liveCoupons.length - 3 > 1 ? "s" : ""}`}
                     </button>
@@ -694,41 +694,41 @@ export default function ProductDetail() {
               <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
                 <Lottie animationData={recipesIconAnim} loop autoplay />
               </div>
-              <h2 className="text-lg sm:text-xl font-medium text-foreground">Explore New Recipes</h2>
+              <h2 className="font-display text-2xl font-bold text-[#542813] sm:text-3xl">Explore New Recipes</h2>
             </div>
             <div className="relative">
               <div ref={recipeScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
                 {product.recipes.map((r, idx) => (
                   <div
                     key={idx}
-                    className="min-w-[260px] sm:min-w-[280px] snap-start bg-card border border-border/30 rounded-2xl overflow-hidden hover:shadow-md transition-shadow flex flex-col cursor-pointer"
+                    className="min-w-[260px] snap-start overflow-hidden rounded-2xl border border-[#9e5424] bg-[#7B3A14] shadow-[0_6px_20px_rgba(82,39,15,.14)] transition-all hover:-translate-y-1 hover:shadow-xl sm:min-w-[280px] flex flex-col cursor-pointer"
                     onClick={() => setLocation(`/recipe/product/${product.id}/${idx}`)}
                   >
-                    <div className="relative w-full h-44 overflow-hidden bg-muted/20 flex items-center justify-center">
+                    <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-[#542813]">
                       {r.image ? (
                         <img src={r.image} alt={r.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
                       ) : (
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
+                        <div className="flex flex-col items-center gap-2 text-white/40">
                           <ChefHat className="w-10 h-10" />
                         </div>
                       )}
                       {r.difficulty && (
-                        <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-[#8B3A0F] text-white shadow-sm">
+                        <span className="absolute right-2 top-2 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#7B3A14] shadow-sm">
                           {r.difficulty}
                         </span>
                       )}
                     </div>
-                    <div className="p-4 flex flex-col flex-1 gap-2">
-                      <h4 className="font-medium text-base text-foreground leading-snug line-clamp-2">{r.title}</h4>
-                      <p className="text-xs font-light text-muted-foreground leading-relaxed line-clamp-3 flex-1">{r.description}</p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <div className="flex flex-1 flex-col gap-2 bg-[#7B3A14] p-4">
+                      <h4 className="line-clamp-2 text-base font-bold leading-snug text-white">{r.title}</h4>
+                      <p className="line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-white/75">{r.description}</p>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-white/80">
                         {r.totalTime && (
                           <span className="inline-flex items-center gap-1">
                             <span
                               aria-hidden
                               className="w-3.5 h-3.5 inline-block shrink-0"
                               style={{
-                                backgroundColor: "#364F9F",
+                                backgroundColor: "#F0A458",
                                 WebkitMaskImage: `url(${iconTimeImg})`,
                                 maskImage: `url(${iconTimeImg})`,
                                 WebkitMaskRepeat: "no-repeat",
@@ -745,7 +745,7 @@ export default function ProductDetail() {
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); setLocation(`/recipe/product/${product.id}/${idx}`); }}
-                        className="mt-1 w-full text-sm font-semibold bg-accent text-white border border-accent rounded-full px-3 py-2 hover:bg-[#364F9F] hover:border-[#364F9F] hover:text-white transition-colors"
+                        className="mt-1 w-full rounded-full border border-white bg-white px-3 py-2 text-sm font-bold text-[#7B3A14] transition-colors hover:bg-[#fff1df]"
                       >
                         View Recipe
                       </button>
@@ -764,7 +764,7 @@ export default function ProductDetail() {
               <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
                 <Lottie animationData={mayAlsoLikeAnim} loop autoplay />
               </div>
-              <h2 className="text-lg sm:text-xl font-medium text-foreground">
+              <h2 className="font-display text-2xl font-bold text-[#542813] sm:text-3xl">
                 {sameCategory.length > 0 ? `More ${product.category}` : "You May Also Like"}
               </h2>
             </div>
@@ -778,6 +778,7 @@ export default function ProductDetail() {
                     <ProductCard
                       product={card.product}
                       detailVariantKey={card.detailVariantKey}
+                      brandText
                     />
                   </div>
                 ))}
