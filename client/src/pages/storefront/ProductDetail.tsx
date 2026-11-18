@@ -316,6 +316,13 @@ export default function ProductDetail() {
   }
 
   const catKeyword = product.category?.toLowerCase() ?? "seafood";
+  const normalizedProductName = product.name.trim().toLowerCase();
+  const showCategoryLabel = Boolean(
+    product.category?.trim() && product.category.trim().toLowerCase() !== normalizedProductName,
+  );
+  const showSubCategoryLabel = Boolean(
+    product.subCategory?.trim() && product.subCategory.trim().toLowerCase() !== normalizedProductName,
+  );
   return (
     <div className="min-h-screen home-storefront-page font-sans">
       <SeoHead
@@ -392,22 +399,23 @@ export default function ProductDetail() {
 
             {/* Name + category / subcategory */}
             <div>
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span
-                  className="inline-block rounded-full bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#7B3A14]"
-                  style={{ color: "#7B3A14" }}
-                  data-testid={`badge-category-${product.category}`}
-                >
-                  {product.category}
-                </span>
-                {product.subCategory && product.subCategory !== product.name && (
-                  <span
-                    className="inline-block rounded-full border border-white/40 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-white"
-                  >
-                    {product.subCategory}
-                  </span>
-                )}
-              </div>
+              {(showCategoryLabel || showSubCategoryLabel) && (
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  {showCategoryLabel && (
+                    <span
+                      className="inline-block rounded-full bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#7B3A14]"
+                      data-testid={`badge-category-${product.category}`}
+                    >
+                      {product.category}
+                    </span>
+                  )}
+                  {showSubCategoryLabel && (
+                    <span className="inline-block rounded-full border border-white/40 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-white">
+                      {product.subCategory}
+                    </span>
+                  )}
+                </div>
+              )}
               <h1 className="break-words font-display text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">{product.name}</h1>
             </div>
 
