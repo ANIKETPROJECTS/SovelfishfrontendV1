@@ -895,6 +895,10 @@ export function CartDrawer() {
       toast({ title: "Select an available delivery Area/City", variant: "destructive" });
       return;
     }
+    if (!getValidAddressCoordinates(addForm)) {
+      toast({ title: "Choose the exact delivery location on the map", variant: "destructive" });
+      return;
+    }
     const label =
       addForm.type === "other" ? (addForm.label || "Other") :
       addForm.type === "house" ? "Home" : "Office";
@@ -2223,69 +2227,6 @@ export function CartDrawer() {
                       </div>
                     )}
 
-                    {/* Bill Details */}
-                    <div className="mx-4 mt-4 border border-[#e6c7a9] bg-white rounded-2xl p-4 space-y-2.5 shadow-[0_3px_10px_rgba(82,39,15,.05)]">
-                      <h3 className="font-bold text-[#542813] text-sm mb-3">Bill Details</h3>
-                      {items.map(item => (
-                        <div key={item.id} className="flex justify-between text-sm">
-                          <span className="text-[#80634e] min-w-0 truncate mr-2">
-                            {item.name} × {item.quantity}
-                            {(item.pieces || item.serves) && (
-                              <span className="block truncate text-[11px] text-[#80634e]">
-                                {item.pieces && `Pieces: ${formatProductMetadataValue(item.pieces, "Pieces")}`}
-                                {item.pieces && item.serves ? " · " : ""}
-                                {item.serves && `Serves: ${formatProductMetadataValue(item.serves, "Serves")}`}
-                              </span>
-                            )}
-                            {item.cuttingMethods?.length ? (
-                              <span className="block truncate text-[11px] text-[#7B3A14]">
-                                Cutting: {item.cuttingMethods.join(", ")}
-                              </span>
-                            ) : null}
-                          </span>
-                          <span className="font-medium flex-shrink-0">₹{item.price * item.quantity}</span>
-                        </div>
-                      ))}
-                      <div className="pt-2 border-t border-[#ead9c8] space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#80634e]">Subtotal</span>
-                          <span className="font-medium">₹{totalPrice}</span>
-                        </div>
-                        {discountAmount > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-emerald-600 flex items-center gap-1">
-                              <Tag className="w-3 h-3" /> Coupon ({appliedCoupon!.code})
-                            </span>
-                            <span className="font-semibold text-emerald-600">−₹{discountAmount}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#80634e]">Delivery fee</span>
-                          <span className="font-semibold text-emerald-600">FREE</span>
-                        </div>
-                        {walletDeduction > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-[#7B3A14] flex items-center gap-1">
-                              <img src={iconWalletImg} alt="" className="w-3 h-3 object-contain" style={{ filter: "brightness(0) saturate(100%) invert(23%) sepia(36%) saturate(1020%) hue-rotate(344deg) brightness(94%) contrast(93%)" }} />
-                              Wallet
-                            </span>
-                            <span className="font-semibold text-[#7B3A14]">−₹{walletDeduction}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="pt-2 border-t border-[#ead9c8] flex justify-between items-center">
-                        <span className="font-bold text-foreground">Total</span>
-                        <div className="text-right">
-                          {(discountAmount > 0 || walletDeduction > 0) && (
-                            <p className="text-xs text-muted-foreground line-through">
-                              ₹{rawTotal}
-                            </p>
-                          )}
-                          <span className="text-lg font-bold text-[#a84d12]">₹{finalTotal}</span>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Shipping Address */}
                     <div className="px-4 mt-5 mb-2">
                       <div className="flex items-center justify-between mb-3">
@@ -2355,21 +2296,46 @@ export function CartDrawer() {
                               <X className="w-3.5 h-3.5" />
                             </Button>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Pincode *</Label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              maxLength={6}
-                              required
-                              value={addForm.pincode}
-                              onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                              placeholder="400601"
-                              className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
-                              data-testid="input-address-pincode"
-                            />
+                          <div className="grid grid-cols-2 items-end gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <Label className="text-xs text-muted-foreground">Pincode *</Label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                maxLength={6}
+                                required
+                                value={addForm.pincode}
+                                onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                                placeholder="400601"
+                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
+                                data-testid="input-address-pincode"
+                              />
+                            </div>
+                            <div className="min-w-0 space-y-1">
+                              <Label className="text-xs text-muted-foreground">Exact location *</Label>
+                              <AddressMapPicker
+                                compact
+                                required
+                                coordinates={getValidAddressCoordinates(addForm)}
+                                onSavePin={(coordinates, pincode) => {
+                                  setAddForm((form) => {
+                                    const next = { ...form };
+                                    delete next.latitude;
+                                    delete next.longitude;
+                                    return {
+                                      ...next,
+                                      ...(coordinates ?? {}),
+                                      ...(pincode ? { pincode } : {}),
+                                    };
+                                  });
+                                }}
+                              />
+                            </div>
                           </div>
+                          <p className="text-[11px] font-medium text-[#80634e]">
+                            Choose where the delivery should arrive.
+                          </p>
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                               <Label className="text-xs text-muted-foreground">Phone *</Label>
@@ -2452,29 +2418,6 @@ export function CartDrawer() {
                               </>
                             )}
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Delivery pin (optional)</Label>
-                            <div className="flex flex-wrap items-center gap-3">
-                              <AddressMapPicker
-                                coordinates={getValidAddressCoordinates(addForm)}
-                                onSavePin={(coordinates, pincode) => {
-                                  setAddForm((form) => {
-                                    const next = { ...form };
-                                    delete next.latitude;
-                                    delete next.longitude;
-                                    return {
-                                      ...next,
-                                      ...(coordinates ?? {}),
-                                      ...(pincode ? { pincode } : {}),
-                                    };
-                                  });
-                                }}
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                Optional exact pin for delivery.
-                              </p>
-                            </div>
-                          </div>
                           <div className="space-y-2">
                             <Label className="text-xs text-muted-foreground">Address Type</Label>
                             <div className="flex gap-2">
@@ -2523,7 +2466,7 @@ export function CartDrawer() {
                             </Button>
                             <Button
                               onClick={saveAddress}
-                              disabled={isSavingAddress}
+                              disabled={isSavingAddress || !getValidAddressCoordinates(addForm)}
                               className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
                               style={{ backgroundColor: "#C8651B" }}
                               data-testid="button-save-address"
@@ -2584,6 +2527,69 @@ export function CartDrawer() {
                           ))}
                         </div>
                       )}
+                    </div>
+
+                    {/* Bill Details */}
+                    <div className="mx-4 mt-4 border border-[#e6c7a9] bg-white rounded-2xl p-4 space-y-2.5 shadow-[0_3px_10px_rgba(82,39,15,.05)]">
+                      <h3 className="font-bold text-[#542813] text-sm mb-3">Bill Details</h3>
+                      {items.map(item => (
+                        <div key={item.id} className="flex justify-between text-sm">
+                          <span className="text-[#80634e] min-w-0 truncate mr-2">
+                            {item.name} × {item.quantity}
+                            {(item.pieces || item.serves) && (
+                              <span className="block truncate text-[11px] text-[#80634e]">
+                                {item.pieces && `Pieces: ${formatProductMetadataValue(item.pieces, "Pieces")}`}
+                                {item.pieces && item.serves ? " · " : ""}
+                                {item.serves && `Serves: ${formatProductMetadataValue(item.serves, "Serves")}`}
+                              </span>
+                            )}
+                            {item.cuttingMethods?.length ? (
+                              <span className="block truncate text-[11px] text-[#7B3A14]">
+                                Cutting: {item.cuttingMethods.join(", ")}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="font-medium flex-shrink-0">₹{item.price * item.quantity}</span>
+                        </div>
+                      ))}
+                      <div className="pt-2 border-t border-[#ead9c8] space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#80634e]">Subtotal</span>
+                          <span className="font-medium">₹{totalPrice}</span>
+                        </div>
+                        {discountAmount > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-emerald-600 flex items-center gap-1">
+                              <Tag className="w-3 h-3" /> Coupon ({appliedCoupon!.code})
+                            </span>
+                            <span className="font-semibold text-emerald-600">−₹{discountAmount}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#80634e]">Delivery fee</span>
+                          <span className="font-semibold text-emerald-600">FREE</span>
+                        </div>
+                        {walletDeduction > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[#7B3A14] flex items-center gap-1">
+                              <img src={iconWalletImg} alt="" className="w-3 h-3 object-contain" style={{ filter: "brightness(0) saturate(100%) invert(23%) sepia(36%) saturate(1020%) hue-rotate(344deg) brightness(94%) contrast(93%)" }} />
+                              Wallet
+                            </span>
+                            <span className="font-semibold text-[#7B3A14]">−₹{walletDeduction}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="pt-2 border-t border-[#ead9c8] flex justify-between items-center">
+                        <span className="font-bold text-foreground">Total</span>
+                        <div className="text-right">
+                          {(discountAmount > 0 || walletDeduction > 0) && (
+                            <p className="text-xs text-muted-foreground line-through">
+                              ₹{rawTotal}
+                            </p>
+                          )}
+                          <span className="text-lg font-bold text-[#a84d12]">₹{finalTotal}</span>
+                        </div>
+                      </div>
                     </div>
 
                     {isPreorderCart && (

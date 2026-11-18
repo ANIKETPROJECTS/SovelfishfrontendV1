@@ -80,9 +80,13 @@ function createDeliveryPin(
 export function AddressMapPicker({
   coordinates,
   onSavePin,
+  required = false,
+  compact = false,
 }: {
   coordinates?: AddressCoordinates | null;
   onSavePin: (coordinates: AddressCoordinates | null, pincode?: string | null) => void;
+  required?: boolean;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [draftCoordinates, setDraftCoordinates] = useState<AddressCoordinates | null>(null);
@@ -149,7 +153,7 @@ export function AddressMapPicker({
     setLocationError("");
     if (!navigator.geolocation) {
       setLocationStatus("error");
-      setLocationError("Your browser does not support device location.");
+      setLocationError("Location access isn't available. Tap the map to choose a spot.");
       return;
     }
 
@@ -162,7 +166,7 @@ export function AddressMapPicker({
         });
         if (!next) {
           setLocationStatus("error");
-          setLocationError("The device returned an invalid location. Please try again.");
+          setLocationError("Couldn't get a valid location. Tap the map to choose a spot.");
           return;
         }
         placePin(next);
@@ -171,11 +175,11 @@ export function AddressMapPicker({
       (error) => {
         setLocationStatus("error");
         if (error.code === error.PERMISSION_DENIED) {
-          setLocationError("Location access was blocked. Allow location access in your browser and try again.");
+          setLocationError("Allow location access or choose a spot on the map.");
         } else if (error.code === error.TIMEOUT) {
-          setLocationError("Your location could not be found in time. Please try again.");
+          setLocationError("Couldn't find your location. Try again or tap the map.");
         } else {
-          setLocationError("Unable to get your location. Check your device settings and try again.");
+          setLocationError("Location unavailable. Choose a spot on the map.");
         }
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
@@ -331,77 +335,84 @@ export function AddressMapPicker({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={compact ? "w-full" : "flex flex-wrap items-center gap-2"}>
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={openPicker}
-          className="h-9 rounded-xl border-border/70 px-3 text-sm"
-          aria-label={coordinates ? "Edit map pin" : "Add map pin"}
+          className={compact
+            ? "h-10 w-full justify-center rounded-xl border-[#d9c1ac] bg-white px-2 text-xs font-semibold text-[#7b3a14] hover:bg-[#fff7ed] hover:text-[#7b3a14]"
+            : "h-9 rounded-xl border-[#d9c1ac] bg-white px-3 text-sm font-semibold text-[#7b3a14] hover:bg-[#fff7ed] hover:text-[#7b3a14]"}
+          aria-label={getValidAddressCoordinates(coordinates) ? "Edit delivery location" : "Choose delivery location"}
+          aria-required={required}
           data-testid="button-address-map"
         >
           <MapPin className="mr-1.5 h-4 w-4" />
-          Map
+          {getValidAddressCoordinates(coordinates)
+            ? compact ? "Location selected" : "Edit location"
+            : compact ? "Choose location" : "Choose location"}
         </Button>
-        {getValidAddressCoordinates(coordinates) && (
-          <span className="text-xs text-emerald-700">Pin saved</span>
+        {!compact && getValidAddressCoordinates(coordinates) && (
+          <span className="text-xs font-semibold text-emerald-700">Exact location selected</span>
         )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col gap-4 overflow-y-auto rounded-2xl p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              Set delivery pin
-            </DialogTitle>
-            <DialogDescription>
-              Search for a public place, street, or locality—not a name, phone number, or flat number. You can also tap the map.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          className="!fixed !inset-0 !left-0 !top-0 !z-[100] !flex !h-[100dvh] !max-h-none !w-screen !max-w-none !translate-x-0 !translate-y-0 flex-col gap-0 overflow-hidden !rounded-none border-0 bg-[#fbf1e6] p-0 font-sans text-[#542813] shadow-none sm:!rounded-none [&>button:last-child]:!right-4 [&>button:last-child]:!top-4 [&>button:last-child]:!z-10 [&>button:last-child]:!bg-[#c8651b] [&>button:last-child]:hover:!bg-[#a84d12]"
+        >
+          <header className="footer-wood-bg shrink-0 px-5 py-5 pr-16 text-white sm:px-8 sm:py-6">
+            <DialogHeader className="space-y-1.5 text-left">
+              <DialogTitle className="flex items-center gap-2 font-display text-2xl font-bold text-white sm:text-3xl">
+                <MapPin className="h-6 w-6 text-[#f0a458]" />
+                Choose delivery location
+              </DialogTitle>
+              <DialogDescription className="text-sm font-medium text-white/85 sm:text-base">
+                Tap the map to mark the exact delivery spot.
+              </DialogDescription>
+            </DialogHeader>
+          </header>
 
-          <div className="space-y-2">
-            <label htmlFor="address-map-search" className="sr-only">
-              Search public places
-            </label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                id="address-map-search"
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value.slice(0, 160))}
-                placeholder="Search a place or area"
-                autoComplete="off"
-                maxLength={160}
-                className="h-10 w-full rounded-xl border border-border/70 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
-                data-testid="input-address-map-search"
-              />
-            </div>
+          <div className="shrink-0 space-y-2.5 bg-[#fbf1e6] px-4 py-3 sm:px-8 sm:py-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <label htmlFor="address-map-search" className="sr-only">
+                Search a public place or area
+              </label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8b6a53]" />
+                <input
+                  id="address-map-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value.slice(0, 160))}
+                  placeholder="Search a public place or area"
+                  autoComplete="off"
+                  maxLength={160}
+                  className="h-12 w-full rounded-xl border border-[#d9c1ac] bg-white pl-11 pr-4 text-sm font-medium text-[#542813] outline-none transition focus:border-[#c8651b] focus:ring-2 focus:ring-[#c8651b]/15 sm:text-base"
+                  data-testid="input-address-map-search"
+                />
+              </div>
 
-            <div className="flex justify-end">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={useCurrentLocation}
-                disabled={locationStatus === "loading" || !mapsReady}
-                className="h-9 rounded-xl border-border/70 px-3"
+                disabled={locationStatus === "loading"}
+                className="h-12 rounded-xl border-[#d9c1ac] bg-white px-4 text-sm font-semibold text-[#7b3a14] hover:bg-[#fff7ed] hover:text-[#7b3a14]"
                 data-testid="button-use-current-location"
               >
-                {locationStatus === "loading" || (!mapsReady && !mapsLoadError) ? (
+                {locationStatus === "loading" ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Crosshair className="mr-2 h-4 w-4" />
                 )}
-                {locationStatus === "loading" || (!mapsReady && !mapsLoadError)
-                  ? "Getting map ready…"
-                  : "Use current location"}
+                {locationStatus === "loading" ? "Finding your location…" : "Use current location"}
               </Button>
             </div>
+
             {locationError && (
-              <p className="text-sm text-destructive" role="alert" data-testid="text-current-location-error">
+              <p className="text-sm font-medium text-red-700" role="alert" data-testid="text-current-location-error">
                 {locationError}
               </p>
             )}
@@ -411,27 +422,27 @@ export function AddressMapPicker({
               searchStatus === "empty" ||
               searchStatus === "error") && (
               <div
-                className="max-h-28 overflow-y-auto rounded-xl border border-border/60 bg-white"
+                className="max-h-36 overflow-y-auto rounded-xl border border-[#e6c7a9] bg-white shadow-sm"
                 role="listbox"
                 aria-label="Place search results"
                 aria-live="polite"
               >
                 {searchStatus === "loading" && (
-                  <p className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                  <p className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-[#80634e]">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Searching places…
+                    Finding places…
                   </p>
                 )}
                 {searchStatus === "empty" && (
-                  <p className="px-3 py-2 text-sm text-muted-foreground">
-                    No places found. Try a nearby area or tap the map.
+                  <p className="px-4 py-3 text-sm font-medium text-[#80634e]">
+                    No places found. Try another area or tap the map.
                   </p>
                 )}
                 {searchStatus === "error" && (
-                  <p className="px-3 py-2 text-sm text-destructive">
+                  <p className="px-4 py-3 text-sm font-medium text-red-700" title={mapsLoadError ? mapsErrorMessage : undefined}>
                     {mapsLoadError
-                      ? mapsErrorMessage
-                      : "Google Places search or place details are unavailable. Check that Places API (New) is enabled for this key. You can still tap the map."}
+                      ? "Place search is unavailable. You can still tap the map."
+                      : "Place search failed. You can still tap the map."}
                   </p>
                 )}
                 {searchStatus === "results" &&
@@ -439,87 +450,97 @@ export function AddressMapPicker({
                     const placePrediction = suggestion.placePrediction;
                     const title = getPlaceSuggestionText(suggestion);
                     return (
-                    <button
-                      key={`${placePrediction?.placeId ?? title}-${index}`}
-                      type="button"
-                      role="option"
-                      aria-selected={false}
-                      onClick={() => void handleResultSelect(suggestion)}
-                      className="block w-full border-b border-border/40 px-3 py-2 text-left last:border-b-0 hover:bg-muted/50"
-                    >
-                      <span className="block text-sm font-medium text-foreground">
-                        {title || "Nearby place"}
-                      </span>
-                    </button>
+                      <button
+                        key={`${placePrediction?.placeId ?? title}-${index}`}
+                        type="button"
+                        role="option"
+                        aria-selected={false}
+                        onClick={() => void handleResultSelect(suggestion)}
+                        className="block w-full border-b border-[#f0dfcf] px-4 py-3 text-left last:border-b-0 hover:bg-[#fff7ed]"
+                      >
+                        <span className="block text-sm font-semibold text-[#542813]">
+                          {title || "Nearby place"}
+                        </span>
+                      </button>
                     );
                   })}
               </div>
             )}
           </div>
 
-          <div className="relative z-0 h-[42vh] min-h-[16rem] max-h-[420px] w-full overflow-hidden rounded-xl border border-border/60">
-            <div
-              ref={mapElementRef}
-              className="h-full w-full"
-              aria-label="Map for selecting a delivery pin"
-            />
-            {(mapError || mapsLoadError) && (
-              <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-muted/95 px-6 text-center text-sm text-muted-foreground">
-                {mapError || mapsErrorMessage}
-              </div>
-            )}
-            {!mapsReady && !mapsLoadError && !mapError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-muted-foreground">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading Google Maps…
-              </div>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="min-w-0 flex-1 text-xs text-muted-foreground" aria-live="polite">
-              {draftCoordinates
-                ? `Pin: ${draftCoordinates.latitude.toFixed(5)}, ${draftCoordinates.longitude.toFixed(5)}`
-                : "No pin selected. Pinning the map is optional."}
-              {isLookingUpPincode && <span className="ml-2">Checking pincode…</span>}
-              {!isLookingUpPincode && draftPincode && <span className="ml-2">Pincode found: {draftPincode}</span>}
-              {!isLookingUpPincode && pincodeLookupFailed && (
-                <span className="ml-2">No pincode found; you can enter it manually.</span>
+          <div className="relative z-0 min-h-0 flex-1 px-3 pb-3 sm:px-6">
+            <div className="relative h-full w-full overflow-hidden rounded-xl border border-[#e6c7a9] bg-[#eadfd3] sm:rounded-2xl">
+              <div
+                ref={mapElementRef}
+                className="h-full w-full"
+                aria-label="Map for choosing the exact delivery location"
+              />
+              {(mapError || mapsLoadError) && (
+                <div
+                  className="absolute inset-0 z-[1000] flex flex-col items-center justify-center bg-[#fbf1e6]/95 px-6 text-center text-[#542813]"
+                  title={mapError || mapsErrorMessage}
+                >
+                  <MapPin className="mb-2 h-8 w-8 text-[#c8651b]" />
+                  <p className="text-lg font-bold">Map unavailable</p>
+                  <p className="mt-1 max-w-sm text-sm font-medium text-[#80634e]">
+                    Check your connection or map settings, then try again.
+                  </p>
+                </div>
               )}
-            </p>
-            <div className="flex shrink-0 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={clearPin}
-                disabled={!draftCoordinates}
-                className="rounded-xl"
-                data-testid="button-clear-map-pin"
-              >
-                Clear pin
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                className="rounded-xl"
-                data-testid="button-cancel-map-pin"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  onSavePin(draftCoordinates, draftPincode);
-                  setOpen(false);
-                }}
-                disabled={isLookingUpPincode}
-                className="rounded-xl"
-                data-testid="button-save-map-pin"
-              >
-                Save pin
-              </Button>
+              {!mapsReady && !mapsLoadError && !mapError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#fbf1e6]/85 text-sm font-semibold text-[#80634e]">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading map…
+                </div>
+              )}
             </div>
           </div>
+
+          <footer className="shrink-0 border-t border-[#e6c7a9] bg-[#fffaf4] px-4 py-3 shadow-[0_-5px_16px_rgba(76,35,13,.08)] sm:px-8 sm:py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="min-h-5 text-sm font-semibold text-[#7b3a14]" aria-live="polite">
+                {draftCoordinates ? "Exact location selected" : "Tap the map to choose the delivery spot."}
+                {isLookingUpPincode && <span className="ml-2 font-medium text-[#80634e]">Finding pincode…</span>}
+                {!isLookingUpPincode && draftPincode && <span className="ml-2 text-[#80634e]">Pincode {draftPincode}</span>}
+                {!isLookingUpPincode && pincodeLookupFailed && (
+                  <span className="ml-2 font-medium text-[#80634e]">Enter the pincode manually.</span>
+                )}
+              </p>
+              <div className="flex shrink-0 items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={clearPin}
+                  disabled={!draftCoordinates}
+                  className="rounded-full px-3 text-sm font-semibold text-[#7b3a14] hover:bg-[#f3dfca] hover:text-[#7b3a14]"
+                  data-testid="button-clear-map-pin"
+                >
+                  Clear location
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="rounded-full border-[#d9c1ac] bg-white px-5 text-sm font-semibold text-[#7b3a14] hover:bg-[#fff7ed] hover:text-[#7b3a14]"
+                  data-testid="button-cancel-map-pin"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    onSavePin(draftCoordinates, draftPincode);
+                    setOpen(false);
+                  }}
+                  disabled={isLookingUpPincode || (required && !draftCoordinates)}
+                  className="rounded-full bg-[#c8651b] px-5 text-sm font-bold text-white hover:bg-[#a84d12]"
+                  data-testid="button-save-map-pin"
+                >
+                  Use this location
+                </Button>
+              </div>
+            </div>
+          </footer>
         </DialogContent>
       </Dialog>
     </>
