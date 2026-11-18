@@ -108,7 +108,7 @@ export default function CategoryPage() {
   const catSeo = CATEGORY_SEO[categoryName] ?? null;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="home-storefront-page min-h-screen flex flex-col font-sans">
       <SeoHead
         title={catSeo ? catSeo.title : `${categoryName} Online in Mumbai | Fresh & Hygienically Cut`}
         description={catSeo ? catSeo.description : `Buy fresh ${categoryName.toLowerCase()} online in Mumbai. Hygienically cleaned, cut & delivered same-day. Order now on Fresh Stock Xchange.`}
@@ -124,23 +124,23 @@ export default function CategoryPage() {
       />
       <Header onSearch={() => {}} />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center gap-3 mb-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6 flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate("/")}
-            className="rounded-full flex-shrink-0"
+            className="shrink-0 rounded-full border border-[#7B3A14]/15 bg-white text-[#7B3A14] shadow-sm hover:bg-[#fff5e9] hover:text-[#542813]"
             data-testid="button-back-category"
           >
             <ChevronLeft className="w-6 h-6" />
           </Button>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground leading-tight">
+            <h1 className="font-display text-2xl font-bold leading-tight text-[#7B3A14] sm:text-3xl">
               {isAll ? "All Products" : categoryName}
             </h1>
             {!isLoading && (
-              <p className="text-sm text-muted-foreground" data-testid="text-category-count">
+              <p className="text-sm font-semibold text-[#7B3A14]/80" data-testid="text-category-count">
                 {displayItemCount} item{displayItemCount !== 1 ? "s" : ""} available
               </p>
             )}
@@ -149,12 +149,12 @@ export default function CategoryPage() {
 
         {preorderProducts.length > 0 && (
           <section className="mb-7" data-testid="section-category-preorder">
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3 flex items-center justify-between">
               <div>
-                <h2 className="text-xl sm:text-2xl font-medium text-foreground uppercase tracking-wide">
+                <h2 className="font-display text-xl font-bold text-[#7B3A14] sm:text-2xl">
                   Preorder
                 </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                <p className="mt-1 text-xs font-medium text-[#7B3A14]/75 sm:text-sm">
                   Reserve these items for a future delivery date
                 </p>
               </div>
@@ -162,7 +162,7 @@ export default function CategoryPage() {
             <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
               {preorderProducts.map((product) => (
                 <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
-                  <ProductCard product={product} preorderContext />
+                  <ProductCard product={product} preorderContext brandText />
                 </div>
               ))}
             </DragScrollDiv>
@@ -183,10 +183,10 @@ export default function CategoryPage() {
                 data-testid="subcategory-all"
               >
                 <div
-                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-slate-50 flex items-center justify-center transition-all duration-200 ${
+                    className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-[#fff8ee] flex items-center justify-center transition-all duration-200 ${
                     activeSub === "All"
-                      ? "ring-[3px] ring-accent ring-offset-2"
-                      : "ring-1 ring-slate-200 group-hover:ring-slate-300"
+                      ? "ring-[3px] ring-[#C8651B] ring-offset-2 ring-offset-[#f5dfc4]"
+                      : "ring-1 ring-[#7B3A14]/20 group-hover:ring-[#C8651B]"
                   }`}
                 >
                   <img
@@ -196,10 +196,10 @@ export default function CategoryPage() {
                   />
                 </div>
                 <span
-                  className={`text-sm sm:text-base whitespace-nowrap transition-colors ${
+                    className={`text-sm sm:text-base whitespace-nowrap transition-colors ${
                     activeSub === "All"
-                      ? "text-primary font-bold"
-                      : "text-foreground/80 font-semibold group-hover:text-foreground"
+                      ? "font-bold text-[#7B3A14]"
+                      : "font-semibold text-[#7B3A14]/80 group-hover:text-[#542813]"
                   }`}
                 >
                   All
@@ -217,10 +217,10 @@ export default function CategoryPage() {
                     data-testid={`subcategory-${sc.name.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     <div
-                      className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-slate-50 flex items-center justify-center transition-all duration-200 ${
+                      className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-[#fff8ee] flex items-center justify-center transition-all duration-200 ${
                         isActive
-                          ? "ring-[3px] ring-accent ring-offset-2"
-                          : "ring-1 ring-slate-200 group-hover:ring-slate-300"
+                          ? "ring-[3px] ring-[#C8651B] ring-offset-2 ring-offset-[#f5dfc4]"
+                          : "ring-1 ring-[#7B3A14]/20 group-hover:ring-[#C8651B]"
                       }`}
                     >
                       <img
@@ -232,8 +232,8 @@ export default function CategoryPage() {
                     <span
                       className={`text-sm sm:text-base whitespace-nowrap text-center transition-colors max-w-[120px] truncate ${
                         isActive
-                          ? "text-primary font-bold"
-                          : "text-foreground/80 font-semibold group-hover:text-foreground"
+                          ? "font-bold text-[#7B3A14]"
+                          : "font-semibold text-[#7B3A14]/80 group-hover:text-[#542813]"
                       }`}
                     >
                       {sc.name}
@@ -245,17 +245,17 @@ export default function CategoryPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {isLoading
             ? [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <Skeleton key={i} className="aspect-[3/4] rounded-3xl" />
+                <Skeleton key={i} className="aspect-[4/5] rounded-2xl bg-white/35" />
               ))
             : displayProducts.length > 0
             ? displayProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} brandText />
               ))
             : (
-                <div className="col-span-full py-20 text-center text-muted-foreground">
+                <div className="col-span-full rounded-2xl border border-[#7B3A14]/15 bg-white/85 px-6 py-16 text-center font-semibold text-[#7B3A14]">
                   No products found in this category.
                 </div>
               )}
