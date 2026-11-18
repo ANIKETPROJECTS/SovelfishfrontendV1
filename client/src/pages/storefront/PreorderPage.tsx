@@ -38,10 +38,7 @@ export default function PreorderPage() {
         </div>
 
         {isLoading ? (
-          <div
-            className="grid justify-items-start gap-4 sm:gap-6"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 240px), 1fr))" }}
-          >
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 4 }, (_, index) => (
               <Skeleton key={index} className="aspect-[4/5] w-full max-w-[320px] rounded-2xl" />
             ))}
@@ -51,10 +48,7 @@ export default function PreorderPage() {
             We couldn&apos;t load preorder products. Please refresh and try again.
           </div>
         ) : preorderProducts.length ? (
-          <div
-            className="grid justify-items-start gap-4 sm:gap-6"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 240px), 1fr))" }}
-          >
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {preorderProducts.map((product) => (
               <ProductCard
                 key={product.id}
