@@ -4,5 +4,7 @@ export const modules: ModuleMap = {
   "./components/mockups/category-menu/Current.tsx": () => import("../components/mockups/category-menu/Current.tsx"),
   "./components/mockups/category-menu/FsxRedesign.tsx": () => import("../components/mockups/category-menu/FsxRedesign.tsx"),
   "./components/mockups/market-board/Current.tsx": () => import("../components/mockups/market-board/Current.tsx"),
-  "./components/mockups/market-board/Premium.tsx": () => import("../components/mockups/market-board/Premium.tsx")
+  "./components/mockups/market-board/Premium.tsx": () => import("../components/mockups/market-board/Premium.tsx"),
+  "./components/mockups/order-summary/Current.tsx": () => import("../components/mockups/order-summary/Current.tsx"),
+  "./components/mockups/order-summary/FsxTheme.tsx": () => import("../components/mockups/order-summary/FsxTheme.tsx")
 };

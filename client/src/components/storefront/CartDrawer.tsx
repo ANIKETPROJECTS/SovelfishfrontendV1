@@ -1791,7 +1791,7 @@ export function CartDrawer() {
   return (
     <>
       <Sheet open={isCartOpen} onOpenChange={handleClose}>
-        <SheetContent className={`w-full sm:max-w-md flex flex-col h-full bg-white border-l border-border/30 p-0 overflow-hidden font-sans ${isSuccess ? "[&>button]:hidden" : ""}`}>
+        <SheetContent className={`w-full sm:max-w-md flex flex-col h-full bg-[#fbf1e6] text-[#542813] border-l border-[#d9ac89] p-0 overflow-hidden font-sans [&>button]:text-white [&>button]:right-4 [&>button]:top-3 [&>button]:opacity-100 [&>button]:rounded-full [&>button]:bg-white/10 [&>button]:hover:bg-white/20 ${isSuccess ? "[&>button]:hidden" : ""}`}>
           {isSuccess ? (
             <div className="relative flex flex-col items-center justify-start h-full p-6 text-center overflow-hidden">
               <div className="pointer-events-none absolute inset-0 z-0">
@@ -1835,9 +1835,9 @@ export function CartDrawer() {
             </div>
           ) : (
             <>
-              <SheetHeader className="px-5 py-4 border-b border-border/30 bg-white sticky top-0 z-10">
-                <SheetTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-                  <img src={headerCartImg} alt="Cart" className="w-5 h-5 object-contain" />
+              <SheetHeader className="footer-wood-bg px-5 py-4 border-b border-[#a9663a] sticky top-0 z-10">
+                <SheetTitle className="flex items-center gap-2 text-xl font-bold text-white">
+                  <img src={headerCartImg} alt="Cart" className="w-5 h-5 object-contain" style={{ filter: "brightness(0) invert(1)" }} />
                   Order Summary
                 </SheetTitle>
               </SheetHeader>
@@ -1854,7 +1854,7 @@ export function CartDrawer() {
                   </Button>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 flex flex-col overflow-hidden bg-[#fbf1e6]">
                   <div className="flex-1 overflow-y-auto scrollbar-hide">
                     {(savedTotal + discountAmount) > 0 && (
                       <div className="mx-4 -mt-2 -mb-2 flex items-center justify-center px-2">
@@ -1867,17 +1867,17 @@ export function CartDrawer() {
                           />
                         </div>
                         <p className="text-sm font-semibold leading-tight">
-                          <span style={{ color: "#F05B4E" }}>Congratulations!</span>
-                          <span style={{ color: "#364F9F" }}> You've saved ₹{savedTotal + discountAmount}</span>
+                          <span style={{ color: "#C8651B" }}>Congratulations!</span>
+                          <span style={{ color: "#7B3A14" }}> You've saved ₹{savedTotal + discountAmount}</span>
                         </p>
                       </div>
                     )}
 
                      <div className="px-4 pt-4 space-y-3">
                       {items.map(item => (
-                        <div key={item.id} className="overflow-hidden" data-testid={`cart-item-${item.id}`}>
+                        <div key={item.id} className="overflow-hidden rounded-2xl border border-[#e6c7a9] bg-white shadow-[0_3px_10px_rgba(82,39,15,.07)]" data-testid={`cart-item-${item.id}`}>
                           <div className="flex items-center gap-3 p-3">
-                            <div className="w-20 h-20 overflow-hidden flex-shrink-0 rounded-xl border border-border/20">
+                            <div className="w-20 h-20 overflow-hidden flex-shrink-0 rounded-xl border border-[#f0dfcf]">
                               {item.isCombo && item.imageUrl ? (
                                 <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                               ) : item.isCombo && item.comboImages && item.comboImages.length > 0 ? (
@@ -1908,10 +1908,10 @@ export function CartDrawer() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-foreground text-sm truncate">{item.name}</h4>
-                              <p className="text-xs text-muted-foreground">{item.unit}</p>
+                              <h4 className="font-bold text-[#542813] text-sm truncate">{item.name}</h4>
+                              <p className="text-xs font-medium text-[#8b6a53]">{item.unit}</p>
                               {(item.pieces || item.serves) && (
-                                <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+                                <p className="mt-1 text-[11px] leading-snug text-[#80634e]">
                                   {item.pieces && `Pieces: ${formatProductMetadataValue(item.pieces, "Pieces")}`}
                                   {item.pieces && item.serves ? " · " : ""}
                                   {item.serves && `Serves: ${formatProductMetadataValue(item.serves, "Serves")}`}
@@ -1926,7 +1926,7 @@ export function CartDrawer() {
                               item.availableCuttingMethods?.length &&
                               item.cuttingMethods?.length !== 1 ? (
                                 <div className="mt-2">
-                                  <p className="mb-1 text-[11px] font-semibold text-muted-foreground">
+                                  <p className="mb-1 text-[11px] font-semibold text-[#80634e]">
                                     Cutting method (required)
                                   </p>
                                   <CuttingMethodSelector
@@ -1948,12 +1948,12 @@ export function CartDrawer() {
                                 </p>
                               )}
                                {item.isPreorderCheckout && (
-                                 <p className="text-[11px] leading-snug text-[#364F9F] mt-1" data-testid={`availability-${item.id}`}>
+                                  <p className="text-[11px] leading-snug text-[#7B3A14] mt-1" data-testid={`availability-${item.id}`}>
                                    {formatPreorderAvailability(item)}
                                  </p>
                                )}
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-sm font-bold text-primary">₹{item.price}</span>
+                                <span className="text-sm font-bold text-[#a84d12]">₹{item.price}</span>
                                 {!item.isCombo && item.originalPrice && item.originalPrice > item.price && (
                                   <>
                                     <span className="text-xs text-muted-foreground line-through">₹{item.originalPrice}</span>
@@ -1962,20 +1962,20 @@ export function CartDrawer() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 bg-slate-50 rounded-full px-2 py-1 border border-slate-100">
-                              <button className="h-6 w-6 rounded-full hover:bg-white flex items-center justify-center" onClick={() => updateQuantity(item.id, item.quantity - 1)} data-testid={`button-decrease-${item.id}`}>
+                            <div className="flex items-center gap-1 bg-[#fff8f0] rounded-full px-2 py-1 border border-[#e6c7a9]">
+                              <button className="h-6 w-6 rounded-full hover:bg-white flex items-center justify-center text-[#7b3a14]" onClick={() => updateQuantity(item.id, item.quantity - 1)} data-testid={`button-decrease-${item.id}`}>
                                 {item.quantity === 1
                                   ? <img src={iconBinImg} alt="Remove" className="w-3 h-3 object-contain" style={{ filter: "brightness(0)" }} />
-                                  : <Minus className="w-3 h-3 text-slate-600" />}
+                                  : <Minus className="w-3 h-3 text-[#7b3a14]" />}
                               </button>
                               <span className="text-sm font-bold w-5 text-center">{item.quantity}</span>
                               <button
-                                className="h-6 w-6 rounded-full hover:bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="h-6 w-6 rounded-full hover:bg-white flex items-center justify-center text-[#7b3a14] disabled:opacity-30 disabled:cursor-not-allowed"
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                 disabled={item.quantity >= computeMaxQty(item)}
                                 data-testid={`button-increase-${item.id}`}
                               >
-                                <Plus className="w-3 h-3 text-slate-600" />
+                                <Plus className="w-3 h-3 text-[#7b3a14]" />
                               </button>
                             </div>
                           </div>
@@ -1985,12 +1985,12 @@ export function CartDrawer() {
 
                     {/* Coupon Section — collapsible */}
                     {cartCoupons.length > 0 && (
-                      <div className="mx-4 mt-4 border border-border/40 rounded-2xl overflow-hidden">
+                      <div className="mx-4 mt-4 border border-[#e6c7a9] bg-white rounded-2xl overflow-hidden shadow-[0_3px_10px_rgba(82,39,15,.05)]">
                         {/* Header — always visible, tap to expand/collapse */}
                         <button
                           type="button"
                           onClick={() => setCouponExpanded(s => !s)}
-                          className="w-full flex items-center gap-2.5 px-4 py-3 bg-muted/20 hover:bg-muted/30 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-3 bg-[#fff5e9] hover:bg-[#ffedd9] transition-colors"
                           aria-expanded={couponExpanded}
                           data-testid="button-toggle-coupons"
                         >
@@ -1998,7 +1998,7 @@ export function CartDrawer() {
                             aria-hidden
                             className="w-5 h-5 shrink-0 inline-block"
                             style={{
-                              backgroundColor: "#364F9F",
+                              backgroundColor: "#7B3A14",
                               WebkitMaskImage: `url(${giftCardIconImg})`,
                               maskImage: `url(${giftCardIconImg})`,
                               WebkitMaskRepeat: "no-repeat",
@@ -2016,7 +2016,7 @@ export function CartDrawer() {
                                 <span className="font-normal text-emerald-600">· saved ₹{discountAmount}</span>
                               </span>
                             ) : (
-                              <span className="text-sm font-semibold text-foreground">
+                                <span className="text-sm font-bold text-[#542813]">
                                 Offers Available
                               </span>
                             )}
@@ -2031,7 +2031,7 @@ export function CartDrawer() {
                           <>
                             {/* Applied coupon banner */}
                             {appliedCoupon && (
-                              <div className="flex items-center justify-between px-4 py-3 bg-emerald-600 border-t border-emerald-700">
+                              <div className="flex items-center justify-between px-4 py-3 bg-[#7b3a14] border-t border-[#5c2a0e]">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   <span
                                     aria-hidden
@@ -2068,7 +2068,7 @@ export function CartDrawer() {
 
                             {/* Manual code entry */}
                             {!appliedCoupon && (
-                              <div className="px-4 py-3 border-t border-border/20">
+                              <div className="px-4 py-3 border-t border-[#f0dfcf]">
                                 <div className="flex gap-2 w-full min-w-0">
                                   <input
                                     type="text"
@@ -2076,14 +2076,14 @@ export function CartDrawer() {
                                     onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
                                     onKeyDown={e => e.key === "Enter" && applyFromInput()}
                                     placeholder="Enter coupon code"
-                                    className="flex-1 min-w-0 h-9 px-4 text-sm font-mono font-semibold tracking-wider rounded-full border border-border/60 bg-muted/30 focus:outline-none focus:border-[#364F9F] placeholder:font-normal placeholder:tracking-normal"
+                                    className="flex-1 min-w-0 h-9 px-4 text-sm font-mono font-semibold tracking-wider rounded-full border border-[#e6c7a9] bg-[#fffdfb] focus:outline-none focus:border-[#c8651b] placeholder:font-normal placeholder:tracking-normal"
                                     data-testid="input-coupon-code"
                                   />
                                   <button
                                     onClick={applyFromInput}
                                     disabled={!couponInput.trim() || isApplyingCoupon}
                                     className="shrink-0 whitespace-nowrap px-4 h-9 rounded-full text-white text-xs font-bold disabled:opacity-40 transition-colors flex items-center gap-1.5"
-                                    style={{ backgroundColor: "#364F9F" }}
+                                    style={{ backgroundColor: "#C8651B" }}
                                     data-testid="button-apply-coupon"
                                   >
                                     {isApplyingCoupon ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
@@ -2099,7 +2099,7 @@ export function CartDrawer() {
                             )}
 
                             {/* Coupon list */}
-                            <div className="divide-y divide-border/20 border-t border-border/20">
+                            <div className="divide-y divide-[#f0dfcf] border-t border-[#f0dfcf]">
                               {(showAllCoupons ? visibleCartCoupons : visibleCartCoupons.slice(0, 3)).map(coupon => {
                                 const exhausted = isCouponExhausted(coupon);
                                 const applicable = isCouponApplicable(coupon);
@@ -2113,14 +2113,14 @@ export function CartDrawer() {
                                 return (
                                   <div
                                     key={coupon.id}
-                                    className={`flex items-center justify-between px-4 py-3 transition-colors ${applicable ? "bg-background hover:bg-muted/10" : "bg-muted/5 opacity-60"}`}
+                                    className={`flex items-center justify-between px-4 py-3 transition-colors ${applicable ? "bg-white hover:bg-[#fffaf5]" : "bg-[#fbf1e6] opacity-60"}`}
                                   >
                                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
                                       <span
                                         aria-hidden
                                         className="w-6 h-6 shrink-0 inline-block mt-0.5"
                                         style={{
-                                          backgroundColor: applicable ? "#364F9F" : "#9CA3AF",
+                                          backgroundColor: applicable ? "#7B3A14" : "#9CA3AF",
                                           WebkitMaskImage: `url(${tagIconImg})`,
                                           maskImage: `url(${tagIconImg})`,
                                           WebkitMaskRepeat: "no-repeat",
@@ -2134,7 +2134,7 @@ export function CartDrawer() {
                                       <div className="min-w-0 flex-1">
                                         <span
                                           className={`font-mono font-bold text-xs tracking-wider rounded-full px-2.5 py-0.5 text-white inline-block ${applicable ? "" : "opacity-60"}`}
-                                          style={{ backgroundColor: "#F05B4E" }}
+                                          style={{ backgroundColor: "#C8651B" }}
                                         >
                                           {coupon.code}
                                         </span>
@@ -2164,9 +2164,9 @@ export function CartDrawer() {
                                           }`}
                                           style={
                                             isApplied
-                                              ? { backgroundColor: "#047857" }
+                                               ? { backgroundColor: "#356b4a" }
                                               : applicable && !exhausted
-                                                ? { backgroundColor: "#364F9F" }
+                                                 ? { backgroundColor: "#7B3A14" }
                                                 : undefined
                                           }
                                         >
@@ -2181,7 +2181,7 @@ export function CartDrawer() {
                               {visibleCartCoupons.length > 3 && (
                                 <button
                                   onClick={() => setShowAllCoupons(s => !s)}
-                                  className="w-full py-2.5 text-xs text-primary font-semibold flex items-center justify-center gap-1 hover:bg-muted/10"
+                                  className="w-full py-2.5 text-xs text-[#a84d12] font-semibold flex items-center justify-center gap-1 hover:bg-[#fff5e9]"
                                 >
                                   {showAllCoupons ? <><ChevronUp className="w-3 h-3" /> Show less</> : <><ChevronDown className="w-3 h-3" /> +{visibleCartCoupons.length - 3} more coupons</>}
                                 </button>
@@ -2198,11 +2198,11 @@ export function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => setUseWallet(w => !w)}
-                          className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${useWallet ? "border-[#364F9F] bg-[#364F9F]/5" : "border-border/40 bg-white hover:border-[#364F9F]/30"}`}
+                          className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${useWallet ? "border-[#7B3A14] bg-[#7B3A14]/5" : "border-[#e6c7a9] bg-white hover:border-[#c8651b]/50"}`}
                           data-testid="button-toggle-wallet"
                         >
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${useWallet ? "border-[#364F9F]" : "border-slate-300"}`}>
-                            {useWallet && <div className="w-2 h-2 rounded-full bg-[#364F9F]" />}
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${useWallet ? "border-[#7B3A14]" : "border-[#d3bba7]"}`}>
+                            {useWallet && <div className="w-2 h-2 rounded-full bg-[#7B3A14]" />}
                           </div>
                           <img
                             src={iconWalletImg}
@@ -2213,9 +2213,9 @@ export function CartDrawer() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-foreground">Use Fresh Stock Xchange Wallet</p>
                             <p className="text-xs text-muted-foreground">
-                              Balance: <span className="font-bold" style={{ color: "#364F9F" }}>₹{walletBalance.toLocaleString("en-IN")}</span>
+                              Balance: <span className="font-bold" style={{ color: "#7B3A14" }}>₹{walletBalance.toLocaleString("en-IN")}</span>
                               {useWallet && walletDeduction > 0 && (
-                                <span className="ml-1 font-semibold" style={{ color: "#364F9F" }}> · −₹{walletDeduction} applied</span>
+                                <span className="ml-1 font-semibold" style={{ color: "#7B3A14" }}> · −₹{walletDeduction} applied</span>
                               )}
                             </p>
                           </div>
@@ -2224,14 +2224,14 @@ export function CartDrawer() {
                     )}
 
                     {/* Bill Details */}
-                    <div className="mx-4 mt-4 border border-dashed border-border/60 rounded-2xl p-4 space-y-2.5">
-                      <h3 className="font-semibold text-foreground text-sm mb-3">Bill Details</h3>
+                    <div className="mx-4 mt-4 border border-[#e6c7a9] bg-white rounded-2xl p-4 space-y-2.5 shadow-[0_3px_10px_rgba(82,39,15,.05)]">
+                      <h3 className="font-bold text-[#542813] text-sm mb-3">Bill Details</h3>
                       {items.map(item => (
                         <div key={item.id} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground min-w-0 truncate mr-2">
+                          <span className="text-[#80634e] min-w-0 truncate mr-2">
                             {item.name} × {item.quantity}
                             {(item.pieces || item.serves) && (
-                              <span className="block truncate text-[11px] text-muted-foreground">
+                              <span className="block truncate text-[11px] text-[#80634e]">
                                 {item.pieces && `Pieces: ${formatProductMetadataValue(item.pieces, "Pieces")}`}
                                 {item.pieces && item.serves ? " · " : ""}
                                 {item.serves && `Serves: ${formatProductMetadataValue(item.serves, "Serves")}`}
@@ -2246,9 +2246,9 @@ export function CartDrawer() {
                           <span className="font-medium flex-shrink-0">₹{item.price * item.quantity}</span>
                         </div>
                       ))}
-                      <div className="pt-2 border-t border-dashed border-border/40 space-y-2">
+                      <div className="pt-2 border-t border-[#ead9c8] space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="text-[#80634e]">Subtotal</span>
                           <span className="font-medium">₹{totalPrice}</span>
                         </div>
                         {discountAmount > 0 && (
@@ -2260,20 +2260,20 @@ export function CartDrawer() {
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Delivery fee</span>
+                          <span className="text-[#80634e]">Delivery fee</span>
                           <span className="font-semibold text-emerald-600">FREE</span>
                         </div>
                         {walletDeduction > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-blue-600 flex items-center gap-1">
-                              <img src={iconWalletImg} alt="" className="w-3 h-3 object-contain" style={{ filter: "brightness(0) saturate(100%) invert(28%) sepia(48%) saturate(1517%) hue-rotate(212deg) brightness(91%) contrast(89%)" }} />
+                            <span className="text-[#7B3A14] flex items-center gap-1">
+                              <img src={iconWalletImg} alt="" className="w-3 h-3 object-contain" style={{ filter: "brightness(0) saturate(100%) invert(23%) sepia(36%) saturate(1020%) hue-rotate(344deg) brightness(94%) contrast(93%)" }} />
                               Wallet
                             </span>
-                            <span className="font-semibold text-blue-600">−₹{walletDeduction}</span>
+                            <span className="font-semibold text-[#7B3A14]">−₹{walletDeduction}</span>
                           </div>
                         )}
                       </div>
-                      <div className="pt-2 border-t border-border/40 flex justify-between items-center">
+                      <div className="pt-2 border-t border-[#ead9c8] flex justify-between items-center">
                         <span className="font-bold text-foreground">Total</span>
                         <div className="text-right">
                           {(discountAmount > 0 || walletDeduction > 0) && (
@@ -2281,7 +2281,7 @@ export function CartDrawer() {
                               ₹{rawTotal}
                             </p>
                           )}
-                          <span className="text-lg font-bold text-primary">₹{finalTotal}</span>
+                          <span className="text-lg font-bold text-[#a84d12]">₹{finalTotal}</span>
                         </div>
                       </div>
                     </div>
@@ -2294,7 +2294,7 @@ export function CartDrawer() {
                             aria-hidden
                             className="w-4 h-4 inline-block"
                             style={{
-                              backgroundColor: "#364F9F",
+                              backgroundColor: "#7B3A14",
                               WebkitMaskImage: `url(${iconShippingHomeImg})`,
                               maskImage: `url(${iconShippingHomeImg})`,
                               WebkitMaskRepeat: "no-repeat",
@@ -2312,7 +2312,7 @@ export function CartDrawer() {
                             size="sm"
                             onClick={openAddForm}
                             className="rounded-full h-8 px-3 text-xs text-white gap-1 hover:opacity-90"
-                            style={{ backgroundColor: "#364F9F" }}
+                            style={{ backgroundColor: "#C8651B" }}
                             data-testid="button-add-address"
                           >
                             <Plus className="w-3 h-3" /> Add Address
@@ -2342,7 +2342,7 @@ export function CartDrawer() {
 
                       {/* Inline Add Address form */}
                       {customer && showAddForm && (
-                        <div className="space-y-3 mb-4 pb-4 border-b border-slate-100">
+                        <div className="space-y-3 mb-4 pb-4 border-b border-[#ead9c8]">
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-sm font-medium text-foreground">New Address</p>
                             <Button
@@ -2366,7 +2366,7 @@ export function CartDrawer() {
                               value={addForm.pincode}
                               onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                               placeholder="400601"
-                              className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                              className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
                               data-testid="input-address-pincode"
                             />
                           </div>
@@ -2380,7 +2380,7 @@ export function CartDrawer() {
                                 value={addForm.phone}
                                 onChange={e => setAddForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
                                 placeholder="10-digit mobile"
-                                className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
                                 data-testid="input-address-phone"
                               />
                             </div>
@@ -2390,7 +2390,7 @@ export function CartDrawer() {
                                 value={addForm.name}
                                 onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder="Recipient name"
-                                className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
                                 data-testid="input-address-name"
                               />
                             </div>
@@ -2401,7 +2401,7 @@ export function CartDrawer() {
                               value={addForm.building}
                               onChange={e => setAddForm(f => ({ ...f, building: e.target.value }))}
                               placeholder="Wing A, Flat 302, Building Name"
-                              className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                              className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
                               data-testid="input-address-building"
                             />
                           </div>
@@ -2411,7 +2411,7 @@ export function CartDrawer() {
                               value={addForm.street}
                               onChange={e => setAddForm(f => ({ ...f, street: e.target.value }))}
                               placeholder="Street name or society"
-                              className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                              className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
                               data-testid="input-address-street"
                             />
                           </div>
@@ -2489,7 +2489,7 @@ export function CartDrawer() {
                                       type: opt.value,
                                       label: opt.value === "house" ? "Home" : opt.value === "office" ? "Office" : f.label,
                                     }))}
-                                    style={{ backgroundColor: selected ? "#364F9F" : "#F05B4E", borderColor: selected ? "#364F9F" : "#F05B4E" }}
+                                    style={{ backgroundColor: selected ? "#7B3A14" : "#C8651B", borderColor: selected ? "#7B3A14" : "#C8651B" }}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border text-white transition-all hover:opacity-90"
                                     data-testid={`button-address-type-${opt.value}`}
                                   >
@@ -2507,7 +2507,7 @@ export function CartDrawer() {
                                 value={addForm.label}
                                 onChange={e => setAddForm(f => ({ ...f, label: e.target.value }))}
                                 placeholder='Custom label (e.g. "Parents Home")'
-                                className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#364F9F] focus:outline-none px-0 py-1.5 text-sm transition-colors"
+                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
                                 data-testid="input-address-custom-label"
                               />
                             )}
@@ -2516,7 +2516,7 @@ export function CartDrawer() {
                             <Button
                               onClick={() => { setShowAddForm(false); setAddForm(emptyForm); }}
                               className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
-                              style={{ backgroundColor: "#F05B4E" }}
+                              style={{ backgroundColor: "#9b603b" }}
                               data-testid="button-cancel-address"
                             >
                               Cancel
@@ -2525,7 +2525,7 @@ export function CartDrawer() {
                               onClick={saveAddress}
                               disabled={isSavingAddress}
                               className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
-                              style={{ backgroundColor: "#364F9F" }}
+                              style={{ backgroundColor: "#C8651B" }}
                               data-testid="button-save-address"
                             >
                               {isSavingAddress ? <><Loader2 className="w-4 h-4 animate-spin mr-2 inline" />Saving...</> : "Save Address"}
@@ -2537,14 +2537,14 @@ export function CartDrawer() {
                       {!customer ? (
                         <button
                           onClick={() => { setIsCartOpen(false); navigate("/"); }}
-                          className="w-full border-2 border-dashed border-border/50 rounded-2xl p-4 text-center text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                          className="w-full border-2 border-dashed border-[#e6c7a9] rounded-2xl bg-white p-4 text-center text-[#80634e] hover:border-[#c8651b] hover:text-[#7b3a14] transition-colors"
                         >
                           <MapPin className="w-6 h-6 mx-auto mb-1 opacity-40" />
                           <p className="text-sm font-medium">Please log in to use saved addresses</p>
                           <p className="text-xs mt-1 opacity-70">Tap to sign in with your phone</p>
                         </button>
                       ) : savedAddresses.length === 0 ? (
-                        <button onClick={openAddForm} className="w-full border-2 border-dashed border-border/50 rounded-2xl p-4 flex flex-col items-center text-center text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors" data-testid="button-add-first-address">
+                        <button onClick={openAddForm} className="w-full border-2 border-dashed border-[#e6c7a9] rounded-2xl bg-white p-4 flex flex-col items-center text-center text-[#80634e] hover:border-[#c8651b] hover:text-[#7b3a14] transition-colors" data-testid="button-add-first-address">
                           <Lottie animationData={emptyAddressAnim} loop className="w-16 h-16" />
                           <p className="text-sm font-medium">+ Add delivery address</p>
                         </button>
@@ -2555,12 +2555,12 @@ export function CartDrawer() {
                               key={addr.id || addr.pincode || addrIdx}
                               type="button"
                               onClick={() => handleSavedAddressSelect(addr)}
-                              className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all ${activeAddressId === addr.id ? "border-primary bg-primary/5" : "border-border/40 bg-white hover:border-primary/30"}`}
+                              className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all ${activeAddressId === addr.id ? "border-[#c8651b] bg-[#fff7ed]" : "border-[#e6c7a9] bg-white hover:border-[#c8651b]/50"}`}
                               data-testid={`address-option-${addr.id}`}
                             >
                               <div className="flex items-start gap-2.5">
-                                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${activeAddressId === addr.id ? "border-primary" : "border-slate-300"}`}>
-                                  {activeAddressId === addr.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${activeAddressId === addr.id ? "border-[#c8651b]" : "border-[#d3bba7]"}`}>
+                                  {activeAddressId === addr.id && <div className="w-2 h-2 rounded-full bg-[#c8651b]" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-0.5">
@@ -2569,12 +2569,12 @@ export function CartDrawer() {
                                       {addr.label}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">{addr.phone || customer?.phone}</p>
-                                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                  <p className="text-xs text-[#80634e]">{addr.phone || customer?.phone}</p>
+                                  <p className="text-xs text-[#80634e] mt-0.5 leading-relaxed">
                                     {[addr.building, addr.street, addr.area, addr.pincode].filter(Boolean).join(", ")}
                                   </p>
                                   {addr.cityArea && (
-                                    <p className="mt-1 text-[11px] font-medium text-orange-700">
+                                    <p className="mt-1 text-[11px] font-semibold text-[#a84d12]">
                                       Area/City: {addr.cityArea}
                                     </p>
                                   )}
@@ -2600,7 +2600,7 @@ export function CartDrawer() {
                             <Button
                               type="button"
                               variant="outline"
-                              className="w-full justify-between rounded-xl border-2 border-border/40 bg-white font-semibold text-sm"
+                              className="w-full justify-between rounded-xl border-2 border-[#e6c7a9] bg-white font-semibold text-sm"
                               data-testid="preorder-delivery-date"
                             >
                               <span>{format(selectedDeliveryDate, "dd-MM-yyyy")}</span>
@@ -2646,12 +2646,12 @@ export function CartDrawer() {
                     {/* Payment Method — hidden when wallet covers the full total */}
                     {finalTotal > 0 && (
                     <div className="px-4 mt-5 mb-4 space-y-3">
-                      <h3 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+                      <h3 className="font-bold text-[#542813] text-sm flex items-center gap-1.5">
                         <span
                           aria-hidden
                           className="w-4 h-4 inline-block"
                           style={{
-                            backgroundColor: "#364F9F",
+                            backgroundColor: "#7B3A14",
                             WebkitMaskImage: `url(${iconWalletImg})`,
                             maskImage: `url(${iconWalletImg})`,
                             WebkitMaskRepeat: "no-repeat",
@@ -2669,15 +2669,15 @@ export function CartDrawer() {
                         aria-disabled={!phonePeEnabled}
                         className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 ${
                           phonePeEnabled
-                            ? "border-primary bg-primary/5"
-                            : "border-border bg-white opacity-60"
+                            ? "border-[#c8651b] bg-[#fff7ed]"
+                            : "border-[#e6c7a9] bg-white opacity-60"
                         }`}
                         data-testid="payment-upi"
                       >
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          phonePeEnabled ? "border-primary" : "border-muted-foreground/40"
+                          phonePeEnabled ? "border-[#c8651b]" : "border-[#d3bba7]"
                         }`}>
-                          {phonePeEnabled && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          {phonePeEnabled && <div className="w-2 h-2 rounded-full bg-[#c8651b]" />}
                         </div>
                         <span className="text-sm font-medium text-foreground">UPI</span>
                       </div>
@@ -2690,19 +2690,19 @@ export function CartDrawer() {
                     )}
                   </div>
 
-                  <div className="px-4 py-4 border-t border-border/30 bg-white sticky bottom-0 z-10">
+                  <div className="footer-wood-bg px-4 py-4 border-t border-[#9e5424] sticky bottom-0 z-10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-muted-foreground">Total</p>
+                        <p className="text-xs font-semibold text-white/80">Total</p>
                         {(discountAmount > 0 || walletDeduction > 0) && (
-                          <p className="text-xs text-muted-foreground line-through">₹{rawTotal}</p>
+                          <p className="text-xs text-white/70 line-through">₹{rawTotal}</p>
                         )}
-                        <p className="text-xl font-bold text-primary">₹{finalTotal}</p>
+                        <p className="text-xl font-extrabold text-white">₹{finalTotal}</p>
                         {discountAmount > 0 && (
-                          <p className="text-[10px] text-emerald-600 font-semibold">Saved ₹{discountAmount} with {appliedCoupon!.code}</p>
+                          <p className="text-[10px] text-[#ffe0bd] font-semibold">Saved ₹{discountAmount} with {appliedCoupon!.code}</p>
                         )}
                         {walletDeduction > 0 && (
-                          <p className="text-[10px] font-semibold" style={{ color: "#364F9F" }}>−₹{walletDeduction} from Wallet</p>
+                          <p className="text-[10px] font-semibold text-[#ffe0bd]">−₹{walletDeduction} from Wallet</p>
                         )}
                       </div>
                       <Button
@@ -2718,7 +2718,7 @@ export function CartDrawer() {
                           Boolean(cityAreasError) ||
                           (paymentMethod === "online" && finalTotal > 0 && !phonePeEnabled)
                         }
-                        className="h-12 px-8 !rounded-full font-bold bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 flex items-center gap-2"
+                        className="h-12 px-8 !rounded-full font-bold bg-[#c8651b] text-white hover:bg-[#a84d12] shadow-lg shadow-black/20 flex items-center gap-2"
                         data-testid="button-place-order"
                       >
                         {!isHubReady
