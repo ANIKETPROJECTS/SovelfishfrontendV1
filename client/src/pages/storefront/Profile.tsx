@@ -6,8 +6,7 @@ import { useProducts } from "@/hooks/use-products";
 import Lottie from "lottie-react";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
-import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
-import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
+import { CustomerAddressFields } from "@/components/storefront/CustomerAddressFields";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -45,13 +44,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomer } from "@/context/CustomerContext";
 import { useCityArea } from "@/context/CityAreaContext";
-import { findCityAreaOption } from "@shared/cityAreaPricing";
 import { OtpModal } from "@/components/storefront/OtpModal";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { apiRequest } from "@/lib/queryClient";
 import type { Customer, CustomerAddress, OrderRequest, Product, UpdateCustomerAddress } from "@shared/schema";
 import { isCustomerOrderVisible } from "@shared/customerOrderVisibility";
-import { getValidAddressCoordinates, hasAddressCoordinateFields } from "@shared/addressCoordinates";
+import { getValidAddressCoordinates } from "@shared/addressCoordinates";
+import {
+  normalizeCustomerAddressDraft,
+  validateCustomerAddressDraft,
+} from "@/lib/customerAddressForm";
 import fishImg from "@assets/Gemini_Generated_Image_w6wqkkw6wqkkw6wq_(1)_1772713077919.png";
 import prawnsImg from "@assets/Gemini_Generated_Image_5xy0sd5xy0sd5xy0_1772713090650.png";
 import chickenImg from "@assets/Gemini_Generated_Image_g0ecb4g0ecb4g0ec_1772713219972.png";
@@ -74,12 +76,6 @@ function getFallbackImage(category: string): string {
     default: return fishImg;
   }
 }
-
-const TYPE_OPTIONS = [
-  { value: "house" as const, iconImg: iconHomeImg, label: "House" },
-  { value: "office" as const, iconImg: iconBriefcaseImg, label: "Office" },
-  { value: "other" as const, iconImg: null, label: "Other" },
-];
 
 const addressTypeColors: Record<string, string> = {
   house: "bg-pink-100 text-pink-700",
@@ -901,7 +897,6 @@ export default function Profile() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [addressForm, setAddressForm] = useState<EmptyAddress>(emptyAddress);
-  const [mapPinCleared, setMapPinCleared] = useState(false);
   const [useAccountDetails, setUseAccountDetails] = useState(false);
 
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -979,6 +974,7 @@ export default function Profile() {
     mutationFn: (data: EmptyAddress) => apiRequest("POST", "/api/customer/me/addresses", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/me"] });
+      setSelectedCityArea(addressForm.cityArea || addressForm.area);
       cancelForm();
       toast({ title: "Address added" });
     },
@@ -990,6 +986,7 @@ export default function Profile() {
       apiRequest("PATCH", `/api/customer/me/addresses/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/me"] });
+      setSelectedCityArea(addressForm.cityArea || addressForm.area);
       cancelForm();
       toast({ title: "Address updated" });
     },
@@ -1007,7 +1004,6 @@ export default function Profile() {
 
   const openAddForm = () => {
     setEditingAddress(null);
-    setMapPinCleared(false);
     const isFirstAddress = (customer?.addresses?.length || 0) === 0;
     setAddressForm({
       ...emptyAddress,
@@ -1021,7 +1017,6 @@ export default function Profile() {
   const openEditForm = (addr: CustomerAddress) => {
     setEditingAddress(addr);
     const coordinates = getValidAddressCoordinates(addr);
-    setMapPinCleared(hasAddressCoordinateFields(addr) && !coordinates);
     setAddressForm({
       name: addr.name, phone: addr.phone, building: addr.building,
       street: addr.street, area: addr.area, pincode: addr.pincode || "",
@@ -1037,7 +1032,6 @@ export default function Profile() {
     setShowAddressForm(false);
     setEditingAddress(null);
     setAddressForm(emptyAddress);
-    setMapPinCleared(false);
     setUseAccountDetails(false);
   };
 
@@ -1051,52 +1045,29 @@ export default function Profile() {
   };
 
   const saveAddress = () => {
-    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area || !addressForm.pincode) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
-      return;
-    }
-    if (!/^\d{6}$/.test(addressForm.pincode)) {
-      toast({ title: "Enter a valid 6-digit pincode", variant: "destructive" });
-      return;
-    }
-    if (!/^[6-9]\d{9}$/.test(addressForm.phone.trim())) {
-      toast({ title: "Enter a valid 10-digit mobile number", variant: "destructive" });
-      return;
-    }
-    if (
-      isCityAreasLoading ||
-      cityAreasError ||
-      !findCityAreaOption(cityAreas, addressForm.cityArea)
-    ) {
+    const validationError = validateCustomerAddressDraft(addressForm, {
+      cityAreas,
+      isCityAreasLoading,
+      cityAreasError,
+    });
+    if (validationError) {
       toast({
-        title: "Choose an active delivery Area/City",
-        description: cityAreasError ?? "Select an area from the available list.",
+        title: validationError.title,
+        description: validationError.description,
         variant: "destructive",
       });
       return;
     }
-    const label = addressForm.type === "other"
-      ? (addressForm.label || "Other")
-      : addressForm.type === "house" ? "Home" : "Office";
-    const activeArea = findCityAreaOption(cityAreas, addressForm.cityArea)!;
-    const entry = {
-      ...addressForm,
-      area: activeArea.name,
-      cityArea: activeArea.name,
-      city: activeArea.name,
-      label,
-    };
+    const entry = normalizeCustomerAddressDraft(addressForm, cityAreas);
+    if (!entry) return;
     if (editingAddress) {
       updateAddressMutation.mutate({
         id: editingAddress.id,
-        data: mapPinCleared
-          ? { ...entry, latitude: null, longitude: null }
-          : entry,
+        data: entry,
       });
     } else {
       addAddressMutation.mutate(entry);
     }
-    setSelectedCityArea(activeArea.name);
   };
 
   if (customerLoading) {
@@ -1359,160 +1330,22 @@ export default function Profile() {
               </div>
 
               {showAddressForm && (
-                <div className="space-y-3 mb-5 pb-5 border-b border-slate-100">
+                  <div className="space-y-3 mb-5 pb-5 border-b border-slate-100">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-foreground">{editingAddress ? "Edit Address" : "New Address"}</p>
                     <Button variant="ghost" size="icon" onClick={cancelForm} className="w-7 h-7 rounded-full text-muted-foreground">
                       <X className="w-3.5 h-3.5" />
                     </Button>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Pincode *</Label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={6}
-                      required
-                      value={addressForm.pincode}
-                      onChange={e => setAddressForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                      placeholder="400601"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
-                      data-testid="input-address-pincode"
+                    <CustomerAddressFields
+                      form={addressForm}
+                      onChange={setAddressForm}
+                      cityAreas={cityAreas}
+                      isCityAreasLoading={isCityAreasLoading}
+                      cityAreasError={cityAreasError}
+                      onRetryCityAreas={reloadCityAreas}
+                      areaSelectId="profile-address-city-area"
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Phone *</Label>
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={10}
-                      value={addressForm.phone}
-                      onChange={e => setAddressForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
-                      placeholder="10-digit mobile"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
-                      data-testid="input-address-phone"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Full Name *</Label>
-                    <input
-                      value={addressForm.name}
-                      onChange={e => setAddressForm(f => ({ ...f, name: e.target.value }))}
-                      placeholder="Recipient name"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
-                      data-testid="input-address-name"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Building / Flat No *</Label>
-                    <input
-                      value={addressForm.building}
-                      onChange={e => setAddressForm(f => ({ ...f, building: e.target.value }))}
-                      placeholder="Wing A, Flat 302, Building Name"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
-                      data-testid="input-address-building"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Street / Locality</Label>
-                    <input
-                      value={addressForm.street}
-                      onChange={e => setAddressForm(f => ({ ...f, street: e.target.value }))}
-                      placeholder="Street name or society"
-                      className="w-full bg-transparent border-0 border-b border-border/60 focus:border-[#C8651B] focus:outline-none px-3 py-2.5 text-base transition-colors"
-                      data-testid="input-address-street"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="profile-address-city-area" className="text-xs text-muted-foreground">
-                      Area/City *
-                    </Label>
-                    {isCityAreasLoading ? (
-                      <p className="py-2 text-xs text-muted-foreground">Loading active areas…</p>
-                    ) : cityAreasError ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-red-700">{cityAreasError}</p>
-                        <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
-                      </div>
-                    ) : cityAreas.length === 0 ? (
-                      <p className="py-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
-                    ) : (
-                      <SearchableCityAreaSelect
-                        id="profile-address-city-area"
-                        value={addressForm.cityArea || addressForm.area || ""}
-                        options={cityAreas}
-                        onValueChange={(value) => {
-                          const option = findCityAreaOption(cityAreas, value);
-                          setAddressForm((form) => ({
-                            ...form,
-                            area: option?.name ?? "",
-                            cityArea: option?.name ?? "",
-                            city: option?.name ?? "",
-                          }));
-                        }}
-                        testId="select-profile-address-area-city"
-                      />
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Delivery pin (optional)</Label>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <AddressMapPicker
-                        coordinates={getValidAddressCoordinates(addressForm)}
-                        onSavePin={(coordinates, pincode) => {
-                          setAddressForm((form) => {
-                            const next = { ...form };
-                            delete next.latitude;
-                            delete next.longitude;
-                            return {
-                              ...next,
-                              ...(coordinates ?? {}),
-                              ...(pincode ? { pincode } : {}),
-                            };
-                          });
-                          setMapPinCleared(coordinates === null);
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Optional exact pin for this address.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Address Type</Label>
-                    <div className="flex gap-2">
-                      {TYPE_OPTIONS.map(opt => {
-                        const selected = addressForm.type === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            onClick={() => setAddressForm(f => ({
-                              ...f, type: opt.value,
-                              label: opt.value === "house" ? "Home" : opt.value === "office" ? "Office" : f.label,
-                            }))}
-                            style={{ backgroundColor: selected ? "#C8651B" : "#8B3A0F", borderColor: selected ? "#C8651B" : "#8B3A0F" }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border text-white transition-all hover:opacity-90"
-                            data-testid={`button-address-type-${opt.value}`}
-                          >
-                            {opt.iconImg && (
-                              <img src={opt.iconImg} alt="" className="w-3.5 h-3.5 object-contain brightness-0 invert" />
-                            )}
-                            {opt.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {addressForm.type === "other" && (
-                      <Input
-                        value={addressForm.label}
-                        onChange={e => setAddressForm(f => ({ ...f, label: e.target.value }))}
-                        placeholder='Custom label (e.g. "Parents Home")'
-                        className="rounded-xl border-border/60 text-base"
-                        data-testid="input-address-custom-label"
-                      />
-                    )}
-                  </div>
                   <div className="flex gap-2 pt-3">
                     <Button
                       onClick={cancelForm}

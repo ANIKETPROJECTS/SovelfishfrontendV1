@@ -5,7 +5,7 @@ import Lottie from "lottie-react";
 import {
   CheckCircle2, Minus, Plus, ShoppingBag, Trash2,
   MapPin, Banknote, CreditCard, ChevronRight, ClipboardList,
-  X, Home, Briefcase, Tag, Navigation, Loader2, AlertCircle, Search,
+  X, Home, Briefcase, Tag, Navigation, Loader2, AlertCircle, Search, Pencil,
   Ticket, ChevronDown, ChevronUp, CalendarDays
 } from "lucide-react";
 import popperAnim from "@/assets/lottie/popper.json";
@@ -14,7 +14,7 @@ import orderSuccessAnim from "@/assets/lottie/order-success.json";
 import confettiAnim from "@/assets/lottie/confetti.json";
 import emptyCartBagAnim from "@/assets/lottie/empty-cart-bag.json";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
-import { AddressMapPicker } from "@/components/storefront/AddressMapPicker";
+import { CustomerAddressFields } from "@/components/storefront/CustomerAddressFields";
 import { SearchableCityAreaSelect } from "@/components/storefront/SearchableCityAreaSelect";
 import { CuttingMethodSelector } from "@/components/storefront/CuttingMethodSelector";
 import { isValidCuttingMethodSelection } from "@shared/cuttingMethods";
@@ -54,6 +54,10 @@ import {
 import type { CustomerAddress, Coupon } from "@shared/schema";
 import { getValidAddressCoordinates } from "@shared/addressCoordinates";
 import { findCityAreaOption } from "@shared/cityAreaPricing";
+import {
+  normalizeCustomerAddressDraft,
+  validateCustomerAddressDraft,
+} from "@/lib/customerAddressForm";
 import { useGoogleMaps } from "@/hooks/use-google-maps";
 import {
   createPlacesSessionToken,
@@ -707,6 +711,7 @@ export function CartDrawer() {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState(emptyForm);
+  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [geoFilling, setGeoFilling] = useState(false);
   const [geoFillStatus, setGeoFillStatus] = useState<"idle" | "success" | "error">("idle");
@@ -802,6 +807,24 @@ export function CartDrawer() {
   const savedAddresses: CustomerAddress[] = customer?.addresses ?? [];
 
   const activeAddressId = selectedAddressId ?? (savedAddresses[0]?.id || null);
+  const activeSavedAddress = savedAddresses.find((address) => address.id === activeAddressId);
+
+  useEffect(() => {
+    if (isCityAreasLoading || !activeAddressId) return;
+    const activeAddress = savedAddresses.find((address) => address.id === activeAddressId);
+    if (!activeAddress) return;
+    const matchingArea = findCityAreaOption(
+      cityAreas,
+      activeAddress.cityArea || activeAddress.area || activeAddress.city,
+    );
+    setSelectedCityArea(matchingArea?.name ?? null);
+  }, [
+    activeAddressId,
+    cityAreas,
+    isCityAreasLoading,
+    savedAddresses,
+    setSelectedCityArea,
+  ]);
 
   const handleSavedAddressSelect = (address: CustomerAddress) => {
     setSelectedAddressId(address.id);
@@ -809,12 +832,13 @@ export function CartDrawer() {
       cityAreas,
       address.cityArea || address.area || address.city,
     );
-    if (matchingArea) setSelectedCityArea(matchingArea.name);
+    setSelectedCityArea(matchingArea?.name ?? null);
   };
 
   const getFallbackImage = (_category: string) => noImageImg;
 
   const openAddForm = () => {
+    setEditingAddress(null);
     setAddForm({
       ...emptyForm,
       name: customer?.name ?? "",
@@ -832,6 +856,40 @@ export function CartDrawer() {
     setLocSearchFailed(false);
     setShowAddForm(true);
     setTimeout(() => locInputRef.current?.focus(), 250);
+  };
+
+  const openEditAddressForm = (address: CustomerAddress) => {
+    const coordinates = getValidAddressCoordinates(address);
+    setEditingAddress(address);
+    setAddForm({
+      ...emptyForm,
+      name: address.name,
+      phone: address.phone,
+      building: address.building,
+      street: address.street,
+      area: address.area,
+      cityArea: address.cityArea || address.area || address.city || "",
+      city: address.city || address.cityArea || address.area || "",
+      pincode: address.pincode || "",
+      type: address.type,
+      label: address.label,
+      instructions: address.instructions,
+      ...(coordinates ?? {}),
+    });
+    setGeoFillStatus("idle");
+    setGeoFillMessage("");
+    setLocSearch("");
+    setLocResults([]);
+    setShowLocDropdown(false);
+    locPlacesSessionTokenRef.current = null;
+    setLocSearchFailed(false);
+    setShowAddForm(true);
+  };
+
+  const closeAddressForm = () => {
+    setShowAddForm(false);
+    setEditingAddress(null);
+    setAddForm(emptyForm);
   };
 
   const handleAutoFillLocation = useCallback(async () => {
@@ -883,55 +941,48 @@ export function CartDrawer() {
   }, []);
 
   const saveAddress = async () => {
-    if (!addForm.name || !addForm.phone || !addForm.building || !addForm.area || !addForm.pincode) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
+    const validationError = validateCustomerAddressDraft(addForm, {
+      cityAreas,
+      isCityAreasLoading,
+      cityAreasError,
+    });
+    if (validationError) {
+      toast({
+        title: validationError.title,
+        description: validationError.description,
+        variant: "destructive",
+      });
       return;
     }
-    if (!/^\d{6}$/.test(addForm.pincode)) {
-      toast({ title: "Enter a valid 6-digit pincode", variant: "destructive" });
-      return;
-    }
-    if (!selectedCityArea || cityAreasError || cityAreas.length === 0) {
-      toast({ title: "Select an available delivery Area/City", variant: "destructive" });
-      return;
-    }
-    if (!getValidAddressCoordinates(addForm)) {
-      toast({ title: "Choose the exact delivery location on the map", variant: "destructive" });
-      return;
-    }
-    const label =
-      addForm.type === "other" ? (addForm.label || "Other") :
-      addForm.type === "house" ? "Home" : "Office";
-    const addressPayload = {
-      ...addForm,
-      label,
-      area: selectedCityArea.name,
-      cityArea: selectedCityArea.name,
-      city: selectedCityArea.name,
-    };
-    const coordinates = getValidAddressCoordinates(addForm);
-    if (coordinates) {
-      Object.assign(addressPayload, coordinates);
-    } else {
-      delete addressPayload.latitude;
-      delete addressPayload.longitude;
-    }
+    const addressPayload = normalizeCustomerAddressDraft(addForm, cityAreas);
+    if (!addressPayload) return;
 
     setIsSavingAddress(true);
     try {
-      const res = await fetch("/api/customer/me/addresses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(addressPayload),
-      });
-      if (!res.ok) throw new Error("Failed to save address");
+      const res = await fetch(
+        editingAddress
+          ? `/api/customer/me/addresses/${encodeURIComponent(editingAddress.id)}`
+          : "/api/customer/me/addresses",
+        {
+          method: editingAddress ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(addressPayload),
+        },
+      );
+      if (!res.ok) {
+        const result = await res.json().catch(() => ({}));
+        throw new Error(result.message || "Failed to save address");
+      }
       const updated = await res.json();
       queryClient.setQueryData(["/api/customer/me"], updated);
-      const newAddr = updated.addresses?.[updated.addresses.length - 1];
-      if (newAddr) setSelectedAddressId(newAddr.id);
-      toast({ title: "Address saved!" });
-      setShowAddForm(false);
-      setAddForm(emptyForm);
+      const savedAddress = editingAddress
+        ? updated.addresses?.find((address: CustomerAddress) => address.id === editingAddress.id)
+        : updated.addresses?.[updated.addresses.length - 1];
+      if (savedAddress) setSelectedAddressId(savedAddress.id);
+      setSelectedCityArea(addressPayload.cityArea ?? addressPayload.area);
+      toast({ title: editingAddress ? "Address updated!" : "Address saved!" });
+      closeAddressForm();
     } catch {
       toast({ title: "Could not save address. Please try again.", variant: "destructive" });
     } finally {
@@ -2275,7 +2326,7 @@ export function CartDrawer() {
                               <p className="text-xs text-red-700">No active areas are configured for this hub.</p>
                             ) : (
                               <p className="text-xs text-red-700">
-                                This saved address has no active Area/City. Edit it in Profile or add a new address.
+                                This saved address has no active Area/City. Edit it here or add a new address.
                               </p>
                             )}
                           </div>
@@ -2285,179 +2336,31 @@ export function CartDrawer() {
                       {customer && showAddForm && (
                         <div className="space-y-3 mb-4 pb-4 border-b border-[#ead9c8]">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-sm font-medium text-foreground">New Address</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {editingAddress ? "Edit Address" : "New Address"}
+                            </p>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => { setShowAddForm(false); setAddForm(emptyForm); }}
+                              onClick={closeAddressForm}
                               className="w-7 h-7 rounded-full text-muted-foreground"
                               data-testid="button-close-address-form"
                             >
                               <X className="w-3.5 h-3.5" />
                             </Button>
                           </div>
-                          <div className="grid grid-cols-2 items-end gap-3">
-                            <div className="min-w-0 space-y-1">
-                              <Label className="text-xs text-muted-foreground">Pincode *</Label>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                maxLength={6}
-                                required
-                                value={addForm.pincode}
-                                onChange={e => setAddForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                                placeholder="400601"
-                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
-                                data-testid="input-address-pincode"
-                              />
-                            </div>
-                            <div className="min-w-0 space-y-1">
-                              <Label className="text-xs text-muted-foreground">Exact location *</Label>
-                              <AddressMapPicker
-                                compact
-                                required
-                                coordinates={getValidAddressCoordinates(addForm)}
-                                onSavePin={(coordinates, pincode) => {
-                                  setAddForm((form) => {
-                                    const next = { ...form };
-                                    delete next.latitude;
-                                    delete next.longitude;
-                                    return {
-                                      ...next,
-                                      ...(coordinates ?? {}),
-                                      ...(pincode ? { pincode } : {}),
-                                    };
-                                  });
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <p className="text-[11px] font-medium text-[#80634e]">
-                            Choose where the delivery should arrive.
-                          </p>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Phone *</Label>
-                              <input
-                                type="tel"
-                                inputMode="numeric"
-                                maxLength={10}
-                                value={addForm.phone}
-                                onChange={e => setAddForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
-                                placeholder="10-digit mobile"
-                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
-                                data-testid="input-address-phone"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Full Name *</Label>
-                              <input
-                                value={addForm.name}
-                                onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
-                                placeholder="Recipient name"
-                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
-                                data-testid="input-address-name"
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Building / Flat No *</Label>
-                            <input
-                              value={addForm.building}
-                              onChange={e => setAddForm(f => ({ ...f, building: e.target.value }))}
-                              placeholder="Wing A, Flat 302, Building Name"
-                              className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
-                              data-testid="input-address-building"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Street / Locality</Label>
-                            <input
-                              value={addForm.street}
-                              onChange={e => setAddForm(f => ({ ...f, street: e.target.value }))}
-                              placeholder="Street name or society"
-                              className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
-                              data-testid="input-address-street"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label htmlFor="new-address-city-area" className="text-xs text-muted-foreground">
-                              Area/City *
-                            </Label>
-                            {isCityAreasLoading ? (
-                              <p className="py-2 text-xs text-muted-foreground">Loading active areas…</p>
-                            ) : cityAreasError ? (
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-xs text-red-700">{cityAreasError}</p>
-                                <Button type="button" size="sm" variant="outline" onClick={reloadCityAreas}>Retry</Button>
-                              </div>
-                            ) : cityAreas.length === 0 ? (
-                              <p className="py-2 text-xs text-red-700">No active delivery areas are configured for this hub.</p>
-                            ) : (
-                              <>
-                                <SearchableCityAreaSelect
-                                  id="new-address-city-area"
-                                  value={addForm.cityArea || addForm.area}
-                                  options={cityAreas}
-                                  onValueChange={(value) => {
-                                    const option = findCityAreaOption(cityAreas, value);
-                                    setSelectedCityArea(option?.name ?? null);
-                                    setAddForm((form) => ({
-                                      ...form,
-                                      area: option?.name ?? "",
-                                      cityArea: option?.name ?? "",
-                                      city: option?.name ?? "",
-                                    }));
-                                  }}
-                                  testId="select-new-address-area-city"
-                                />
-                                <p className="text-[11px] text-muted-foreground">
-                                  This Area/City is saved with the address and used for item pricing.
-                                </p>
-                              </>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Address Type</Label>
-                            <div className="flex gap-2">
-                              {TYPE_OPTIONS.map(opt => {
-                                const selected = addForm.type === opt.value;
-                                return (
-                                  <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => setAddForm(f => ({
-                                      ...f,
-                                      type: opt.value,
-                                      label: opt.value === "house" ? "Home" : opt.value === "office" ? "Office" : f.label,
-                                    }))}
-                                    style={{ backgroundColor: selected ? "#7B3A14" : "#C8651B", borderColor: selected ? "#7B3A14" : "#C8651B" }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border text-white transition-all hover:opacity-90"
-                                    data-testid={`button-address-type-${opt.value}`}
-                                  >
-                                    {opt.iconImg && (
-                                      <img src={opt.iconImg} alt="" className="w-3.5 h-3.5 object-contain brightness-0 invert" />
-                                    )}
-                                    {opt.icon}
-                                    {opt.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            {addForm.type === "other" && (
-                              <input
-                                value={addForm.label}
-                                onChange={e => setAddForm(f => ({ ...f, label: e.target.value }))}
-                                placeholder='Custom label (e.g. "Parents Home")'
-                                className="w-full bg-transparent border-0 border-b border-[#d9c1ac] focus:border-[#c8651b] focus:outline-none px-0 py-1.5 text-sm text-[#542813] transition-colors"
-                                data-testid="input-address-custom-label"
-                              />
-                            )}
-                          </div>
+                          <CustomerAddressFields
+                            form={addForm}
+                            onChange={setAddForm}
+                            cityAreas={cityAreas}
+                            isCityAreasLoading={isCityAreasLoading}
+                            cityAreasError={cityAreasError}
+                            onRetryCityAreas={reloadCityAreas}
+                            areaSelectId="checkout-address-city-area"
+                          />
                           <div className="flex gap-2 pt-3">
                             <Button
-                              onClick={() => { setShowAddForm(false); setAddForm(emptyForm); }}
+                              onClick={closeAddressForm}
                               className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
                               style={{ backgroundColor: "#9b603b" }}
                               data-testid="button-cancel-address"
@@ -2466,12 +2369,14 @@ export function CartDrawer() {
                             </Button>
                             <Button
                               onClick={saveAddress}
-                              disabled={isSavingAddress || !getValidAddressCoordinates(addForm)}
+                              disabled={isSavingAddress}
                               className="flex-1 rounded-xl text-white font-medium hover:opacity-90"
                               style={{ backgroundColor: "#C8651B" }}
                               data-testid="button-save-address"
                             >
-                              {isSavingAddress ? <><Loader2 className="w-4 h-4 animate-spin mr-2 inline" />Saving...</> : "Save Address"}
+                              {isSavingAddress
+                                ? <><Loader2 className="w-4 h-4 animate-spin mr-2 inline" />Saving...</>
+                                : editingAddress ? "Update Address" : "Save Address"}
                             </Button>
                           </div>
                         </div>
@@ -2526,6 +2431,19 @@ export function CartDrawer() {
                             </button>
                           ))}
                         </div>
+                      )}
+                      {!showAddForm && activeSavedAddress && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditAddressForm(activeSavedAddress)}
+                          className="mt-2 h-8 rounded-full border-[#d9c1ac] text-xs text-[#7b3a14] hover:bg-[#fff7ed]"
+                          data-testid="button-edit-selected-address"
+                        >
+                          <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                          Edit selected address
+                        </Button>
                       )}
                     </div>
 
