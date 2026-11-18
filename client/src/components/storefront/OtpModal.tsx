@@ -4,9 +4,11 @@ import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import flagImg from "@assets/flag_(1)_1776403319572.png";
+import loginFishIcon from "@assets/fish_1794989243100.png";
+import otpFishIcon from "@assets/fish_(1)_1794989293465.png";
 import { FreshStockXchangeLogo } from "@/components/storefront/FreshStockXchangeLogo";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, Fish, MessageCircle, ShieldCheck } from "lucide-react";
+import { CheckCircle2, MessageCircle, ShieldCheck } from "lucide-react";
 import { OTP_DIGIT_COUNT } from "@shared/otp";
 
 const BRAND_BROWN = "#7B3A14";
@@ -254,7 +256,13 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
             <>
               <div className="mb-5 flex flex-col items-center text-center">
                 <span className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fbf1e6] text-[#C8651B]">
-                  <Fish className="h-9 w-9" aria-hidden="true" />
+                  <img
+                    src={loginFishIcon}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-11 w-11 object-contain"
+                    style={{ filter: "brightness(0) saturate(100%) invert(55%) sepia(90%) saturate(700%) hue-rotate(340deg) brightness(105%)" }}
+                  />
                 </span>
                 <h2 className="font-display text-xl font-bold leading-snug text-[#7B3A14] sm:text-2xl">
                   Fresh catch starts here
@@ -317,8 +325,17 @@ export function OtpModal({ open, onClose }: OtpModalProps) {
           ) : (
             <>
               <div className="mb-5 flex flex-col items-center text-center">
-                <span className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fbf1e6] text-[#7B3A14]">
-                  <ShieldCheck className="h-9 w-9" aria-hidden="true" />
+                <span className="relative mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fbf1e6]">
+                  <img
+                    src={otpFishIcon}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-10 w-10 object-contain"
+                    style={{ filter: "brightness(0) saturate(100%) invert(24%) sepia(47%) saturate(1232%) hue-rotate(351deg) brightness(87%) contrast(92%)" }}
+                  />
+                  <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#C8651B] text-white">
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
                 </span>
                 <h3 className="font-display text-xl font-bold text-[#7B3A14] sm:text-2xl">Verify your number</h3>
                 <p className="mt-1 text-sm text-[#80634e]">Enter the one-time code sent to WhatsApp at</p>
