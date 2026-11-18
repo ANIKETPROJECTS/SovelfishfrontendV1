@@ -19,7 +19,6 @@ import { isNormalStorefrontProduct, isPreorderStorefrontProduct } from "@shared/
 import { isStorefrontProductVisible } from "@/lib/storefrontProductVisibility";
 import { DemoCatalogPreview } from "@/components/storefront/DemoCatalogPreview";
 import { FreshCatchReels } from "@/components/storefront/FreshCatchReels";
-import { CustomFishRequest } from "@/components/storefront/CustomFishRequest";
 import { WhatsAppFloatingButton } from "@/components/storefront/WhatsAppFloatingButton";
 
 function getFallbackImage(_category: string): string {
@@ -322,7 +321,6 @@ export default function Home() {
         ) : (
           <>
         <FreshCatchReels />
-        <CustomFishRequest />
 
         {/* Preserve the existing preorder placement for hubs that have not
             configured a ranked preorder section yet. */}
