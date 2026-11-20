@@ -174,14 +174,6 @@ function isExpressOrder(order: OrderRequest) {
 function getScheduledDeliveryDateLabel(order: OrderRequest): string | null {
   const deliveryDate = getIndiaDateKey(order.deliveryDate);
   if (!deliveryDate) return null;
-  const createdAt = getValidOrderCreatedAt(order);
-  const orderDateKey = createdAt ? getIndiaDateKey(createdAt) : null;
-  const hasScheduledDate = order.orderType === "preorder" ||
-    order.nextDayOrder === true ||
-    orderDateKey === null ||
-    (orderDateKey !== null && deliveryDate !== orderDateKey);
-
-  if (!hasScheduledDate) return null;
   return new Intl.DateTimeFormat("en-IN", {
     timeZone: "Asia/Kolkata",
     weekday: "short",

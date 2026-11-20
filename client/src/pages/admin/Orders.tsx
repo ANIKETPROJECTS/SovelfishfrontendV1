@@ -36,16 +36,6 @@ function getScheduledDeliveryDateLabel(order: {
   const deliveryDate = getIndiaDateKey(order.deliveryDate);
   if (!deliveryDate) return null;
 
-  const createdAt = order.createdAt ? new Date(order.createdAt) : null;
-  const orderDateKey = createdAt && !Number.isNaN(createdAt.getTime())
-    ? getIndiaDateKey(createdAt)
-    : null;
-  const hasScheduledDate = order.orderType === "preorder" ||
-    order.nextDayOrder === true ||
-    orderDateKey === null ||
-    (orderDateKey !== null && deliveryDate !== orderDateKey);
-
-  if (!hasScheduledDate) return null;
   return new Intl.DateTimeFormat("en-IN", {
     timeZone: "Asia/Kolkata",
     weekday: "short",
