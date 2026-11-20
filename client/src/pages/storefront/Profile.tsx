@@ -135,6 +135,12 @@ type OrdersSubTab = "current" | "previous";
 
 const ORDERS_PER_PAGE = 5;
 
+function getValidOrderCreatedAt(order: OrderRequest): Date | null {
+  if (!order.createdAt) return null;
+  const date = new Date(order.createdAt);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function isExpressOrder(order: OrderRequest) {
   if (order.isExpress) return true;
   if (order.scheduleType === "express" || order.scheduleType === "instant") return true;
@@ -149,13 +155,14 @@ function getScheduledDeliveryDateLabel(order: OrderRequest): string | null {
   const date = new Date(`${deliveryDate}T00:00:00`);
   if (Number.isNaN(date.getTime())) return null;
 
-  const orderDateKey = order.createdAt
+  const createdAt = getValidOrderCreatedAt(order);
+  const orderDateKey = createdAt
     ? new Intl.DateTimeFormat("en-CA", {
         timeZone: "Asia/Kolkata",
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
-      }).format(order.createdAt)
+      }).format(createdAt)
     : null;
   const hasScheduledDate = order.orderType === "preorder" ||
     order.nextDayOrder === true ||
@@ -195,9 +202,10 @@ const TRACK_STATUS_ORDER = ["pending", "confirmed", "out_for_delivery", "deliver
 function TrackOrderModal({ order, onClose }: { order: OrderRequest; onClose: () => void }) {
   const currentIdx = TRACK_STATUS_ORDER.indexOf(order.status);
   const isCancelled = order.status === "cancelled";
-  const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+  const createdAt = getValidOrderCreatedAt(order);
+  const date = createdAt ? createdAt.toLocaleDateString("en-IN", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
-  }) : "";
+  }) : "Date unavailable";
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -492,9 +500,12 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
   const discount = (order.discount ?? couponDiscount) + extraDiscount;
   const total = order.total ?? (subtotal + porterCharge + deliveryFee - couponDiscount - extraDiscount);
   const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-  const placedDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
-  }) : "";
+  const createdAt = getValidOrderCreatedAt(order);
+  const placedDate = createdAt
+    ? createdAt.toLocaleDateString("en-IN", {
+        day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+      })
+    : "Date unavailable";
   const scheduledDeliveryDate = getScheduledDeliveryDateLabel(order);
   const isCancelled = order.status === "cancelled";
   const currentStepIdx = TRACK_STATUS_ORDER.indexOf(order.status);
@@ -768,10 +779,11 @@ function OrderGridCard({ order, productImageMap }: { order: OrderRequest; produc
   const items: OrderItem[] = Array.isArray(order.items) ? order.items as OrderItem[] : [];
   const total = getOrderTotal(order);
   const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-  const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+  const createdAt = getValidOrderCreatedAt(order);
+  const date = createdAt ? createdAt.toLocaleDateString("en-IN", {
     day: "2-digit", month: "short", year: "numeric"
-  }) : "";
-  const time = order.createdAt ? new Date(order.createdAt).toLocaleTimeString("en-IN", {
+  }) : "Date unavailable";
+  const time = createdAt ? createdAt.toLocaleTimeString("en-IN", {
     hour: "2-digit", minute: "2-digit"
   }) : "";
 

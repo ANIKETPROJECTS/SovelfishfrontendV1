@@ -86,11 +86,15 @@ export default function Orders() {
               const paymentCompleted = paymentStatus === "completed" || paymentStatus === "paid";
               const cityArea = order.cityArea ?? order.deliveryArea;
               const deliveryDateLabel = getScheduledDeliveryDateLabel(order);
+              const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+              const placedDateLabel = createdAt && !Number.isNaN(createdAt.getTime())
+                ? format(createdAt, "MMM d, h:mm a")
+                : "Date unavailable";
 
               return (
                 <TableRow key={order.id} className="group">
                   <TableCell className="whitespace-nowrap">
-                    <div>Placed: {format(new Date(order.createdAt!), "MMM d, h:mm a")}</div>
+                    <div>Placed: {placedDateLabel}</div>
                     {deliveryDateLabel && (
                       <div className="mt-1 text-xs font-semibold text-[#7B3A14]">
                         Delivery: {deliveryDateLabel}
