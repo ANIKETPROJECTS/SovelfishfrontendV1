@@ -524,11 +524,6 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate">Order #{getDisplayOrderId(order)}</p>
             <p className="text-xs text-muted-foreground">Placed: {placedDate}</p>
-            {scheduledDeliveryDate && (
-              <p className="text-xs font-semibold text-[#7B3A14]">
-                Delivery date: {scheduledDeliveryDate}
-              </p>
-            )}
           </div>
         </div>
         <div
@@ -562,6 +557,15 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
         <img src={headerLocationImg} alt="" className="w-3.5 h-3.5 object-contain mt-0.5 shrink-0" />
         <p className="text-xs text-muted-foreground leading-relaxed">{order.address}, {order.deliveryArea}</p>
       </div>
+      {scheduledDeliveryDate && (
+        <div
+          className="mx-4 mt-2 mb-3 flex items-center justify-between gap-3 rounded-xl border border-[#7B3A14]/20 bg-[#FFF7ED] px-3 py-2"
+          data-testid={`order-delivery-date-${order.id}`}
+        >
+          <span className="text-xs font-semibold text-[#7B3A14]">Delivery date</span>
+          <span className="text-sm font-bold text-[#7B3A14] text-right">{scheduledDeliveryDate}</span>
+        </div>
+      )}
       {order.timeslotLabel && (
         <div className="px-4 pb-3 flex items-center gap-2">
           <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
