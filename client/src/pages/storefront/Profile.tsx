@@ -142,11 +142,26 @@ function isExpressOrder(order: OrderRequest) {
   return label.includes("porter") || label.includes("instant") || label.includes("express");
 }
 
-function getPreorderDeliveryDateLabel(order: OrderRequest): string | null {
-  const deliveryDate = (order as any).deliveryDate as string | null | undefined;
-  if ((order as any).orderType !== "preorder" || !deliveryDate) return null;
+function getScheduledDeliveryDateLabel(order: OrderRequest): string | null {
+  const deliveryDate = order.deliveryDate;
+  if (!deliveryDate || !/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate)) return null;
+
   const date = new Date(`${deliveryDate}T00:00:00`);
   if (Number.isNaN(date.getTime())) return null;
+
+  const orderDateKey = order.createdAt
+    ? new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(order.createdAt)
+    : null;
+  const hasScheduledDate = order.orderType === "preorder" ||
+    order.nextDayOrder === true ||
+    (orderDateKey !== null && deliveryDate !== orderDateKey);
+
+  if (!hasScheduledDate) return null;
   return date.toLocaleDateString("en-IN", {
     weekday: "short",
     day: "numeric",
@@ -431,7 +446,7 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
 
   <hr class="divider"/>
 
-  ${getPreorderDeliveryDateLabel(order) ? `<div class="info-row"><span class="info-label">Delivery Date</span><span class="info-val">${getPreorderDeliveryDateLabel(order)}</span></div>` : ''}
+  ${getScheduledDeliveryDateLabel(order) ? `<div class="info-row"><span class="info-label">Delivery Date</span><span class="info-val">${getScheduledDeliveryDateLabel(order)}</span></div>` : ''}
   ${order.timeslotLabel ? `<div class="info-row"><span class="info-label">Delivery Slot</span><span class="info-val">${order.timeslotLabel}</span></div>` : ''}
   <div class="info-row"><span class="info-label">Payment Method</span><span class="info-val">${paymentMethod}</span></div>
   <div class="info-row" style="border-bottom:none;"><span class="info-label">Payment Status</span><span class="badge" style="background:${statusColor};">${statusLabel}</span></div>
@@ -477,9 +492,10 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
   const discount = (order.discount ?? couponDiscount) + extraDiscount;
   const total = order.total ?? (subtotal + porterCharge + deliveryFee - couponDiscount - extraDiscount);
   const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-  const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+  const placedDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-IN", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
   }) : "";
+  const scheduledDeliveryDate = getScheduledDeliveryDateLabel(order);
   const isCancelled = order.status === "cancelled";
   const currentStepIdx = TRACK_STATUS_ORDER.indexOf(order.status);
 
@@ -490,7 +506,12 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
           <img src={orderIconImg} alt="" className="w-7 h-7 object-contain flex-shrink-0" style={{ filter: "brightness(0) saturate(100%) invert(28%) sepia(48%) saturate(1517%) hue-rotate(212deg) brightness(91%) contrast(89%)" }} />
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate">Order #{getDisplayOrderId(order)}</p>
-            <p className="text-xs text-muted-foreground">{date}</p>
+            <p className="text-xs text-muted-foreground">Placed: {placedDate}</p>
+            {scheduledDeliveryDate && (
+              <p className="text-xs font-semibold text-[#7B3A14]">
+                Delivery date: {scheduledDeliveryDate}
+              </p>
+            )}
           </div>
         </div>
         <div
@@ -524,25 +545,12 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
         <img src={headerLocationImg} alt="" className="w-3.5 h-3.5 object-contain mt-0.5 shrink-0" />
         <p className="text-xs text-muted-foreground leading-relaxed">{order.address}, {order.deliveryArea}</p>
       </div>
-      {(order.timeslotLabel || getPreorderDeliveryDateLabel(order)) && (() => {
-        const deliveryDate = (order as any).deliveryDate as string | null | undefined;
-        const orderDay = order.createdAt ? new Date(order.createdAt).toISOString().slice(0, 10) : null;
-        const isScheduledNextDay = deliveryDate && orderDay && deliveryDate !== orderDay;
-        const dateLabel = isScheduledNextDay
-          ? new Date(deliveryDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })
-          : null;
-        return (
-          <div className="px-4 pb-3 flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              {getPreorderDeliveryDateLabel(order)
-                ? <span className="font-medium text-slate-600">Delivery {getPreorderDeliveryDateLabel(order)} · </span>
-                : dateLabel ? <span className="font-medium text-slate-600">{dateLabel} · </span> : null}
-              {order.timeslotLabel ?? ""}
-            </p>
-          </div>
-        );
-      })()}
+      {order.timeslotLabel && (
+        <div className="px-4 pb-3 flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <p className="text-xs text-muted-foreground">{order.timeslotLabel}</p>
+        </div>
+      )}
 
       {!isCancelled && (
         <div className="px-4 pb-4">
@@ -705,10 +713,10 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
                     <div className="flex justify-between text-sm font-bold text-foreground pt-2 border-t border-slate-200">
                       <span>Total</span><span>₹{Math.max(0, total - walletPaidAmt).toLocaleString()}</span>
                     </div>
-                    {getPreorderDeliveryDateLabel(order) && (
+                    {scheduledDeliveryDate && (
                       <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-100">
                         <span className="text-muted-foreground">Delivery Date</span>
-                        <span className="font-semibold text-foreground text-right">{getPreorderDeliveryDateLabel(order)}</span>
+                        <span className="font-semibold text-foreground text-right">{scheduledDeliveryDate}</span>
                       </div>
                     )}
                     {order.timeslotLabel && (

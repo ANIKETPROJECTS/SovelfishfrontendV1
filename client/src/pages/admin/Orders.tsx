@@ -4,6 +4,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { format } from "date-fns";
 
+function getScheduledDeliveryDateLabel(order: {
+  deliveryDate?: string | null;
+  orderType?: string | null;
+  nextDayOrder?: boolean;
+  createdAt?: Date | string | null;
+}) {
+  const deliveryDate = order.deliveryDate;
+  if (!deliveryDate || !/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate)) return null;
+
+  const date = new Date(`${deliveryDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+  const orderDateKey = createdAt && !Number.isNaN(createdAt.getTime())
+    ? new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(createdAt)
+    : null;
+  const hasScheduledDate = order.orderType === "preorder" ||
+    order.nextDayOrder === true ||
+    (orderDateKey !== null && deliveryDate !== orderDateKey);
+
+  if (!hasScheduledDate) return null;
+  return date.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 const STATUSES = [
   { value: "pending", label: "Pending", color: "border-amber-200 bg-amber-50 text-amber-700" },
   { value: "confirmed", label: "Confirmed", color: "border-blue-200 bg-blue-50 text-blue-700" },
@@ -51,11 +85,17 @@ export default function Orders() {
               const paymentFailed = paymentStatus === "failed";
               const paymentCompleted = paymentStatus === "completed" || paymentStatus === "paid";
               const cityArea = order.cityArea ?? order.deliveryArea;
+              const deliveryDateLabel = getScheduledDeliveryDateLabel(order);
 
               return (
                 <TableRow key={order.id} className="group">
                   <TableCell className="whitespace-nowrap">
-                    {format(new Date(order.createdAt!), "MMM d, h:mm a")}
+                    <div>Placed: {format(new Date(order.createdAt!), "MMM d, h:mm a")}</div>
+                    {deliveryDateLabel && (
+                      <div className="mt-1 text-xs font-semibold text-[#7B3A14]">
+                        Delivery: {deliveryDateLabel}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{order.customerName}</div>
