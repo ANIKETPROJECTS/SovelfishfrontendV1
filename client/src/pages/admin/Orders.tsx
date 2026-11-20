@@ -4,38 +4,55 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { format } from "date-fns";
 
+function getIndiaDateKey(value: unknown): string | null {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+      ? value
+      : null;
+  }
+  if (!(typeof value === "string" || value instanceof Date)) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+  const part = (type: string) => parts.find((entry) => entry.type === type)?.value;
+  const year = part("year");
+  const month = part("month");
+  const day = part("day");
+  return year && month && day ? `${year}-${month}-${day}` : null;
+}
+
 function getScheduledDeliveryDateLabel(order: {
   deliveryDate?: string | null;
   orderType?: string | null;
   nextDayOrder?: boolean;
   createdAt?: Date | string | null;
 }) {
-  const deliveryDate = order.deliveryDate;
-  if (!deliveryDate || !/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate)) return null;
-
-  const date = new Date(`${deliveryDate}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return null;
+  const deliveryDate = getIndiaDateKey(order.deliveryDate);
+  if (!deliveryDate) return null;
 
   const createdAt = order.createdAt ? new Date(order.createdAt) : null;
   const orderDateKey = createdAt && !Number.isNaN(createdAt.getTime())
-    ? new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Kolkata",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(createdAt)
+    ? getIndiaDateKey(createdAt)
     : null;
   const hasScheduledDate = order.orderType === "preorder" ||
     order.nextDayOrder === true ||
+    orderDateKey === null ||
     (orderDateKey !== null && deliveryDate !== orderDateKey);
 
   if (!hasScheduledDate) return null;
-  return date.toLocaleDateString("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
     weekday: "short",
     day: "numeric",
     month: "short",
     year: "numeric",
-  });
+  }).format(new Date(`${deliveryDate}T12:00:00+05:30`));
 }
 
 const STATUSES = [

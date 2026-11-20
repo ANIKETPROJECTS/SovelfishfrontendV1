@@ -141,6 +141,29 @@ function getValidOrderCreatedAt(order: OrderRequest): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function getIndiaDateKey(value: unknown): string | null {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+      ? value
+      : null;
+  }
+  if (!(typeof value === "string" || value instanceof Date)) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+  const part = (type: string) => parts.find((entry) => entry.type === type)?.value;
+  const year = part("year");
+  const month = part("month");
+  const day = part("day");
+  return year && month && day ? `${year}-${month}-${day}` : null;
+}
+
 function isExpressOrder(order: OrderRequest) {
   if (order.isExpress) return true;
   if (order.scheduleType === "express" || order.scheduleType === "instant") return true;
@@ -149,32 +172,23 @@ function isExpressOrder(order: OrderRequest) {
 }
 
 function getScheduledDeliveryDateLabel(order: OrderRequest): string | null {
-  const deliveryDate = order.deliveryDate;
-  if (!deliveryDate || !/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate)) return null;
-
-  const date = new Date(`${deliveryDate}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return null;
-
+  const deliveryDate = getIndiaDateKey(order.deliveryDate);
+  if (!deliveryDate) return null;
   const createdAt = getValidOrderCreatedAt(order);
-  const orderDateKey = createdAt
-    ? new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Kolkata",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(createdAt)
-    : null;
+  const orderDateKey = createdAt ? getIndiaDateKey(createdAt) : null;
   const hasScheduledDate = order.orderType === "preorder" ||
     order.nextDayOrder === true ||
+    orderDateKey === null ||
     (orderDateKey !== null && deliveryDate !== orderDateKey);
 
   if (!hasScheduledDate) return null;
-  return date.toLocaleDateString("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
     weekday: "short",
     day: "numeric",
     month: "short",
     year: "numeric",
-  });
+  }).format(new Date(`${deliveryDate}T12:00:00+05:30`));
 }
 
 function getOrderTotal(order: OrderRequest) {
@@ -645,7 +659,7 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
               </div>
               <div className="text-right">
                 <p className="text-xs font-semibold text-foreground">#{getDisplayOrderId(order)}</p>
-                <p className="text-[11px] text-muted-foreground">{date}</p>
+                <p className="text-[11px] text-muted-foreground">{placedDate}</p>
               </div>
             </div>
 
@@ -757,7 +771,7 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
                   <p className="text-[11px] text-center text-muted-foreground pt-1">Thank you for shopping with Fresh Stock Xchange!</p>
 
                   <button
-                    onClick={() => downloadInvoicePDF(order, items, subtotal, slotCharge, discount, total, date)}
+                    onClick={() => downloadInvoicePDF(order, items, subtotal, slotCharge, discount, total, placedDate)}
                     className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-full text-white text-sm font-semibold transition-colors"
                     style={{ backgroundColor: "#364F9F" }}
                     data-testid={`button-download-invoice-${order.id}`}
